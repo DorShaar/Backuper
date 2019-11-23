@@ -20,27 +20,32 @@ namespace BackuperApp
             {
                 Console.WriteLine($"Backuping from {directoriesCouple.SourceDirectory}");
                 List<string> updatedFiles = directoryEnumarator.OperateRecursive(
-                    directoriesCouple.SourceDirectory, 
+                    directoriesCouple.SourceDirectory,
                     GetUpdatedFileSince,
                     "Get Updated Files");
 
                 Console.WriteLine($"Copying updated files from {directoriesCouple.SourceDirectory} to {directoriesCouple.DestDirectory}");
-                foreach(string updatedFile in updatedFiles)
+                foreach (string updatedFile in updatedFiles)
                 {
-                    if (!filesHashesHandler.TryAddFileHash(updatedFile))
+                    string fileHash = filesHashesHandler.GetFileHash(updatedFile);
+                    if (filesHashesHandler.HashExists(fileHash))
                         continue;
-
-                    string outputFile = updatedFile.Replace(directoriesCouple.SourceDirectory, directoriesCouple.DestDirectory);
-                    Console.WriteLine($"{updatedFile} will be copied to {outputFile}");
-                    Directory.CreateDirectory(Path.GetDirectoryName(outputFile));
-
-                    try
+                    else
                     {
-                        File.Copy(updatedFile, outputFile);
-                    }
-                    catch (IOException)
-                    {
-                        Console.WriteLine($"Failed to copy {updatedFile} to {outputFile}. Check if {outputFile} is already exists");
+                        string outputFile = updatedFile.Replace(directoriesCouple.SourceDirectory, directoriesCouple.DestDirectory);
+                        Console.WriteLine($"{updatedFile} will be copied to {outputFile}");
+                        Directory.CreateDirectory(Path.GetDirectoryName(outputFile));
+
+                        try
+                        {
+                            File.Copy(updatedFile, outputFile);
+                        }
+                        catch (IOException)
+                        {
+                            Console.WriteLine($"Failed to copy {updatedFile} to {outputFile}. Check if {outputFile} is already exists");
+                        }
+
+                        filesHashesHandler.AddFileHash(fileHash, outputFile);
                     }
                 }
             }

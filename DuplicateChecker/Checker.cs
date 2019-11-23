@@ -27,7 +27,8 @@ namespace DuplicateChecker
 
         public void AddFileHash(string filePath, FilesHashesHandler filesHashesHandler)
         {
-            filesHashesHandler.TryAddFileHash(filePath, addIfHashExist: true);
+            string hash = filesHashesHandler.GetFileHash(filePath);
+            filesHashesHandler.AddFileHash(hash, filePath);
         }
 
         private void PrintDuplicateFiles(FilesHashesHandler filesHashesHandler, string outputPath)

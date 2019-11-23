@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 
 namespace FileHashes
@@ -14,25 +15,22 @@ namespace FileHashes
 
         public int Count => mHashToFilePathDict.Count;
 
-        public bool TryAddFileHash(string filePath, bool addIfHashExist = false)
-        {
-            string hash = GetFileHash(filePath);
-            if (mHashToFilePathDict.TryGetValue(hash, out List<string> paths))
-            {
-                Console.WriteLine($"Hash {hash} found duplicate with file {filePath}");
-                if (addIfHashExist)
-                    paths.Add(filePath);
+        public bool HashExists(string hash) => mHashToFilePathDict.ContainsKey(hash);
 
-                return false;
+        public void AddFileHash(string fileHash, string filePath)
+        {
+            if (mHashToFilePathDict.TryGetValue(fileHash, out List<string> paths))
+            {
+                Console.WriteLine($"Hash {fileHash} found duplicate with file {filePath}");
+                paths.Add(filePath);
             }
             else
             {
-                mHashToFilePathDict.Add(hash, new List<string>() { filePath });
-                return true;
+                mHashToFilePathDict.Add(fileHash, new List<string>() { filePath });
             }
         }
 
-        private string GetFileHash(string filePath)
+        public string GetFileHash(string filePath)
         {
             using (MD5 md5 = MD5.Create())
             using (Stream stream = File.OpenRead(filePath))
@@ -55,6 +53,13 @@ namespace FileHashes
         public void Save(IObjectSerializer serializer, string savedFilePath)
         {
             serializer.Serialize(mHashToFilePathDict, savedFilePath);
+
+            string savedDuplicatesOnlyFilePath = Path.Combine(
+                Path.GetDirectoryName(savedFilePath), "dup_only" + Path.GetExtension(savedFilePath));
+            var duplicatesOnly = (from pair in mHashToFilePathDict
+                                  where pair.Value.Count > 2
+                                  select pair);
+            serializer.Serialize(duplicatesOnly, savedDuplicatesOnlyFilePath);
         }
 
         public void Load(IObjectSerializer serializer, string savedFilePath)
