@@ -7,9 +7,9 @@ namespace BackuperApp
     {
         private readonly List<DirectoriesCouple> mDirectoriesList = new List<DirectoriesCouple>();
 
-        public void Register(string backupFromDirectory, string backupToDirectory)
+        public DirectoriesBinding(List<DirectoriesCouple> directoriesCouples)
         {
-            mDirectoriesList.Add(new DirectoriesCouple(backupFromDirectory, backupToDirectory));
+            mDirectoriesList = directoriesCouples;
         }
 
         public IEnumerator<DirectoriesCouple> GetEnumerator()

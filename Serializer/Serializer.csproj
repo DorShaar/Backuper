@@ -5,8 +5,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\FileHashesHandler\FileHashesHandler.csproj" />
-    <ProjectReference Include="..\RecursiveDirectoryEnumarator\RecursiveDirectoryEnumarator.csproj" />
+    <ProjectReference Include="..\Serializer.Interface\Serializer.Interface.csproj" />
   </ItemGroup>
 
 </Project>

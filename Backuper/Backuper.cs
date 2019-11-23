@@ -1,4 +1,5 @@
-﻿using RecursiveDirectoryEnumaratorClass;
+﻿using FileHashes;
+using RecursiveDirectoryEnumaratorClass;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,16 +10,8 @@ namespace BackuperApp
     {
         private DateTime mLastUpdateDateTime;
 
-        public List<string> BackupFiles(
-            DirectoriesBinding directoriesBinding, 
-            DateTime lastUpdateDateTime, 
-            Dictionary<string, List<string>> hashToFilePath)
+        public void BackupFiles(DirectoriesBinding directoriesBinding, DateTime lastUpdateDateTime, FilesHashesHandler filesHashesHandler)
         {
-            if (hashToFilePath == null || hashToFilePath.Count == 0)
-                throw new InvalidOperationException("Please run Duplicate Check or configure duplicates file");
-
-            List<string> totalUpdatedFiles = new List<string>();
-
             mLastUpdateDateTime = lastUpdateDateTime;
 
             var directoryEnumarator = new RecursiveDirectoryEnumarator<List<string>>();
@@ -31,13 +24,13 @@ namespace BackuperApp
                     GetUpdatedFileSince,
                     "Get Updated Files");
 
-                totalUpdatedFiles.AddRange(updatedFiles);
-
                 Console.WriteLine($"Copying updated files from {directoriesCouple.SourceDirectory} to {directoriesCouple.DestDirectory}");
                 foreach(string updatedFile in updatedFiles)
                 {
-                    string outputFile = updatedFile.Replace(
-                        directoriesCouple.SourceDirectory, directoriesCouple.DestDirectory);
+                    if (!filesHashesHandler.TryAddFileHash(updatedFile))
+                        continue;
+
+                    string outputFile = updatedFile.Replace(directoriesCouple.SourceDirectory, directoriesCouple.DestDirectory);
                     Console.WriteLine($"{updatedFile} will be copied to {outputFile}");
                     Directory.CreateDirectory(Path.GetDirectoryName(outputFile));
 
@@ -51,8 +44,6 @@ namespace BackuperApp
                     }
                 }
             }
-
-            return totalUpdatedFiles;
         }
 
         private void GetUpdatedFileSince(string filePath, List<string> updatedFilesList)

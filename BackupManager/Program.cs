@@ -1,46 +1,71 @@
 ﻿using BackuperApp;
 using DuplicateChecker;
 using System;
-using System.Collections.Generic;
+using Microsoft.Extensions.DependencyInjection;
+using FileHashes;
+using Serializer.Interface;
+using Microsoft.Extensions.Options;
 
-namespace BackuperManager
+namespace BackupManager
 {
     class Program
     {
-        static void Main(string[] args)
+        private static readonly IServiceProvider mServiceProvider = new BackupManagerServiceProvider();
+
+        static void Main()
         {
             Console.WriteLine("Backuper is running!");
 
-            Console.WriteLine("Choose one of the next options:");
-            Console.WriteLine("1. Duplicate Check");
-            Console.WriteLine("2. Backup");
+            BackuperConfiguration config = mServiceProvider.GetRequiredService<IOptions<BackuperConfiguration>>().Value;
+            IObjectSerializer objectSerializer = mServiceProvider.GetRequiredService<IObjectSerializer>();
 
-            Checker checker = new Checker();
-            string userInput = Console.ReadLine();
-            while (userInput.ToLower() != "exit" || userInput.ToLower() != "q")
+            string userInput = string.Empty;
+            while (userInput.ToLower() != "exit" && userInput.ToLower() != "q")
             {
+                PrintMenu();
+                userInput = Console.ReadLine();
                 switch (userInput)
                 {
                     case "1":
-                        Dictionary<string, List<string>> hashToFilePathDict =
-                            checker.GetDuplicateFiles("TODO get root dir from configuration file");
-                        hashToFilePathDict.SaveToFile();
+                        RunDuplicatedHashes(config, objectSerializer);
                         break;
 
                     case "2":
-                        Backuper backuper = new Backuper();
-                        DirectoriesBinding directoriesCouples = GetDirectoriesBinding();
-                        DateTime lastUpdateTime = GetLastUpdateTime();
-                        Dictionary<string, List<string>> hashToFilePathDict = GetHashToFilePathDict();
-                        List<string> updatedFiles = backuper.BackupFiles(directoriesCouples, lastUpdateTime, hashToFilePathDict);
-                        foreach (string updatedFile in updatedFiles)
-                        {
-                            checker.AddFileHash(updatedFile, hashToFilePathDict);
-                        }
-
+                        RunBackup(config, objectSerializer);
                         break;
                 }
             }
+        }
+
+        private static void PrintMenu()
+        {
+            Console.WriteLine();
+            Console.WriteLine("Choose one of the next options:");
+            Console.WriteLine("1. Duplicate Check");
+            Console.WriteLine("2. Backup");
+        }
+
+        private static void RunDuplicatedHashes(BackuperConfiguration config, IObjectSerializer objectSerializer)
+        {
+            Checker checker = new Checker();
+            FilesHashesHandler filesHashesHandler = checker.GetDuplicateFiles(config.BackupRootDirectory);
+            filesHashesHandler.Save(objectSerializer, config.FileHashesPath);
+        }
+
+        private static void RunBackup(BackuperConfiguration config, IObjectSerializer objectSerializer)
+        {
+            FilesHashesHandler filesHashesHandler = new FilesHashesHandler();
+            filesHashesHandler.Load(objectSerializer, config.FileHashesPath);
+
+            if (filesHashesHandler.Count == 0)
+            {
+                Console.WriteLine("Please run Duplicate Check or configure duplicates file");
+                return;
+            }
+
+            Backuper backuper = new Backuper();
+            backuper.BackupFiles(new DirectoriesBinding(config.DirectoriesCouples), config.LastUpdateTime, filesHashesHandler);
+            filesHashesHandler.Save(objectSerializer, config.FileHashesPath);
         }
     }
 }

@@ -4,20 +4,34 @@ namespace BackuperApp
 {
     public class DirectoriesCouple
     {
-        public string SourceDirectory { get; }
-        public string DestDirectory { get; }
+        private string mSourceDirectory;
+        public string SourceDirectory
+        {
+            get => mSourceDirectory;
+            set => SetSourceDirectory(value);
+        }
 
-        public DirectoriesCouple(string sourceDirectory, string destDirectory)
+        private string mDestDirectory;
+        public string DestDirectory
+        {
+            get => mDestDirectory;
+            set => SetDestinationDirectory(value);
+        }
+
+        public void SetSourceDirectory(string sourceDirectory)
         {
             if (!Directory.Exists(sourceDirectory))
                 throw new DirectoryNotFoundException($"Error in directories registration: {sourceDirectory} does not exists");
 
-            SourceDirectory = sourceDirectory;
+            mSourceDirectory = sourceDirectory;
+        }
 
+        public void SetDestinationDirectory(string destDirectory)
+        {
             if (!Directory.Exists(destDirectory))
                 throw new DirectoryNotFoundException($"Error in directories registration: {destDirectory} does not exists");
-            
-            DestDirectory = destDirectory;
+
+            mDestDirectory = destDirectory;
         }
     }
 }

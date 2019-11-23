@@ -1,8 +1,8 @@
-﻿using RecursiveDirectoryEnumaratorClass;
+﻿using FileHashes;
+using RecursiveDirectoryEnumaratorClass;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Security.Cryptography;
 
 namespace DuplicateChecker
 {
@@ -19,41 +19,22 @@ namespace DuplicateChecker
             PrintDuplicateFiles(GetDuplicateFiles(rootDirectory), duplicatesFilesTxtFile);
         }
 
-        public Dictionary<string, List<string>> GetDuplicateFiles(string rootDirectory)
+        public FilesHashesHandler GetDuplicateFiles(string rootDirectory)
         {
-            var directoryEnumarator = new RecursiveDirectoryEnumarator<Dictionary<string, List<string>>>();
+            var directoryEnumarator = new RecursiveDirectoryEnumarator<FilesHashesHandler>();
             return directoryEnumarator.OperateRecursive(rootDirectory, AddFileHash, "Duplicate Files Search");
         }
 
-        public void AddFileHash(string filePath, Dictionary<string, List<string>> hashToFilePathDict)
+        public void AddFileHash(string filePath, FilesHashesHandler filesHashesHandler)
         {
-            string hash = GetFileHash(filePath);
-            if (hashToFilePathDict.TryGetValue(hash, out List<string> paths))
-            {
-                Console.WriteLine($"Hash {hash} found duplicate with file {filePath}");
-                paths.Add(filePath);
-            }
-            else
-            {
-                hashToFilePathDict.Add(hash, new List<string>());
-            }
+            filesHashesHandler.TryAddFileHash(filePath, addIfHashExist: true);
         }
 
-        private string GetFileHash(string filePath)
-        {
-            using (MD5 md5 = MD5.Create())
-            using (Stream stream = File.OpenRead(filePath))
-            {
-                byte[] hash = md5.ComputeHash(stream);
-                return BitConverter.ToString(hash).Replace("-", string.Empty);
-            }
-        }
-
-        private void PrintDuplicateFiles(Dictionary<string, List<string>> hashToFilePath, string outputPath)
+        private void PrintDuplicateFiles(FilesHashesHandler filesHashesHandler, string outputPath)
         {
             using (StreamWriter writer = File.CreateText(outputPath))
             {
-                foreach (KeyValuePair<string, List<string>> keyValuePair in hashToFilePath)
+                foreach (KeyValuePair<string, List<string>> keyValuePair in filesHashesHandler)
                 {
                     if (keyValuePair.Value.Count > 1)
                     {
