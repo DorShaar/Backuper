@@ -21,7 +21,7 @@ namespace BackuperApp
         public void SetSourceDirectory(string sourceDirectory)
         {
             if (!Directory.Exists(sourceDirectory))
-                throw new DirectoryNotFoundException($"Error in directories registration: {sourceDirectory} does not exists");
+                System.Console.WriteLine($"Error in directories registration: {sourceDirectory} does not exists");
 
             mSourceDirectory = sourceDirectory;
         }
@@ -29,7 +29,7 @@ namespace BackuperApp
         public void SetDestinationDirectory(string destDirectory)
         {
             if (!Directory.Exists(destDirectory))
-                throw new DirectoryNotFoundException($"Error in directories registration: {destDirectory} does not exists");
+                System.Console.WriteLine($"Error in directories registration: {destDirectory} does not exists");
 
             mDestDirectory = destDirectory;
         }
