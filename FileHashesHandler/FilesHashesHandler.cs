@@ -52,13 +52,20 @@ namespace FileHashes
 
         public void Save(IObjectSerializer serializer, string savedFilePath)
         {
+            // Serialize all hashes.
             serializer.Serialize(mHashToFilePathDict, savedFilePath);
 
+            // Serialize duplicates hashes files.
             string savedDuplicatesOnlyFilePath = Path.Combine(
                 Path.GetDirectoryName(savedFilePath), "dup_only" + Path.GetExtension(savedFilePath));
-            var duplicatesOnly = (from pair in mHashToFilePathDict
-                                  where pair.Value.Count > 2
-                                  select pair);
+
+            Dictionary<string, List<string>> duplicatesOnly = new Dictionary<string, List<string>>();
+            foreach (KeyValuePair<string, List<string>> pair in mHashToFilePathDict)
+            {
+                if (pair.Value.Count > 1)
+                    duplicatesOnly.Add(pair.Key, pair.Value);
+            }
+
             serializer.Serialize(duplicatesOnly, savedDuplicatesOnlyFilePath);
         }
 
