@@ -254,3 +254,6 @@ __pycache__/
 
 # Database files
 *.db
+
+# Coverlet files
+*coverage.json
