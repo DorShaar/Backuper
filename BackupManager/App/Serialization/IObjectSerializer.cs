@@ -1,4 +1,4 @@
-﻿namespace Serializer.Interface
+﻿namespace Backuper.App.Serialization
 {
     public interface IObjectSerializer
     {

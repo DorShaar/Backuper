@@ -1,14 +1,14 @@
-﻿using BackuperApp;
+﻿using Backuper.Domain.Mapping;
 using System;
 using System.Collections.Generic;
 
-namespace BackupManager
+namespace Backuper.Domain.Configuration
 {
     public class BackuperConfiguration
     {
         public DateTime LastUpdateTime { get; set; }
         public string FileHashesPath { get; set; }
-        public List<DirectoriesCouple> DirectoriesCouples { get; set; }
+        public List<DirectoriesMap> DirectoriesCouples { get; set; }
         public string BackupRootDirectory { get; set; }
     }
 }

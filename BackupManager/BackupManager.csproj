@@ -10,18 +10,17 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.4" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="3.1.4" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="3.1.4" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Backuper\Backuper.csproj" />
-    <ProjectReference Include="..\DuplicateChecker\DuplicateChecker.csproj" />
-    <ProjectReference Include="..\Serializer\Serializer.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="config\BackuperConfig.json">
+    <None Update="Domain\Configuration\BackuperConfig.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Infra\Backuper\" />
   </ItemGroup>
 
 </Project>

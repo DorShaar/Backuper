@@ -1,10 +1,13 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Backuper.App.Serialization;
+using Backuper.Domain;
+using Backuper.Domain.Configuration;
+using Backuper.Infra.Serialization;
+using Backuper.App;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Serializer;
-using Serializer.Interface;
 using System;
 
-namespace BackupManager
+namespace Backuper.Infra
 {
     internal class BackupManagerServiceProvider : IServiceProvider
     {
@@ -20,6 +23,8 @@ namespace BackupManager
             ServiceCollection serviceCollection = new ServiceCollection();
 
             serviceCollection.AddSingleton<IObjectSerializer, JsonSerializerWrapper>();
+            serviceCollection.AddSingleton<IBackuperService, BackuperService>();
+            serviceCollection.AddSingleton<IDuplicateChecker, DuplicateChecker>();
 
             RegisterConfiguration(serviceCollection);
 
@@ -30,7 +35,7 @@ namespace BackupManager
         {
             IConfigurationBuilder configurationBuilder = 
                 new ConfigurationBuilder()
-                .AddJsonFile(@"config\BackuperConfig.json", optional: false); // Adds json configuration.
+                .AddJsonFile(@"Configuration\BackuperConfig.json", optional: false); // Adds json configuration.
 
             IConfiguration configuration = configurationBuilder.Build();
 

@@ -1,10 +1,9 @@
-﻿using FileHashes;
+﻿using Backuper.App.Serialization;
 using Newtonsoft.Json;
-using Serializer.Interface;
 using System;
 using System.IO;
 
-namespace Serializer
+namespace Backuper.Infra.Serialization
 {
     public class JsonSerializerWrapper : IObjectSerializer
     {

@@ -1,18 +1,18 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 
-namespace BackuperApp
+namespace Backuper.Domain.Mapping
 {
-    public class DirectoriesBinding : IEnumerable<DirectoriesCouple>
+    public class DirectoriesMapping : IEnumerable<DirectoriesMap>
     {
-        private readonly List<DirectoriesCouple> mDirectoriesList = new List<DirectoriesCouple>();
+        private readonly List<DirectoriesMap> mDirectoriesList = new List<DirectoriesMap>();
 
-        public DirectoriesBinding(List<DirectoriesCouple> directoriesCouples)
+        public DirectoriesMapping(List<DirectoriesMap> directoriesCouples)
         {
             mDirectoriesList = directoriesCouples;
         }
 
-        public IEnumerator<DirectoriesCouple> GetEnumerator()
+        public IEnumerator<DirectoriesMap> GetEnumerator()
         {
             return mDirectoriesList.GetEnumerator();
         }

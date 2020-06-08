@@ -1,23 +1,25 @@
-﻿using BackuperApp;
-using DuplicateChecker;
-using System;
+﻿using System;
 using Microsoft.Extensions.DependencyInjection;
-using FileHashes;
-using Serializer.Interface;
 using Microsoft.Extensions.Options;
+using Backuper.Infra;
+using Backuper.Domain.Configuration;
+using Backuper.App.Serialization;
+using Backuper.App;
+using Backuper.Domain.Mapping;
 
-namespace BackupManager
+namespace Backuper
 {
     class Program
     {
         private static readonly IServiceProvider mServiceProvider = new BackupManagerServiceProvider();
+        private static readonly BackuperConfiguration mConfig = mServiceProvider.GetRequiredService<IOptions<BackuperConfiguration>>().Value;
+        private static readonly IObjectSerializer mObjectSerializer = mServiceProvider.GetRequiredService<IObjectSerializer>();
+        private static readonly IBackuperService mBackuperService = mServiceProvider.GetRequiredService<IBackuperService>();
+        private static readonly IDuplicateChecker mDuplicateChecker = mServiceProvider.GetRequiredService<IDuplicateChecker>();
 
         static void Main()
         {
             Console.WriteLine("Backuper is running!");
-
-            BackuperConfiguration config = mServiceProvider.GetRequiredService<IOptions<BackuperConfiguration>>().Value;
-            IObjectSerializer objectSerializer = mServiceProvider.GetRequiredService<IObjectSerializer>();
 
             string userInput = string.Empty;
             while (userInput.ToLower() != "exit" && userInput.ToLower() != "q")
@@ -27,11 +29,11 @@ namespace BackupManager
                 switch (userInput)
                 {
                     case "1":
-                        RunDuplicatedHashes(config, objectSerializer);
+                        FindDuplicatedHashes();
                         break;
 
                     case "2":
-                        RunBackup(config, objectSerializer);
+                        RunBackup();
                         break;
                 }
             }
@@ -45,27 +47,26 @@ namespace BackupManager
             Console.WriteLine("2. Backup");
         }
 
-        private static void RunDuplicatedHashes(BackuperConfiguration config, IObjectSerializer objectSerializer)
+        private static void FindDuplicatedHashes()
         {
-            Checker checker = new Checker();
-            FilesHashesHandler filesHashesHandler = checker.GetDuplicateFiles(config.BackupRootDirectory);
-            filesHashesHandler.Save(objectSerializer, config.FileHashesPath);
+            FilesHashesHandler filesHashesHandler = new FilesHashesHandler(mDuplicateChecker, mObjectSerializer);
+            filesHashesHandler.FindDuplicatedHashes(mConfig.BackupRootDirectory);
+            filesHashesHandler.Save(mConfig.FileHashesPath);
         }
 
-        private static void RunBackup(BackuperConfiguration config, IObjectSerializer objectSerializer)
+        private static void RunBackup()
         {
-            FilesHashesHandler filesHashesHandler = new FilesHashesHandler();
-            filesHashesHandler.Load(objectSerializer, config.FileHashesPath);
+            FilesHashesHandler filesHashesHandler = new FilesHashesHandler(mDuplicateChecker, mObjectSerializer);
+            filesHashesHandler.Load(mConfig.FileHashesPath);
 
-            if (filesHashesHandler.Count == 0)
+            if (filesHashesHandler.HashesCount == 0)
             {
-                Console.WriteLine("Please run Duplicate Check or configure duplicates file");
+                Console.WriteLine("No hashes file provided. Please run Duplicate Check or configure duplicates file");
                 return;
             }
 
-            Backuper backuper = new Backuper();
-            backuper.BackupFiles(new DirectoriesBinding(config.DirectoriesCouples), config.LastUpdateTime, filesHashesHandler);
-            filesHashesHandler.Save(objectSerializer, config.FileHashesPath);
+            mBackuperService.BackupFiles(new DirectoriesMapping(mConfig.DirectoriesCouples), mConfig.LastUpdateTime, filesHashesHandler);
+            filesHashesHandler.Save(mConfig.FileHashesPath);
         }
     }
 }

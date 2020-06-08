@@ -1,8 +1,8 @@
 ﻿using System.IO;
 
-namespace BackuperApp
+namespace Backuper.Domain.Mapping
 {
-    public class DirectoriesCouple
+    public class DirectoriesMap
     {
         private string mSourceDirectory;
         public string SourceDirectory
