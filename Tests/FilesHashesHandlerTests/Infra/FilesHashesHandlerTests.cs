@@ -1,86 +1,99 @@
-﻿using Backuper.Infra;
+﻿using Backuper.App;
+using Backuper.App.Serialization;
+using Backuper.Infra;
+using FakeItEasy;
+using System.Collections.Generic;
+using System.Linq;
 using Xunit;
 
 namespace BackupManagerTests.Infra
 {
     public class FilesHashesHandlerTests
     {
-        //[Fact]
-        //public void HashesCount_AsExpected()
-        //{
-        //    FilesHashesHandler filesHashesHandler = new FilesHashesHandler();
-        //    filesHashesHandler.HashesCount
-        //}
+        [Fact]
+        public void AddFileHash_FileHashNotExists_FileHashAdded()
+        {
+            FilesHashesHandler filesHashesHandler = new FilesHashesHandler(
+                A.Fake<IDuplicateChecker>(), A.Fake<IObjectSerializer>());
 
-        //[Fact]
-        //public void AddFileHash_FileHashNotExists_FileHashAdded()
-        //{
-        //    FilesHashesHandler filesHashesHandler = new FilesHashesHandler();
-        //    filesHashesHandler.AddFileHash
-        //}
+            Assert.Equal(0, filesHashesHandler.HashesCount);
 
-        //[Fact]
-        //public void AddFileHash_FileHashAlreadyExists_FileHashNotAdded()
-        //{
-        //    FilesHashesHandler filesHashesHandler = new FilesHashesHandler();
-        //    filesHashesHandler.AddFileHash
-        //}
+            filesHashesHandler.AddFileHash("ABC123", "FileName.ext");
+            filesHashesHandler.AddFileHash("ABC1234", "FileName.ext");
+            Assert.Equal(2, filesHashesHandler.HashesCount);
+        }
 
-        //[Fact]
-        //public void AddFileHash_NewHashIsAdded()
-        //{
-        //    FilesHashesHandler hashesHandler = new FilesHashesHandler();
-        //    Assert.Equal(0, hashesHandler.HashesCount);
+        [Fact]
+        public void AddFileHash_FileHashAlreadyExists_PathIsAdded()
+        {
+            FilesHashesHandler filesHashesHandler = new FilesHashesHandler(
+                A.Fake<IDuplicateChecker>(), A.Fake<IObjectSerializer>());
 
-        //    hashesHandler.AddFileHash("ABC123", "FileName.ext");
-        //    Assert.Equal(1, hashesHandler.HashesCount);
-        //}
+            Assert.Equal(0, filesHashesHandler.HashesCount);
 
-        //[Fact]
-        //public void AddFileHash_ExitingHashAndPathIsAdded()
-        //{
-        //    FilesHashesHandler hashesHandler = new FilesHashesHandler();
-        //    Assert.Equal(0, hashesHandler.HashesCount);
+            string firstFileName = "FileName.ext";
+            string secondFileName = "FileName2.ext";
+            filesHashesHandler.AddFileHash("ABC123", firstFileName);
+            filesHashesHandler.AddFileHash("ABC123", secondFileName);
 
-        //    string firstFileName = "FileName.ext";
-        //    string secondFileName = "FileName2.ext";
-        //    hashesHandler.AddFileHash("ABC123", firstFileName);
-        //    hashesHandler.AddFileHash("ABC123", secondFileName);
+            Assert.Equal(1, filesHashesHandler.HashesCount);
 
-        //    Assert.Equal(1, hashesHandler.HashesCount);
+            KeyValuePair<string, List<string>> pair = filesHashesHandler.HashToFilePathDict.First();
 
-        //    KeyValuePair<string, List<string>> pair = hashesHandler.ToList().First();
+            Assert.Equal(firstFileName, pair.Value[0]);
+            Assert.Equal(secondFileName, pair.Value[1]);
+        }
 
-        //    Assert.Equal(firstFileName, pair.Value[0]);
-        //    Assert.Equal(secondFileName, pair.Value[1]);
-        //}
+        [Fact]
+        public void HashExists_HashAlreadyExists_True()
+        {
+            FilesHashesHandler filesHashesHandler = new FilesHashesHandler(
+                A.Fake<IDuplicateChecker>(), A.Fake<IObjectSerializer>());
 
-        //[Fact]
-        //public void HashExists_HashAlreadyExists_True()
-        //{
-        //    FilesHashesHandler filesHashesHandler = new FilesHashesHandler();
-        //    filesHashesHandler.HashExists
-        //}
+            string hash = "ABC123";
+            filesHashesHandler.AddFileHash(hash, "fileName");
 
-        //[Fact]
-        //public void HashExists_HashNotExists_False()
-        //{
-        //    FilesHashesHandler filesHashesHandler = new FilesHashesHandler();
-        //    filesHashesHandler.HashExists
-        //}
+            Assert.True(filesHashesHandler.HashExists(hash));
+        }
 
-        //[Fact]
-        //public void Load_HashCountUpdated()
-        //{
-        //    FilesHashesHandler filesHashesHandler = new FilesHashesHandler();
-        //    filesHashesHandler.Load()
-        //}
+        [Fact]
+        public void HashExists_HashNotExists_False()
+        {
+            FilesHashesHandler filesHashesHandler = new FilesHashesHandler(
+               A.Fake<IDuplicateChecker>(), A.Fake<IObjectSerializer>());
 
-        //[Fact]
-        //public void Save_FileCreated()
-        //{
-        //    FilesHashesHandler filesHashesHandler = new FilesHashesHandler();
-        //    filesHashesHandler.Save()
-        //}
+            filesHashesHandler.AddFileHash("ABC123", "fileName");
+
+            Assert.False(filesHashesHandler.HashExists("ABC1235"));
+        }
+
+        [Fact]
+        public void Load_DeserializeCalled()
+        {
+            IObjectSerializer objectSerializer = A.Fake<IObjectSerializer>();
+
+            FilesHashesHandler filesHashesHandler = new FilesHashesHandler(
+                A.Fake<IDuplicateChecker>(), objectSerializer);
+
+            string filePath = "filePath";
+            filesHashesHandler.Load(filePath);
+            A.CallTo(() => objectSerializer.Deserialize<Dictionary<string, List<string>>>(filePath))
+                .MustHaveHappenedOnceExactly();
+        }
+
+        [Fact]
+        public void Save_FileCreated()
+        {
+            IObjectSerializer objectSerializer = A.Fake<IObjectSerializer>();
+
+            FilesHashesHandler filesHashesHandler = new FilesHashesHandler(
+                A.Fake<IDuplicateChecker>(), objectSerializer);
+
+            string filePath = "filePath";
+            filesHashesHandler.Save(filePath);
+            A.CallTo(() => objectSerializer.Serialize(
+                A<Dictionary<string, List<string>>>.Ignored, filePath))
+                .MustHaveHappened();
+        }
     }
 }
