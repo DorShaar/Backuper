@@ -9,46 +9,21 @@ namespace Backuper
 {
     public class BackuperService : IBackuperService
     {
-        public void BackupFiles(DirectoriesMapping directoriesBinding, DateTime lastUpdateDateTime, FilesHashesHandler filesHashesHandler)
+        public void BackupFiles(DirectoriesMapping directoriesMapping, DateTime lastUpdateDateTime, FilesHashesHandler filesHashesHandler)
         {
-            foreach (DirectoriesMap directoriesCouple in directoriesBinding)
+            foreach (DirectoriesMap directoriesMap in directoriesMapping)
             {
-                Console.WriteLine($"Backuping from {directoriesCouple.SourceDirectory}");
-                List<string> updatedFiles = FindUpdatedFiles(directoriesCouple.SourceDirectory,
+                Console.WriteLine($"Heading to directory {directoriesMap.SourceDirectory}");
+                List<string> updatedFiles = FindUpdatedFiles(directoriesMap.SourceDirectory,
                     lastUpdateDateTime);
 
                 if (updatedFiles.Count == 0)
                 {
-                    Console.WriteLine("No updated files found");
+                    Console.WriteLine($"No updated files found in {directoriesMap.SourceDirectory}");
                     continue;
                 }
 
-                Console.WriteLine($"Copying {updatedFiles.Count} updated files from {directoriesCouple.SourceDirectory} to {directoriesCouple.DestDirectory}");
-                foreach (string updatedFile in updatedFiles)
-                {
-                    string fileHash = FilesHashesHandler.GetFileHash(updatedFile);
-                    if (filesHashesHandler.HashExists(fileHash))
-                    {
-                        Console.WriteLine($"DUP: {updatedFile} with hash {fileHash}");
-                        continue;
-                    }
-
-                    string outputFile = updatedFile.Replace(directoriesCouple.SourceDirectory, directoriesCouple.DestDirectory);
-                    Console.WriteLine($"COPY: {updatedFile} to {outputFile}");
-                    Directory.CreateDirectory(Path.GetDirectoryName(outputFile));
-
-                    try
-                    {
-                        File.Copy(updatedFile, outputFile);
-                    }
-                    catch (IOException)
-                    {
-                        Console.WriteLine($"Failed to copy {updatedFile} to {outputFile}. Check if {outputFile} is already exists");
-                    }
-
-                    filesHashesHandler.AddFileHash(fileHash, outputFile);
-                    Console.WriteLine();
-                }
+                CopyUpdatedFiles(updatedFiles, directoriesMap, filesHashesHandler);
             }
         }
 
@@ -58,7 +33,7 @@ namespace Backuper
 
             if (!Directory.Exists(rootDirectory))
             {
-                Console.WriteLine($"{rootDirectory} does not exists");
+                Console.WriteLine($"{rootDirectory} does not exists"); // Log error.
                 return updatedFiles;
             }
 
@@ -70,7 +45,7 @@ namespace Backuper
             while (directoriesToSearch.Count > 0)
             {
                 string currentSearchDirectory = directoriesToSearch.Dequeue();
-                Console.WriteLine($"Collecting from {currentSearchDirectory}");
+                Console.WriteLine($"Collecting from directory {currentSearchDirectory}");
 
                 // Adding subdirectories to search.
                 foreach (string directory in Directory.EnumerateDirectories(currentSearchDirectory))
@@ -93,6 +68,36 @@ namespace Backuper
         {
             if (lastUpdateDateTime < (new FileInfo(filePath)).LastWriteTime)
                 updatedFilesList.Add(filePath);
+        }
+
+        private void CopyUpdatedFiles(List<string> updatedFiles, DirectoriesMap directoriesMap, FilesHashesHandler filesHashesHandler)
+        {
+            Console.WriteLine($"Copying {updatedFiles.Count} updated files from {directoriesMap.SourceDirectory} to {directoriesMap.DestDirectory}");
+            foreach (string updatedFile in updatedFiles)
+            {
+                string fileHash = FilesHashesHandler.GetFileHash(updatedFile);
+                if (filesHashesHandler.HashExists(fileHash))
+                {
+                    Console.WriteLine($"Duplication found - not performing copy: {updatedFile} with hash {fileHash}."); // log warning.
+                    continue;
+                }
+
+                string outputFile = updatedFile.Replace(directoriesMap.SourceDirectory, directoriesMap.DestDirectory);
+                Directory.CreateDirectory(Path.GetDirectoryName(outputFile));
+
+                try
+                {
+                    File.Copy(updatedFile, outputFile, overwrite: true);
+                    Console.WriteLine($"Copied {updatedFile} to {outputFile}");
+                }
+                catch (IOException ex)
+                {
+                    Console.WriteLine($"Failed to copy {updatedFile} to {outputFile}. Exception: {ex.Message}"); // log error.
+                }
+
+                filesHashesHandler.AddFileHash(fileHash, outputFile);
+                Console.WriteLine();
+            }
         }
     }
 }

@@ -11,13 +11,18 @@ namespace Backuper.Infra.Serialization
         {
             string jsonText = JsonConvert.SerializeObject(objectToSerialize, Formatting.Indented);
             File.WriteAllText(databasePath, jsonText);
+            Console.WriteLine($"Serialized object {typeof(T)} into {databasePath}");
         }
 
         public T Deserialize<T>(string databasePath)
         {
             JsonSerializerSettings settings = new JsonSerializerSettings();
             settings.Converters.Add(new FilesHashesHandlerConverter());
-            return JsonConvert.DeserializeObject<T>(File.ReadAllText(databasePath), settings);
+
+            T deserializedObject = JsonConvert.DeserializeObject<T>(File.ReadAllText(databasePath), settings);
+            Console.WriteLine($"Deserialized object {typeof(T)} from {databasePath}");
+
+            return deserializedObject;
         }
 
         private class FilesHashesHandlerConverter : JsonConverter
