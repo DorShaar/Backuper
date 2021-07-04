@@ -1,7 +1,9 @@
 ﻿using Backuper.App;
 using Backuper.App.Serialization;
+using Backuper.Domain.Configuration;
 using Backuper.Infra;
 using FakeItEasy;
+using Microsoft.Extensions.Options;
 using System.Collections.Generic;
 using System.Linq;
 using Xunit;
@@ -14,7 +16,9 @@ namespace BackupManagerTests.Infra
         public void AddFileHash_FileHashNotExists_FileHashAdded()
         {
             FilesHashesHandler filesHashesHandler = new FilesHashesHandler(
-                A.Fake<IDuplicateChecker>(), A.Fake<IObjectSerializer>());
+                A.Dummy<IDuplicateChecker>(),
+                A.Dummy<IObjectSerializer>(),
+                A.Dummy<IOptions<BackuperConfiguration>>());
 
             Assert.Equal(0, filesHashesHandler.HashesCount);
 
@@ -27,12 +31,14 @@ namespace BackupManagerTests.Infra
         public void AddFileHash_FileHashAlreadyExists_PathIsAdded()
         {
             FilesHashesHandler filesHashesHandler = new FilesHashesHandler(
-                A.Fake<IDuplicateChecker>(), A.Fake<IObjectSerializer>());
+                A.Dummy<IDuplicateChecker>(),
+                A.Dummy<IObjectSerializer>(),
+                A.Dummy<IOptions<BackuperConfiguration>>());
 
             Assert.Equal(0, filesHashesHandler.HashesCount);
 
-            string firstFileName = "FileName.ext";
-            string secondFileName = "FileName2.ext";
+            const string firstFileName = "FileName.ext";
+            const string secondFileName = "FileName2.ext";
             filesHashesHandler.AddFileHash("ABC123", firstFileName);
             filesHashesHandler.AddFileHash("ABC123", secondFileName);
 
@@ -48,9 +54,11 @@ namespace BackupManagerTests.Infra
         public void HashExists_HashAlreadyExists_True()
         {
             FilesHashesHandler filesHashesHandler = new FilesHashesHandler(
-                A.Fake<IDuplicateChecker>(), A.Fake<IObjectSerializer>());
+                A.Dummy<IDuplicateChecker>(),
+                A.Dummy<IObjectSerializer>(),
+                A.Dummy<IOptions<BackuperConfiguration>>());
 
-            string hash = "ABC123";
+            const string hash = "ABC123";
             filesHashesHandler.AddFileHash(hash, "fileName");
 
             Assert.True(filesHashesHandler.HashExists(hash));
@@ -60,7 +68,9 @@ namespace BackupManagerTests.Infra
         public void HashExists_HashNotExists_False()
         {
             FilesHashesHandler filesHashesHandler = new FilesHashesHandler(
-               A.Fake<IDuplicateChecker>(), A.Fake<IObjectSerializer>());
+                A.Dummy<IDuplicateChecker>(),
+                A.Dummy<IObjectSerializer>(),
+                A.Dummy<IOptions<BackuperConfiguration>>());
 
             filesHashesHandler.AddFileHash("ABC123", "fileName");
 
@@ -68,16 +78,19 @@ namespace BackupManagerTests.Infra
         }
 
         [Fact]
-        public void Load_DeserializeCalled()
+        public void Ctor_DeserializeCalledForLoadingDB()
         {
             IObjectSerializer objectSerializer = A.Fake<IObjectSerializer>();
 
-            FilesHashesHandler filesHashesHandler = new FilesHashesHandler(
-                A.Fake<IDuplicateChecker>(), objectSerializer);
+            IOptions<BackuperConfiguration> config = A.Fake<IOptions<BackuperConfiguration>>();
+            config.Value.FileHashesPath = "filePath";
 
-            string filePath = "filePath";
-            filesHashesHandler.Load(filePath);
-            A.CallTo(() => objectSerializer.Deserialize<Dictionary<string, List<string>>>(filePath))
+            FilesHashesHandler filesHashesHandler = new FilesHashesHandler(
+                A.Dummy<IDuplicateChecker>(),
+                objectSerializer,
+                config);
+
+            A.CallTo(() => objectSerializer.Deserialize<Dictionary<string, List<string>>>(config.Value.FileHashesPath))
                 .MustHaveHappenedOnceExactly();
         }
 
@@ -86,13 +99,17 @@ namespace BackupManagerTests.Infra
         {
             IObjectSerializer objectSerializer = A.Fake<IObjectSerializer>();
 
-            FilesHashesHandler filesHashesHandler = new FilesHashesHandler(
-                A.Fake<IDuplicateChecker>(), objectSerializer);
+            IOptions<BackuperConfiguration> config = A.Fake<IOptions<BackuperConfiguration>>();
+            config.Value.FileHashesPath = "filePath";
 
-            string filePath = "filePath";
-            filesHashesHandler.Save(filePath);
+            FilesHashesHandler filesHashesHandler = new FilesHashesHandler(
+                A.Fake<IDuplicateChecker>(),
+                objectSerializer,
+                config);
+
+            filesHashesHandler.Save();
             A.CallTo(() => objectSerializer.Serialize(
-                A<Dictionary<string, List<string>>>.Ignored, filePath))
+                A<Dictionary<string, List<string>>>.Ignored, config.Value.FileHashesPath))
                 .MustHaveHappened();
         }
     }

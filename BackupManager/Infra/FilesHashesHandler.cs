@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
+using Microsoft.Extensions.Options;
+using Backuper.Domain.Configuration;
 
 namespace Backuper.Infra
 {
@@ -11,24 +13,30 @@ namespace Backuper.Infra
     {
         private readonly IObjectSerializer mSerializer;
         private readonly IDuplicateChecker mDuplicateChecker;
+        private readonly IOptions<BackuperConfiguration> mConfiguration;
 
         // Key: hash, Value: List of filePaths with same hash.
         public Dictionary<string, List<string>> HashToFilePathDict { get; private set; }
             = new Dictionary<string, List<string>>();
 
+        public FilesHashesHandler(IDuplicateChecker duplicateChecker,
+            IObjectSerializer serializer,
+            IOptions<BackuperConfiguration> configuration)
+        {
+            mDuplicateChecker = duplicateChecker ?? throw new ArgumentNullException(nameof(duplicateChecker));
+            mSerializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
+            mConfiguration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+
+            HashToFilePathDict = mSerializer.Deserialize<Dictionary<string, List<string>>>(mConfiguration.Value.FileHashesPath);
+        }
+
         public int HashesCount => HashToFilePathDict.Count;
 
         public bool HashExists(string hash) => HashToFilePathDict.ContainsKey(hash);
 
-        public FilesHashesHandler(IDuplicateChecker duplicateChecker, IObjectSerializer serializer)
+        public void FindDuplicatedHashes()
         {
-            mDuplicateChecker = duplicateChecker;
-            mSerializer = serializer;
-        }
-
-        public void FindDuplicatedHashes(string rootDirectory)
-        {
-            HashToFilePathDict = mDuplicateChecker.FindDuplicateFiles(rootDirectory);
+            HashToFilePathDict = mDuplicateChecker.FindDuplicateFiles(mConfiguration.Value.BackupRootDirectory);
         }
 
         public static string GetFileHash(string filePath)
@@ -52,8 +60,10 @@ namespace Backuper.Infra
             }
         }
 
-        public void Save(string savedFilePath)
+        public void Save()
         {
+            string savedFilePath = mConfiguration.Value.FileHashesPath;
+
             // Serialize all hashes.
             mSerializer.Serialize(HashToFilePathDict, savedFilePath);
 
@@ -69,11 +79,6 @@ namespace Backuper.Infra
             }
 
             mSerializer.Serialize(duplicatesOnly, savedDuplicatesOnlyFilePath);
-        }
-
-        public void Load(string savedFilePath)
-        {
-            HashToFilePathDict = mSerializer.Deserialize<Dictionary<string, List<string>>>(savedFilePath);
         }
     }
 }
