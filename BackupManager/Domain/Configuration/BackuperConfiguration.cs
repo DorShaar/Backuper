@@ -6,9 +6,8 @@ namespace Backuper.Domain.Configuration
 {
     public class BackuperConfiguration
     {
+        public string DriveRootDirectory { get; set; }
         public DateTime LastUpdateTime { get; set; }
-        public string FileHashesPath { get; set; }
         public List<DirectoriesMap> DirectoriesCouples { get; set; }
-        public string BackupRootDirectory { get; set; }
     }
 }

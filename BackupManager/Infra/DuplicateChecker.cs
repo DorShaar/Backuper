@@ -1,35 +1,55 @@
 ﻿using Backuper.App;
+using BackupManager.Infra.Hash;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Security.Cryptography;
 
 namespace Backuper.Infra
 {
     public class DuplicateChecker : IDuplicateChecker
     {
-        public void WriteDuplicateFiles(string rootDirectory, string duplicatesFilesTxtFile)
+        public void WriteDuplicateFiles(string rootDirectory, string duplicateFilesOutputFilePath)
         {
-            if (!Directory.Exists(Path.GetDirectoryName(duplicatesFilesTxtFile)))
+            string directory = Path.GetDirectoryName(duplicateFilesOutputFilePath);
+            if (!Directory.Exists(directory))
             {
-                Console.WriteLine($"{Path.GetDirectoryName(duplicatesFilesTxtFile)} does not exists");
+                Console.WriteLine($"{directory} does not exists");
                 return;
             }
 
-            WriteDuplicateFiles(FindDuplicateFiles(rootDirectory), duplicatesFilesTxtFile);
+            WriteDuplicateFiles(FindDuplicateFiles(rootDirectory), duplicateFilesOutputFilePath);
+        }
+
+        private void WriteDuplicateFiles(Dictionary<string, List<string>> duplicatedFiles, string outputPath)
+        {
+            using StreamWriter writer = File.CreateText(outputPath);
+            foreach (KeyValuePair<string, List<string>> keyValuePair in duplicatedFiles)
+            {
+                if (keyValuePair.Value.Count > 1)
+                {
+                    writer.WriteLine($"Duplicate {keyValuePair.Key}");
+                    keyValuePair.Value.ForEach(file => writer.WriteLine(file));
+                    writer.WriteLine(string.Empty);
+                }
+            }
         }
 
         public Dictionary<string, List<string>> FindDuplicateFiles(string rootDirectory)
         {
-            Dictionary<string, List<string>> duplicatesFiles = new Dictionary<string, List<string>>();
-
             if (!Directory.Exists(rootDirectory))
             {
                 Console.WriteLine($"{rootDirectory} does not exists");
-                return duplicatesFiles;
+                return new Dictionary<string, List<string>>();
             }
 
-            Console.WriteLine($"Start recursive operation for finding duplicate files from {rootDirectory}");
+            return FindDuplicateFilesIterative(rootDirectory);
+        }
+
+        private Dictionary<string, List<string>> FindDuplicateFilesIterative(string rootDirectory)
+        {
+            Dictionary<string, List<string>> duplicatesFiles = new Dictionary<string, List<string>>();
+
+            Console.WriteLine($"Start iterative operation for finding duplicate files from {rootDirectory}");
 
             Queue<string> directoriesToSearch = new Queue<string>();
             directoriesToSearch.Enqueue(rootDirectory);
@@ -48,23 +68,15 @@ namespace Backuper.Infra
                 // Search files.
                 foreach (string filePath in Directory.EnumerateFiles(currentSearchDirectory))
                 {
-                    AddFileHash(duplicatesFiles, GetFileHash(filePath), filePath);
+                    AddFileHashToGivenDict(duplicatesFiles, HashCalculator.CalculateHash(filePath), filePath);
                 }
             }
 
-            Console.WriteLine($"Finished recursive operation for finding duplicate files from {rootDirectory}");
+            Console.WriteLine($"Finished iterative operation for finding duplicate files from {rootDirectory}");
             return duplicatesFiles;
         }
 
-        private string GetFileHash(string filePath)
-        {
-            using MD5 md5 = MD5.Create();
-            using Stream stream = File.OpenRead(filePath);
-            byte[] hash = md5.ComputeHash(stream);
-            return BitConverter.ToString(hash).Replace("-", string.Empty);
-        }
-
-        private void AddFileHash(Dictionary<string, List<string>> duplicatesFiles, string fileHash, string filePath)
+        private void AddFileHashToGivenDict(Dictionary<string, List<string>> duplicatesFiles, string fileHash, string filePath)
         {
             if (duplicatesFiles.TryGetValue(fileHash, out List<string> paths))
             {
@@ -74,20 +86,6 @@ namespace Backuper.Infra
             else
             {
                 duplicatesFiles.Add(fileHash, new List<string>() { filePath });
-            }
-        }
-
-        private void WriteDuplicateFiles(Dictionary<string, List<string>> duplicatedFiles, string outputPath)
-        {
-            using StreamWriter writer = File.CreateText(outputPath);
-            foreach (KeyValuePair<string, List<string>> keyValuePair in duplicatedFiles)
-            {
-                if (keyValuePair.Value.Count > 1)
-                {
-                    writer.WriteLine($"Duplicate {keyValuePair.Key}");
-                    keyValuePair.Value.ForEach(file => writer.WriteLine(file));
-                    writer.WriteLine(string.Empty);
-                }
             }
         }
     }

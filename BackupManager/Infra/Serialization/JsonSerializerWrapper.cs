@@ -16,7 +16,11 @@ namespace Backuper.Infra.Serialization
 
         public T Deserialize<T>(string databasePath)
         {
-            JsonSerializerSettings settings = new JsonSerializerSettings();
+            JsonSerializerSettings settings = new JsonSerializerSettings
+            {
+                NullValueHandling = NullValueHandling.Ignore,
+            };
+
             settings.Converters.Add(new FilesHashesHandlerConverter());
 
             T deserializedObject = JsonConvert.DeserializeObject<T>(File.ReadAllText(databasePath), settings);

@@ -1,15 +1,14 @@
 {
-  "LastUpdateTime": "2019-11-20T00:00:00Z",
-  "FileHashesPath": "C:\\Users\\dor.shaar\\Desktop\\source\\file-hashes.json",
-  "BackupRootDirectory": "C:\\Users\\dor.shaar\\Desktop\\source",
-  "DirectoriesCouples": [
-    {
-      "SourceDirectory": "C:\\Users\\dor.shaar\\Desktop\\source\\aa",
-      "DestDirectory": "C:\\Users\\dor.shaar\\Desktop\\dest\\2"
-    },
-    {
-      "SourceDirectory": "C:\\Users\\dor.shaar\\Desktop\\source\\b",
-      "DestDirectory": "C:\\Users\\dor.shaar\\Desktop\\dest\\1"
-    }
-  ]
+     "LastUpdateTime": "2019-11-20T00:00:00Z",
+     "DriveRootDirectory": "E:/Dor's backups",
+     "DirectoriesCouples": [
+          {
+               "SourceDirectory": "C:\\Users\\dor.shaar\\Desktop\\source\\aa",
+               "DestDirectory": "C:\\Users\\dor.shaar\\Desktop\\dest\\2"
+          },
+          {
+               "SourceDirectory": "C:\\Users\\dor.shaar\\Desktop\\source\\b",
+               "DestDirectory": "C:\\Users\\dor.shaar\\Desktop\\dest\\1"
+          }
+     ]
 }

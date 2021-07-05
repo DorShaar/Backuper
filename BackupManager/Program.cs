@@ -6,6 +6,7 @@ using Backuper.App;
 using Backuper.Domain.Mapping;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using BackupManager.Infra;
 
 namespace Backuper
 {
@@ -16,7 +17,8 @@ namespace Backuper
         private static readonly IObjectSerializer mObjectSerializer = mServiceProvider.GetRequiredService<IObjectSerializer>();
         private static readonly IBackuperService mBackuperService = mServiceProvider.GetRequiredService<IBackuperService>();
         private static readonly IDuplicateChecker mDuplicateChecker = mServiceProvider.GetRequiredService<IDuplicateChecker>();
-        private static readonly FilesHashesHandler mFilesHashesHandler = new FilesHashesHandler(mDuplicateChecker, mObjectSerializer, mConfig);
+        private static readonly UnregisteredHashesAdder mUnregisteredHashesAdder = mServiceProvider.GetRequiredService<UnregisteredHashesAdder>();
+        private static readonly FilesHashesHandler mFilesHashesHandler = new FilesHashesHandler(mDuplicateChecker, mObjectSerializer, mUnregisteredHashesAdder, mConfig);
 
         private static void Main()
         {
@@ -35,11 +37,11 @@ namespace Backuper
                         break;
 
                     case "2":
-                        FindDuplicatedHashes();
+                        SynchronizeHashes();
                         break;
 
                     case "3":
-                        SynchronizeHashes();
+                        FindDuplicatedHashes();
                         break;
                 }
             }
@@ -52,12 +54,9 @@ namespace Backuper
             Console.WriteLine("1. Backup");
             Console.WriteLine("2. Syncronize hashes");
             Console.WriteLine("3. Duplicate Check");
-        }
-
-        private static void FindDuplicatedHashes()
-        {
-            mFilesHashesHandler.FindDuplicatedHashes();
-            mFilesHashesHandler.Save();
+            Console.WriteLine();
+            Console.WriteLine("Press \"exit\" or 'q' to quit :");
+            Console.Write("Your input: ");
         }
 
         private static void RunBackup()
@@ -72,12 +71,22 @@ namespace Backuper
                 mConfig.Value.LastUpdateTime,
                 mFilesHashesHandler);
 
-            mFilesHashesHandler.Save();
+            // TODO update / add last update time
+            // Map from inside disk.
+
+            mFilesHashesHandler.WriteHashesFiles();
         }
 
         private static void SynchronizeHashes()
         {
-            // TODO
+            mFilesHashesHandler.UpdateUnregisteredHashes();
+            mFilesHashesHandler.WriteHashesFiles();
+        }
+
+        private static void FindDuplicatedHashes()
+        {
+            mFilesHashesHandler.UpdateDuplicatedHashes();
+            mFilesHashesHandler.WriteHashesFiles();
         }
     }
 }

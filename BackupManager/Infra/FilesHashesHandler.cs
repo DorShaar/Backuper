@@ -3,16 +3,19 @@ using Backuper.App;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Security.Cryptography;
 using Microsoft.Extensions.Options;
 using Backuper.Domain.Configuration;
+using BackupManager.Infra;
 
 namespace Backuper.Infra
 {
     public class FilesHashesHandler
     {
+        private const string HashFileName = "hashes.txt";
+
         private readonly IObjectSerializer mSerializer;
         private readonly IDuplicateChecker mDuplicateChecker;
+        private readonly UnregisteredHashesAdder mUnregisteredHashesAdder;
         private readonly IOptions<BackuperConfiguration> mConfiguration;
 
         // Key: hash, Value: List of filePaths with same hash.
@@ -21,30 +24,29 @@ namespace Backuper.Infra
 
         public FilesHashesHandler(IDuplicateChecker duplicateChecker,
             IObjectSerializer serializer,
+            UnregisteredHashesAdder unregisteredHashesAdder,
             IOptions<BackuperConfiguration> configuration)
         {
             mDuplicateChecker = duplicateChecker ?? throw new ArgumentNullException(nameof(duplicateChecker));
             mSerializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
+            mUnregisteredHashesAdder = unregisteredHashesAdder ?? throw new ArgumentNullException(nameof(unregisteredHashesAdder));
             mConfiguration = configuration ?? throw new ArgumentNullException(nameof(configuration));
 
-            HashToFilePathDict = mSerializer.Deserialize<Dictionary<string, List<string>>>(mConfiguration.Value.FileHashesPath);
+            HashToFilePathDict = mSerializer.Deserialize<Dictionary<string, List<string>>>(Path.Combine(mConfiguration.Value.DriveRootDirectory, HashFileName));
         }
 
         public int HashesCount => HashToFilePathDict.Count;
 
         public bool HashExists(string hash) => HashToFilePathDict.ContainsKey(hash);
 
-        public void FindDuplicatedHashes()
+        public void UpdateDuplicatedHashes()
         {
-            HashToFilePathDict = mDuplicateChecker.FindDuplicateFiles(mConfiguration.Value.BackupRootDirectory);
+            HashToFilePathDict = mDuplicateChecker.FindDuplicateFiles(mConfiguration.Value.DriveRootDirectory);
         }
 
-        public static string GetFileHash(string filePath)
+        public void UpdateUnregisteredHashes()
         {
-            using MD5 md5 = MD5.Create();
-            using Stream stream = File.OpenRead(filePath);
-            byte[] hash = md5.ComputeHash(stream);
-            return BitConverter.ToString(hash).Replace("-", string.Empty);
+            HashToFilePathDict = mUnregisteredHashesAdder.UpdateUnregisteredFiles(HashToFilePathDict);
         }
 
         public void AddFileHash(string fileHash, string filePath)
@@ -60,15 +62,17 @@ namespace Backuper.Infra
             }
         }
 
-        public void Save()
+        public void WriteHashesFiles()
         {
-            string savedFilePath = mConfiguration.Value.FileHashesPath;
+            string hashesFilePath = Path.Combine(mConfiguration.Value.DriveRootDirectory, HashFileName);
 
-            // Serialize all hashes.
-            mSerializer.Serialize(HashToFilePathDict, savedFilePath);
+            mSerializer.Serialize(HashToFilePathDict, hashesFilePath);
+            WriteOnlyDuplicatesFiles(hashesFilePath);
+        }
 
-            // Serialize duplicates hashes files.
-            string savedDuplicatesOnlyFilePath = Path.Combine(
+        private void WriteOnlyDuplicatesFiles(string savedFilePath)
+        {
+            string savedOnlyDuplicatesFilePath = Path.Combine(
                 Path.GetDirectoryName(savedFilePath), "dup_only" + Path.GetExtension(savedFilePath));
 
             Dictionary<string, List<string>> duplicatesOnly = new Dictionary<string, List<string>>();
@@ -78,7 +82,7 @@ namespace Backuper.Infra
                     duplicatesOnly.Add(pair.Key, pair.Value);
             }
 
-            mSerializer.Serialize(duplicatesOnly, savedDuplicatesOnlyFilePath);
+            mSerializer.Serialize(duplicatesOnly, savedOnlyDuplicatesFilePath);
         }
     }
 }

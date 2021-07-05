@@ -3,9 +3,9 @@ using Backuper.App;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Backuper.Infra;
+using BackupManager.Infra.Hash;
 
-namespace Backuper
+namespace Backuper.Infra
 {
     public class BackuperService : IBackuperService
     {
@@ -75,7 +75,7 @@ namespace Backuper
             Console.WriteLine($"Copying {updatedFiles.Count} updated files from {directoriesMap.SourceDirectory} to {directoriesMap.DestDirectory}");
             foreach (string updatedFile in updatedFiles)
             {
-                string fileHash = FilesHashesHandler.GetFileHash(updatedFile);
+                string fileHash = HashCalculator.CalculateHash(updatedFile);
                 if (filesHashesHandler.HashExists(fileHash))
                 {
                     Console.WriteLine($"Duplication found - not performing copy: {updatedFile} with hash {fileHash}."); // log warning.
