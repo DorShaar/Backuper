@@ -4,18 +4,39 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using BackupManager.Infra.Hash;
+using Backuper.Domain.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace Backuper.Infra
 {
     public class BackuperService : IBackuperService
     {
-        public void BackupFiles(DirectoriesMapping directoriesMapping, DateTime lastUpdateDateTime, FilesHashesHandler filesHashesHandler)
+        private const string LastUpdateFileName = "LastUpdate.txt";
+        private const string backupDirectoryName = "to_backup";
+
+        private readonly FilesHashesHandler mFilesHashesHandler;
+        private readonly IOptions<BackuperConfiguration> mConfiguration;
+        private readonly string mBackupDriveDirectoryPath;
+
+        public BackuperService(FilesHashesHandler filesHashesHandler,
+            IOptions<BackuperConfiguration> configuration)
         {
+            mFilesHashesHandler = filesHashesHandler ?? throw new ArgumentNullException(nameof(filesHashesHandler));
+            mConfiguration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+
+            mBackupDriveDirectoryPath = Path.Combine(Path.GetDirectoryName(mConfiguration.Value.DriveRootDirectory), backupDirectoryName);
+        }
+
+        public void BackupFiles()
+        {
+            DirectoriesMapping directoriesMapping = new DirectoriesMapping(mConfiguration.Value.DirectoriesCouples);
+
             foreach (DirectoriesMap directoriesMap in directoriesMapping)
             {
                 Console.WriteLine($"Heading to directory {directoriesMap.SourceDirectory}");
-                List<string> updatedFiles = FindUpdatedFiles(directoriesMap.SourceDirectory,
-                    lastUpdateDateTime);
+                List<string> updatedFiles = FindUpdatedFiles(
+                    Path.Combine(mBackupDriveDirectoryPath, directoriesMap.SourceDirectory),
+                    GetLastUpdatedTime());
 
                 if (updatedFiles.Count == 0)
                 {
@@ -23,24 +44,41 @@ namespace Backuper.Infra
                     continue;
                 }
 
-                CopyUpdatedFiles(updatedFiles, directoriesMap, filesHashesHandler);
+                CopyUpdatedFiles(updatedFiles, directoriesMap, mFilesHashesHandler);
             }
+
+            UpdateLastUpdatedTime();
         }
 
-        private List<string> FindUpdatedFiles(string rootDirectory, DateTime lastUpdateDateTime)
+        private DateTime GetLastUpdatedTime()
+        {
+            string[] allLines = File.ReadAllLines(
+                Path.Combine(mConfiguration.Value.DriveRootDirectory, LastUpdateFileName));
+            string lastUpdateTime = allLines[^1];
+            return DateTime.Parse(lastUpdateTime);
+        }
+
+        private void UpdateLastUpdatedTime()
+        {
+            File.AppendAllText(
+                Path.Combine(mConfiguration.Value.DriveRootDirectory, LastUpdateFileName),
+                Environment.NewLine + DateTime.Now.ToString());
+        }
+
+        private List<string> FindUpdatedFiles(string sourceDirectory, DateTime lastUpdateDateTime)
         {
             List<string> updatedFiles = new List<string>();
 
-            if (!Directory.Exists(rootDirectory))
+            if (!Directory.Exists(sourceDirectory))
             {
-                Console.WriteLine($"{rootDirectory} does not exists"); // Log error.
+                Console.WriteLine($"{sourceDirectory} does not exists"); // Log error.
                 return updatedFiles;
             }
 
-            Console.WriteLine($"Start recursive operation for finding updated files from {rootDirectory}");
+            Console.WriteLine($"Start iterative operation for finding updated files from {sourceDirectory}");
 
             Queue<string> directoriesToSearch = new Queue<string>();
-            directoriesToSearch.Enqueue(rootDirectory);
+            directoriesToSearch.Enqueue(sourceDirectory);
 
             while (directoriesToSearch.Count > 0)
             {
@@ -60,7 +98,7 @@ namespace Backuper.Infra
                 }
             }
 
-            Console.WriteLine($"Finished recursive operation for finding updated files from {rootDirectory}");
+            Console.WriteLine($"Finished iterative operation for finding updated files from {sourceDirectory}");
             return updatedFiles;
         }
 
@@ -83,6 +121,7 @@ namespace Backuper.Infra
                 }
 
                 string outputFile = updatedFile.Replace(directoriesMap.SourceDirectory, directoriesMap.DestDirectory);
+                outputFile = outputFile.Replace(mBackupDriveDirectoryPath, mConfiguration.Value.DriveRootDirectory);
                 Directory.CreateDirectory(Path.GetDirectoryName(outputFile));
 
                 try

@@ -67,12 +67,7 @@ namespace Backuper
                 return;
             }
 
-            mBackuperService.BackupFiles(new DirectoriesMapping(mConfig.Value.DirectoriesCouples),
-                mConfig.Value.LastUpdateTime,
-                mFilesHashesHandler);
-
-            // TODO update / add last update time
-            // Map from inside disk.
+            mBackuperService.BackupFiles();
 
             mFilesHashesHandler.WriteHashesFiles();
         }

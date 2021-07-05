@@ -1,6 +1,4 @@
-﻿using System.IO;
-
-namespace Backuper.Domain.Mapping
+﻿namespace Backuper.Domain.Mapping
 {
     public class DirectoriesMap
     {
@@ -20,17 +18,11 @@ namespace Backuper.Domain.Mapping
 
         public void SetSourceDirectory(string sourceDirectory)
         {
-            if (!Directory.Exists(sourceDirectory))
-                System.Console.WriteLine($"Error in directories registration: {sourceDirectory} does not exists");
-
             mSourceDirectory = sourceDirectory;
         }
 
         public void SetDestinationDirectory(string destDirectory)
         {
-            if (!Directory.Exists(destDirectory))
-                System.Console.WriteLine($"Error in directories registration: {destDirectory} does not exists");
-
             mDestDirectory = destDirectory;
         }
     }

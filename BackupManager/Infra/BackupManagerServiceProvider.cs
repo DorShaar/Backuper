@@ -26,6 +26,7 @@ namespace Backuper.Infra
             serviceCollection.AddSingleton<IBackuperService, BackuperService>();
             serviceCollection.AddSingleton<IDuplicateChecker, DuplicateChecker>();
             serviceCollection.AddSingleton<UnregisteredHashesAdder>();
+            serviceCollection.AddSingleton<FilesHashesHandler>();
 
             RegisterConfiguration(serviceCollection);
 
