@@ -1,24 +1,15 @@
 ﻿using System;
 using Backuper.Infra;
-using Backuper.Domain.Configuration;
-using Backuper.App.Serialization;
 using Backuper.App;
-using Backuper.Domain.Mapping;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
-using BackupManager.Infra;
 
 namespace Backuper
 {
     internal static class Program
     {
         private static readonly IServiceProvider mServiceProvider = new BackupManagerServiceProvider();
-        private static readonly IOptions<BackuperConfiguration> mConfig = mServiceProvider.GetRequiredService<IOptions<BackuperConfiguration>>();
-        private static readonly IObjectSerializer mObjectSerializer = mServiceProvider.GetRequiredService<IObjectSerializer>();
         private static readonly IBackuperService mBackuperService = mServiceProvider.GetRequiredService<IBackuperService>();
-        private static readonly IDuplicateChecker mDuplicateChecker = mServiceProvider.GetRequiredService<IDuplicateChecker>();
-        private static readonly UnregisteredHashesAdder mUnregisteredHashesAdder = mServiceProvider.GetRequiredService<UnregisteredHashesAdder>();
-        private static readonly FilesHashesHandler mFilesHashesHandler = new FilesHashesHandler(mDuplicateChecker, mObjectSerializer, mUnregisteredHashesAdder, mConfig);
+        private static readonly FilesHashesHandler mFilesHashesHandler = mServiceProvider.GetRequiredService<FilesHashesHandler>();
 
         private static void Main()
         {
