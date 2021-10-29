@@ -1,8 +1,4 @@
-﻿using Backuper.Domain.Mapping;
-using Backuper.Infra;
-using System;
-
-namespace Backuper.App
+﻿namespace Backuper.App
 {
     public interface IBackuperService
     {

@@ -94,7 +94,7 @@ namespace Backuper.Infra
                 // Search files.
                 foreach (string filePath in Directory.EnumerateFiles(currentSearchDirectory))
                 {
-                    GetUpdatedFileSince(filePath, updatedFiles, lastUpdateDateTime);
+                    AddUpdatedFileSince(filePath, updatedFiles, lastUpdateDateTime);
                 }
             }
 
@@ -102,7 +102,7 @@ namespace Backuper.Infra
             return updatedFiles;
         }
 
-        private void GetUpdatedFileSince(string filePath, List<string> updatedFilesList, DateTime lastUpdateDateTime)
+        private void AddUpdatedFileSince(string filePath, List<string> updatedFilesList, DateTime lastUpdateDateTime)
         {
             if (lastUpdateDateTime < (new FileInfo(filePath)).LastWriteTime)
                 updatedFilesList.Add(filePath);
