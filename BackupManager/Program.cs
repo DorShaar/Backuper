@@ -15,7 +15,13 @@ namespace Backuper
         {
             Console.WriteLine("Backuper is running!");
 
-            string userInput = string.Empty;
+            // TODO DOR look for BackuperConfig.json in known directories. If found, start compare...
+            // TOdO DOR check if latest updated time is today. if not, start backup procedure.
+            // TODO DOR After compare, copy to known dir location.
+            // TODO DORAfter copy to known dir location,
+            // TODO DOR check for not mapped file, add it with hash.
+            
+            string? userInput = string.Empty;
             while (!string.Equals(userInput, "exit", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(userInput, "q", StringComparison.OrdinalIgnoreCase))
             {
@@ -43,7 +49,7 @@ namespace Backuper
             Console.WriteLine();
             Console.WriteLine("Choose one of the next options:");
             Console.WriteLine("1. Backup");
-            Console.WriteLine("2. Syncronize hashes");
+            Console.WriteLine("2. Synchronize hashes");
             Console.WriteLine("3. Duplicate Check");
             Console.WriteLine();
             Console.WriteLine("Press \"exit\" or 'q' to quit :");
@@ -59,20 +65,20 @@ namespace Backuper
             }
 
             mBackuperService.BackupFiles();
-
-            mFilesHashesHandler.WriteHashesFiles();
         }
 
         private static void SynchronizeHashes()
         {
-            mFilesHashesHandler.UpdateUnregisteredHashes();
-            mFilesHashesHandler.WriteHashesFiles();
+            // TODO DOR
+            // mFilesHashesHandler.UpdateUnregisteredHashes();
+            // mFilesHashesHandler.WriteHashesFiles();
         }
 
         private static void FindDuplicatedHashes()
         {
-            mFilesHashesHandler.UpdateDuplicatedHashes();
-            mFilesHashesHandler.WriteHashesFiles();
+            // TODO DOR
+            // mFilesHashesHandler.UpdateDuplicatedHashes();
+            // mFilesHashesHandler.WriteHashesFiles();
         }
     }
 }

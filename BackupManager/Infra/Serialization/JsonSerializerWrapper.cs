@@ -23,9 +23,10 @@ namespace Backuper.Infra.Serialization
 
             settings.Converters.Add(new FilesHashesHandlerConverter());
 
-            T deserializedObject = JsonConvert.DeserializeObject<T>(File.ReadAllText(databasePath), settings);
+            T deserializedObject = JsonConvert.DeserializeObject<T>(File.ReadAllText(databasePath), settings)
+                                   ?? throw new NullReferenceException($"Failed to deserialize '{databasePath}'");
             Console.WriteLine($"Deserialized object {typeof(T)} from {databasePath}");
-
+            
             return deserializedObject;
         }
 
@@ -36,12 +37,12 @@ namespace Backuper.Infra.Serialization
                 return objectType == typeof(FilesHashesHandler);
             }
 
-            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+            public override object? ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
             {
                 return serializer.Deserialize(reader, typeof(FilesHashesHandler));
             }
 
-            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+            public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer)
             {
                 serializer.Serialize(writer, value, typeof(FilesHashesHandler));
             }

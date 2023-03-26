@@ -1,9 +1,9 @@
 ﻿{
-     "DriveRootDirectory": "E:/Dor's backups",
-     "DirectoriesCouples": [
+     "RootDirectory": "E:/Dor's backups",
+     "DirectoriesSourcesToDirectoriesDestinationMap": [
           {
                "SourceDirectory": "Salary",
-               "DestDirectory": "Dor's documents/עבודה/תלושי שכר/Votiro"
+               "DestDirectory": "Salary"
           }
      ]
 }

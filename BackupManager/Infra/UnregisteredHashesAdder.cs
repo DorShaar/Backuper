@@ -9,6 +9,7 @@ using BackupManager.Infra.NDependExtensions;
 
 namespace BackupManager.Infra
 {
+    // TODO DOR understand what does it do
     public class UnregisteredHashesAdder
     {
         private readonly IOptions<BackuperConfiguration> mConfiguration;
@@ -42,9 +43,9 @@ namespace BackupManager.Infra
 
         private List<string> FindUnregisteredFiles(HashSet<string> filePathsHashSet)
         {
-            if (!Directory.Exists(mConfiguration.Value.DriveRootDirectory))
+            if (!Directory.Exists(mConfiguration.Value.RootDirectory))
             {
-                Console.WriteLine($"{mConfiguration.Value.DriveRootDirectory} does not exists");
+                Console.WriteLine($"{mConfiguration.Value.RootDirectory} does not exists");
                 return new List<string>();
             }
 
@@ -55,12 +56,12 @@ namespace BackupManager.Infra
         {
             List<string> unregisteredFiles = new List<string>();
 
-            Console.WriteLine($"Start iterative operation for finding unregistered files from {mConfiguration.Value.DriveRootDirectory}");
+            Console.WriteLine($"Start iterative operation for finding unregistered files from {mConfiguration.Value.RootDirectory}");
 
             Queue<string> directoriesToSearch = new Queue<string>();
-            directoriesToSearch.Enqueue(mConfiguration.Value.DriveRootDirectory);
+            directoriesToSearch.Enqueue(mConfiguration.Value.RootDirectory);
 
-            mConfiguration.Value.DriveRootDirectory.TryGetAbsoluteDirectoryPath(out IAbsoluteDirectoryPath absoluteDirectoryPath);
+            mConfiguration.Value.RootDirectory.TryGetAbsoluteDirectoryPath(out IAbsoluteDirectoryPath absoluteDirectoryPath);
 
             while (directoriesToSearch.Count > 0)
             {
@@ -85,7 +86,7 @@ namespace BackupManager.Infra
                 }
             }
 
-            Console.WriteLine($"Finished iterative operation for finding unregistered files from {mConfiguration.Value.DriveRootDirectory}");
+            Console.WriteLine($"Finished iterative operation for finding unregistered files from {mConfiguration.Value.RootDirectory}");
             return unregisteredFiles;
         }
 
@@ -94,7 +95,7 @@ namespace BackupManager.Infra
         {
             foreach(string unregisteredFile in unregisteredFiles)
             {
-                string unregisteredFileFullPath = mConfiguration.Value.DriveRootDirectory + '/' + unregisteredFile;
+                string unregisteredFileFullPath = mConfiguration.Value.RootDirectory + '/' + unregisteredFile;
 
                 string fileHash = HashCalculator.CalculateHash(unregisteredFileFullPath);
                 if (hashToFilePathDict.TryGetValue(fileHash, out List<string> filePaths))

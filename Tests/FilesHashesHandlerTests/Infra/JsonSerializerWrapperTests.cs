@@ -13,12 +13,11 @@ namespace BackupManagerTests.Infra
         {
             JsonSerializerWrapper jsonSerializer = new JsonSerializerWrapper();
 
-            Dictionary<string, List<string>> HashToFilePathDict =
-                new Dictionary<string, List<string>>
-                {
-                    { "abc", new List<string> { "123", "456" } },
-                    { "def", new List<string> { "789", "456" } }
-                };
+            Dictionary<string, List<string>> HashToFilePathDict = new()
+            {
+                { "abc", new List<string> { "123", "456" } },
+                { "def", new List<string> { "789", "456" } }
+            };
 
             string tempFile = Guid.NewGuid().ToString();
 

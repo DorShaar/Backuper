@@ -7,7 +7,6 @@ using FakeItEasy;
 using Microsoft.Extensions.Options;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using Xunit;
 
 namespace BackupManagerTests.Infra
@@ -18,13 +17,13 @@ namespace BackupManagerTests.Infra
 
         public FilesHashesHandlerTests()
         {
-            mConfiguration.Value.DriveRootDirectory = "root";
+            mConfiguration.Value.RootDirectory = "root";
         }
 
         [Fact]
         public void AddFileHash_FileHashNotExists_FileHashAdded()
         {
-            FilesHashesHandler filesHashesHandler = new FilesHashesHandler(
+            FilesHashesHandler filesHashesHandler = new(
                 A.Dummy<IDuplicateChecker>(),
                 A.Dummy<IObjectSerializer>(),
                 new UnregisteredHashesAdder(mConfiguration),
@@ -64,7 +63,7 @@ namespace BackupManagerTests.Infra
         [Fact]
         public void HashExists_HashAlreadyExists_True()
         {
-            FilesHashesHandler filesHashesHandler = new FilesHashesHandler(
+            FilesHashesHandler filesHashesHandler = new(
                 A.Dummy<IDuplicateChecker>(),
                 A.Dummy<IObjectSerializer>(),
                 new UnregisteredHashesAdder(mConfiguration),
@@ -79,7 +78,7 @@ namespace BackupManagerTests.Infra
         [Fact]
         public void HashExists_HashNotExists_False()
         {
-            FilesHashesHandler filesHashesHandler = new FilesHashesHandler(
+            FilesHashesHandler filesHashesHandler = new(
                 A.Dummy<IDuplicateChecker>(),
                 A.Dummy<IObjectSerializer>(),
                 new UnregisteredHashesAdder(mConfiguration),
@@ -95,14 +94,14 @@ namespace BackupManagerTests.Infra
         {
             IObjectSerializer objectSerializer = A.Fake<IObjectSerializer>();
 
-            FilesHashesHandler filesHashesHandler = new FilesHashesHandler(
+            FilesHashesHandler filesHashesHandler = new(
                 A.Dummy<IDuplicateChecker>(),
                 objectSerializer,
                 new UnregisteredHashesAdder(mConfiguration),
                 mConfiguration);
 
             A.CallTo(() => objectSerializer.Deserialize<Dictionary<string, List<string>>>(
-                Path.Combine(mConfiguration.Value.DriveRootDirectory, "hashes.txt")))
+                Path.Combine(mConfiguration.Value.RootDirectory, "hashes.txt")))
                 .MustHaveHappenedOnceExactly();
         }
 
@@ -111,7 +110,7 @@ namespace BackupManagerTests.Infra
         {
             IObjectSerializer objectSerializer = A.Fake<IObjectSerializer>();
 
-            FilesHashesHandler filesHashesHandler = new FilesHashesHandler(
+            FilesHashesHandler filesHashesHandler = new(
                 A.Fake<IDuplicateChecker>(),
                 objectSerializer,
                 new UnregisteredHashesAdder(mConfiguration),
@@ -120,7 +119,7 @@ namespace BackupManagerTests.Infra
             filesHashesHandler.WriteHashesFiles();
             A.CallTo(() => objectSerializer.Serialize(
                 A<Dictionary<string, List<string>>>.Ignored,
-                Path.Combine(mConfiguration.Value.DriveRootDirectory, "hashes.txt")))
+                Path.Combine(mConfiguration.Value.RootDirectory, "hashes.txt")))
                 .MustHaveHappened();
         }
     }

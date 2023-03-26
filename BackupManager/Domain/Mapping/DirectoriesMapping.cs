@@ -5,7 +5,7 @@ namespace Backuper.Domain.Mapping
 {
     public class DirectoriesMapping : IEnumerable<DirectoriesMap>
     {
-        private readonly List<DirectoriesMap> mDirectoriesList = new List<DirectoriesMap>();
+        private readonly List<DirectoriesMap> mDirectoriesList;
 
         public DirectoriesMapping(List<DirectoriesMap> directoriesCouples)
         {

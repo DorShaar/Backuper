@@ -8,10 +8,10 @@ namespace BackupManager.Infra.Hash
     {
         public static string CalculateHash(string filePath)
         {
-            using MD5 md5 = MD5.Create();
+            using SHA256 sha256HashAlgorithm = SHA256.Create();
             using Stream stream = File.OpenRead(filePath);
-            byte[] hash = md5.ComputeHash(stream);
-            return BitConverter.ToString(hash).Replace("-", string.Empty);
+            byte[] hashBytes = sha256HashAlgorithm.ComputeHash(stream);  
+            return BitConverter.ToString(hashBytes).Replace("-", string.Empty);  
         }
     }
 }

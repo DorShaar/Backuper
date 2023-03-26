@@ -6,6 +6,7 @@ using System.IO;
 using Microsoft.Extensions.Options;
 using Backuper.Domain.Configuration;
 using BackupManager.Infra;
+using BackupManager.Infra.Hash;
 
 namespace Backuper.Infra
 {
@@ -14,13 +15,13 @@ namespace Backuper.Infra
         private const string HashFileName = "hashes.txt";
 
         private readonly IObjectSerializer mSerializer;
+        // TOdO DOR think if should use
         private readonly IDuplicateChecker mDuplicateChecker;
+        // TOdO DOR think if should use
         private readonly UnregisteredHashesAdder mUnregisteredHashesAdder;
-        private readonly IOptions<BackuperConfiguration> mConfiguration;
-
-        // Key: hash, Value: List of filePaths with same hash.
-        public Dictionary<string, List<string>> HashToFilePathDict { get; private set; }
-            = new Dictionary<string, List<string>>();
+        private readonly string mHashesFilePath;
+        private readonly Dictionary<string, List<string>> mHashToFilePathsMap;
+        private readonly Dictionary<string, string> mFilePathToFileHashMap;
 
         public FilesHashesHandler(IDuplicateChecker duplicateChecker,
             IObjectSerializer serializer,
@@ -30,59 +31,87 @@ namespace Backuper.Infra
             mDuplicateChecker = duplicateChecker ?? throw new ArgumentNullException(nameof(duplicateChecker));
             mSerializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
             mUnregisteredHashesAdder = unregisteredHashesAdder ?? throw new ArgumentNullException(nameof(unregisteredHashesAdder));
-            mConfiguration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-
-            HashToFilePathDict = mSerializer.Deserialize<Dictionary<string, List<string>>>(Path.Combine(mConfiguration.Value.DriveRootDirectory, HashFileName));
+            string rootDirectory = configuration.Value.RootDirectory ?? throw new NullReferenceException(nameof(configuration.Value.RootDirectory));
+            mHashesFilePath = Path.Combine(rootDirectory, HashFileName);
+            
+            mHashToFilePathsMap = mSerializer.Deserialize<Dictionary<string, List<string>>>(Path.Combine(rootDirectory, HashFileName));
+            mFilePathToFileHashMap = deduceFilePathToFileHashMap(mHashToFilePathsMap);
         }
 
-        public int HashesCount => HashToFilePathDict.Count;
+        public int HashesCount => mHashToFilePathsMap.Count;
 
-        public bool HashExists(string hash) => HashToFilePathDict.ContainsKey(hash);
+        public bool HashExists(string hash) => mHashToFilePathsMap.ContainsKey(hash);
 
-        public void UpdateDuplicatedHashes()
-        {
-            HashToFilePathDict = mDuplicateChecker.FindDuplicateFiles(mConfiguration.Value.DriveRootDirectory);
-        }
+        // tOdO DOR think if needed.
+        // public void UpdateDuplicatedHashes()
+        // {
+        //     mHashToFilePathsMap = mDuplicateChecker.FindDuplicateFiles(mRootDirectory);
+        // }
 
-        public void UpdateUnregisteredHashes()
-        {
-            HashToFilePathDict = mUnregisteredHashesAdder.UpdateUnregisteredFiles(HashToFilePathDict);
-        }
+        // tOdO DOR think if needed.
+        // public void UpdateUnregisteredHashes()
+        // {
+        //     mHashToFilePathsMap = mUnregisteredHashesAdder.UpdateUnregisteredFiles(HashToFilePathDict);
+        // }
 
         public void AddFileHash(string fileHash, string filePath)
         {
-            if (HashToFilePathDict.TryGetValue(fileHash, out List<string> paths))
+            if (mHashToFilePathsMap.TryGetValue(fileHash, out List<string>? paths))
             {
-                Console.WriteLine($"Hash {fileHash} found duplicate with file {filePath}");
+                Console.WriteLine($"File '{filePath}' with Hash {fileHash} has duplicates: '{string.Join(',', paths)}'");
                 paths.Add(filePath);
             }
             else
             {
-                HashToFilePathDict.Add(fileHash, new List<string>() { filePath });
+                mHashToFilePathsMap.Add(fileHash, new List<string> { filePath });
             }
+            
+            _ = mFilePathToFileHashMap.TryAdd(filePath, fileHash);
         }
 
-        public void WriteHashesFiles()
+        public (string fileHash, bool isFileHashExist) IsFileHashExist(string filePath)
         {
-            string hashesFilePath = Path.Combine(mConfiguration.Value.DriveRootDirectory, HashFileName);
+            string fileHash = HashCalculator.CalculateHash(filePath);
+            return (fileHash, HashExists(fileHash));
+        }
 
-            mSerializer.Serialize(HashToFilePathDict, hashesFilePath);
-            WriteOnlyDuplicatesFiles(hashesFilePath);
+        public void Save()
+        {
+            mSerializer.Serialize(mHashToFilePathsMap, mHashesFilePath);
+            WriteOnlyDuplicatesFiles(mHashesFilePath);
         }
 
         private void WriteOnlyDuplicatesFiles(string savedFilePath)
         {
-            string savedOnlyDuplicatesFilePath = Path.Combine(
-                Path.GetDirectoryName(savedFilePath), "dup_only" + Path.GetExtension(savedFilePath));
+            string savedFileDirectory = Path.GetDirectoryName(savedFilePath) ?? throw new NullReferenceException($"Directory of '{savedFilePath}' is empty"); 
+            
+            string savedOnlyDuplicatesFilePath = Path.Combine(savedFileDirectory, "dup_only" + Path.GetExtension(savedFilePath));
 
-            Dictionary<string, List<string>> duplicatesOnly = new Dictionary<string, List<string>>();
-            foreach (KeyValuePair<string, List<string>> pair in HashToFilePathDict)
+            Dictionary<string, List<string>> duplicatesOnly = new();
+            foreach ((string fileHash, List<string> filesPaths) in mHashToFilePathsMap)
             {
-                if (pair.Value.Count > 1)
-                    duplicatesOnly.Add(pair.Key, pair.Value);
+                if (filesPaths.Count > 1)
+                {
+                    duplicatesOnly.Add(fileHash, filesPaths);
+                }
             }
 
             mSerializer.Serialize(duplicatesOnly, savedOnlyDuplicatesFilePath);
+        }
+
+        private Dictionary<string, string> deduceFilePathToFileHashMap(Dictionary<string, List<string>> fileHashToFilePathsMap)
+        {
+            Dictionary<string, string> filePathToFileHashMap = new();
+
+            foreach ((string fileHash, List<string> filesPaths) in fileHashToFilePathsMap)
+            {
+                foreach (string filePath in filesPaths)
+                {
+                    filePathToFileHashMap.Add(filePath, fileHash);
+                }
+            }
+
+            return filePathToFileHashMap;
         }
     }
 }

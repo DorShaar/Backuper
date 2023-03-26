@@ -2,28 +2,14 @@
 {
     public class DirectoriesMap
     {
-        private string mSourceDirectory;
-        public string SourceDirectory
-        {
-            get => mSourceDirectory;
-            set => SetSourceDirectory(value);
-        }
+        // TOdO DOR add test serialization is working.
+        public required string SourceDirectory { get; init; }
+        public required string DestDirectory { get; init; }
 
-        private string mDestDirectory;
-        public string DestDirectory
+        // TODO DOR add test
+        public string GetNewFilePath(string filePath)
         {
-            get => mDestDirectory;
-            set => SetDestinationDirectory(value);
-        }
-
-        public void SetSourceDirectory(string sourceDirectory)
-        {
-            mSourceDirectory = sourceDirectory;
-        }
-
-        public void SetDestinationDirectory(string destDirectory)
-        {
-            mDestDirectory = destDirectory;
+            return filePath.Replace(SourceDirectory, DestDirectory);
         }
     }
 }
