@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using Backuper.Domain.Configuration;
 using BackupManager.Infra;
 using BackupManager.Infra.Hash;
+using Microsoft.Extensions.Logging;
 
 namespace Backuper.Infra
 {
@@ -22,16 +23,19 @@ namespace Backuper.Infra
         private readonly string mHashesFilePath;
         private readonly Dictionary<string, List<string>> mHashToFilePathsMap;
         private readonly Dictionary<string, string> mFilePathToFileHashMap;
+        private readonly ILogger<FilesHashesHandler> mLogger;
 
         public FilesHashesHandler(IDuplicateChecker duplicateChecker,
             IObjectSerializer serializer,
             UnregisteredHashesAdder unregisteredHashesAdder,
-            IOptions<BackuperConfiguration> configuration)
+            IOptions<BackuperConfiguration> configuration,
+            ILogger<FilesHashesHandler> logger)
         {
             mDuplicateChecker = duplicateChecker ?? throw new ArgumentNullException(nameof(duplicateChecker));
             mSerializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
             mUnregisteredHashesAdder = unregisteredHashesAdder ?? throw new ArgumentNullException(nameof(unregisteredHashesAdder));
             string rootDirectory = configuration.Value.RootDirectory ?? throw new NullReferenceException(nameof(configuration.Value.RootDirectory));
+            mLogger = logger ?? throw new ArgumentNullException(nameof(logger));
             mHashesFilePath = Path.Combine(rootDirectory, HashFileName);
             
             mHashToFilePathsMap = mSerializer.Deserialize<Dictionary<string, List<string>>>(Path.Combine(rootDirectory, HashFileName));
@@ -58,7 +62,7 @@ namespace Backuper.Infra
         {
             if (mHashToFilePathsMap.TryGetValue(fileHash, out List<string>? paths))
             {
-                Console.WriteLine($"File '{filePath}' with Hash {fileHash} has duplicates: '{string.Join(',', paths)}'");
+                mLogger.LogDebug($"File '{filePath}' with Hash {fileHash} has duplicates: '{string.Join(',', paths)}'");
                 paths.Add(filePath);
             }
             else
@@ -75,6 +79,7 @@ namespace Backuper.Infra
             return (fileHash, HashExists(fileHash));
         }
 
+        // TOdO DOR think is needed.
         public void Save()
         {
             mSerializer.Serialize(mHashToFilePathsMap, mHashesFilePath);

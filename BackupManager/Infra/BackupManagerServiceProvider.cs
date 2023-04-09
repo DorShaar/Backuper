@@ -20,7 +20,7 @@ namespace Backuper.Infra
 
         private IServiceProvider CreateServiceProvider()
         {
-            ServiceCollection serviceCollection = new ServiceCollection();
+            ServiceCollection serviceCollection = new();
 
             serviceCollection.AddSingleton<IObjectSerializer, JsonSerializerWrapper>();
             serviceCollection.AddSingleton<IBackuperService, BackuperService>();

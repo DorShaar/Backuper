@@ -1,30 +1,35 @@
-﻿using Backuper.Domain.Mapping;
+﻿using Backuper.Domain.Configuration;
+using Backuper.Domain.Mapping;
 using Backuper.App;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Backuper.Domain.Configuration;
+using System.Threading;
+using System.Threading.Tasks;
+using BackupManager.Infra;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Backuper.Infra
 {
     public class BackuperService : IBackuperService
     {
-        private const string LastUpdateFileName = "BackupUpdatesTimeLog";
-        
         // tODO DOR think about it.
         private const string BackupDirectoryName = "to_backup";
 
         private readonly FilesHashesHandler mFilesHashesHandler;
-        private readonly string mBackupDriveDirectoryPath;
-        private readonly string mLastUpdatedFilePath;
+        private readonly string mRootBackupSourceDirectoryPath;
+        private readonly string mRootBackupDestinationDirectoryPath;
         private readonly DirectoriesMapping mDirectoriesMapping;
+        private readonly ILogger<BackuperService> mLogger;
 
-        public BackuperService(FilesHashesHandler filesHashesHandler, IOptions<BackuperConfiguration> configuration)
+        public BackuperService(FilesHashesHandler filesHashesHandler,
+            IOptions<BackuperConfiguration> configuration,
+            ILogger<BackuperService> logger)
         {
             mFilesHashesHandler = filesHashesHandler ?? throw new ArgumentNullException(nameof(filesHashesHandler));
-            string rootDirectory = configuration.Value.RootDirectory ?? throw new NullReferenceException(nameof(configuration.Value.RootDirectory));
-            mLastUpdatedFilePath = Path.Combine(rootDirectory, LastUpdateFileName);
+            // TODO DOR use it.
+            string rootDirectory = configuration.Value.RootDirectory ?? throw new ArgumentNullException(nameof(configuration.Value.RootDirectory));
             
             if (configuration.Value.DirectoriesSourcesToDirectoriesDestinationMap is null)
             {
@@ -33,6 +38,8 @@ namespace Backuper.Infra
             
             mDirectoriesMapping = new DirectoriesMapping(configuration.Value.DirectoriesSourcesToDirectoriesDestinationMap);
 
+            mLogger = logger ?? throw new ArgumentNullException(nameof(logger));
+
             // TODO DOR think after thinking on BackupDirectoryName.
             // string driveRootDirectory = Path.GetDirectoryName(mConfiguration.Value.RootDirectory)
             //                             ?? throw new NullReferenceException($"Directory of '{mConfiguration.Value.RootDirectory}' is empty");
@@ -40,78 +47,57 @@ namespace Backuper.Infra
         }
 
         // TODO DOR Add tests.
-        public void BackupFiles()
+        public async Task BackupFiles(CancellationToken cancellationToken)
         {
-            if (!shouldBackup())
-            {
-                return;
-            }
+            List<Task> backupTasks = new();
             
             foreach (DirectoriesMap directoriesMap in mDirectoriesMapping)
             {
-                Console.WriteLine($"Heading to directory {directoriesMap.SourceDirectory}");
-                Dictionary<string, string> filePathToFileHashMap = getFilesToBackup(Path.Combine(mBackupDriveDirectoryPath, directoriesMap.SourceDirectory));
+                mLogger.LogInformation($"Handling backup from '{directoriesMap.SourceRelativeDirectory}' to '{directoriesMap.DestRelativeDirectory}'");
+
+                string sourceDirectoryToBackup = Path.Combine(mRootBackupSourceDirectoryPath, directoriesMap.SourceRelativeDirectory);
+                Dictionary<string, string> filePathToFileHashMap = getFilesToBackup(sourceDirectoryToBackup);
 
                 if (filePathToFileHashMap.Count == 0)
                 {
-                    Console.WriteLine($"No files to backup found in '{directoriesMap.SourceDirectory}'");
+                    mLogger.LogInformation($"No files found to backup in '{directoriesMap.SourceRelativeDirectory}'");
                     continue;
                 }
 
-                CopyBackupFiles(filePathToFileHashMap, directoriesMap);
+                Task backupTask = Task.Run(() => BackupFiles(filePathToFileHashMap, directoriesMap), cancellationToken);
+                backupTasks.Add(backupTask);
             }
 
-            mFilesHashesHandler.Save();
+            Task.WaitAll(backupTasks.ToArray(), cancellationToken);
+
+            // mFilesHashesHandler.Save(); // TOdo dor think about it
             UpdateLastBackupTime();
         }
 
-        private bool shouldBackup()
+        private static void UpdateLastBackupTime()
         {
-            DateTime lastBackupTime = GetLastBackupTime();
-            if (lastBackupTime.Add(TimeSpan.FromDays(1)) > DateTime.Now)
-            {
-                Console.WriteLine($"Last backup performed less than a day ({lastBackupTime}), should not backup");
-                return false;
-            }
-            
-            Console.WriteLine($"Last backup performed on {lastBackupTime}, should backup");
-            return true;
+            File.AppendAllText(Consts.BackupTimeDiaryFilePath, Environment.NewLine + DateTime.Now);
         }
 
-        private DateTime GetLastBackupTime()
-        {
-            string[] allLines = File.ReadAllLines(mLastUpdatedFilePath);
-            
-            // Gets the last line in file.
-            string lastUpdateTime = allLines[^1];
-            return DateTime.Parse(lastUpdateTime);
-        }
-
-        private void UpdateLastBackupTime()
-        {
-            File.AppendAllText(mLastUpdatedFilePath, Environment.NewLine + DateTime.Now);
-        }
-
-        // TODO DOR replace all console writeline with logger to file and console.
-        private Dictionary<string, string> getFilesToBackup(string sourceDirectory)
+        private Dictionary<string, string> getFilesToBackup(string directoryToBackup)
         {
             Dictionary<string, string> filePathToFileHashMap = new();
 
-            if (!Directory.Exists(sourceDirectory))
+            if (!Directory.Exists(directoryToBackup))
             {
-                Console.WriteLine($"'{sourceDirectory}' does not exists"); // TODO DOR Log error.
+                mLogger.LogError($"'{directoryToBackup}' does not exists");
                 return filePathToFileHashMap;
             }
 
-            Console.WriteLine($"Start iterative operation for finding updated files from '{sourceDirectory}'");
+            mLogger.LogInformation($"Starting iterative operation for finding files to backup from '{directoryToBackup}'");
 
             Queue<string> directoriesToSearch = new();
-            directoriesToSearch.Enqueue(sourceDirectory);
+            directoriesToSearch.Enqueue(directoryToBackup);
 
             while (directoriesToSearch.Count > 0)
             {
                 string currentSearchDirectory = directoriesToSearch.Dequeue();
-                Console.WriteLine($"Collecting files from directory '{currentSearchDirectory}'");
+                mLogger.LogDebug($"Collecting files from directory '{currentSearchDirectory}'");
 
                 // Adding subdirectories to search.
                 foreach (string directory in Directory.EnumerateDirectories(currentSearchDirectory))
@@ -119,53 +105,52 @@ namespace Backuper.Infra
                     directoriesToSearch.Enqueue(directory);
                 }
 
-                AddFilesToBackup(filePathToFileHashMap, currentSearchDirectory);
+                AddFilesToBackupOnlyIfFileNotBackupedAlready(filePathToFileHashMap, currentSearchDirectory);
             }
 
-            Console.WriteLine($"Finished iterative operation for finding updated files from '{sourceDirectory}'");
+            mLogger.LogInformation($"Finished iterative operation for finding updated files from '{directoryToBackup}'");
             return filePathToFileHashMap;
         }
 
-        private void AddFilesToBackup(IDictionary<string, string> filePathToFileHashMap, string directory)
+        private void AddFilesToBackupOnlyIfFileNotBackupedAlready(IDictionary<string, string> filePathToFileHashMap, string directory)
         {
             foreach (string filePath in Directory.EnumerateFiles(directory))
             {
-                (string fileHash, bool isFileHashExist) = mFilesHashesHandler.IsFileHashExist(filePath);  
+                (string fileHash, bool isFileHashExist) = mFilesHashesHandler.IsFileHashExist(filePath);
                 if (isFileHashExist)
                 {
                     continue;
                 }
                 
                 filePathToFileHashMap.Add(filePath, fileHash);
-                Console.WriteLine($"Found file '{filePath}' to backup");
+                mLogger.LogInformation($"Found file '{filePath}' to backup");
             }
         }
 
-        private void CopyBackupFiles(Dictionary<string, string> filePathToBackupToFileHashMap, DirectoriesMap directoriesMap)
+        private void BackupFiles(Dictionary<string, string> filePathToBackupToFileHashMap, DirectoriesMap directoriesMap)
         {
-            Console.WriteLine($"Copying {filePathToBackupToFileHashMap.Count} files from '{directoriesMap.SourceDirectory}' to '{directoriesMap.DestDirectory}'");
+            mLogger.LogInformation($"Copying {filePathToBackupToFileHashMap.Count} files from '{directoriesMap.SourceRelativeDirectory}' to '{directoriesMap.DestRelativeDirectory}'");
             foreach ((string fileToBackup, string fileHash) in filePathToBackupToFileHashMap)
             {
-                string outputFile = directoriesMap.GetNewFilePath(fileToBackup);
+                string destinationFilePath = directoriesMap.GetNewDestinationFilePath(fileToBackup);
                 // TODO DOR use mConfiguration.Value.DriveRootDirectory as member.
                 
-                // TODO DOR validate logic.
-                outputFile = outputFile.Replace(mBackupDriveDirectoryPath, mConfiguration.Value.RootDirectory);
-                string outputDirectory = Path.GetDirectoryName(outputFile) ?? throw new NullReferenceException($"Directory of '{outputFile}' is empty"); 
+                // TODO DOR validate logic by adding test.
+                destinationFilePath = destinationFilePath.Replace(mRootBackupSourceDirectoryPath, mRootBackupDestinationDirectoryPath);
+                string outputDirectory = Path.GetDirectoryName(destinationFilePath) ?? throw new NullReferenceException($"Directory of '{destinationFilePath}' is empty"); 
                 Directory.CreateDirectory(outputDirectory);
 
                 try
                 {
-                    File.Copy(fileToBackup, outputFile, overwrite: true);
-                    Console.WriteLine($"Copied {fileToBackup} to {outputFile}");
+                    File.Copy(fileToBackup, destinationFilePath, overwrite: true);
+                    mLogger.LogInformation($"Copied '{fileToBackup}' to '{destinationFilePath}'");
                 }
                 catch (IOException ex)
                 {
-                    Console.WriteLine($"Failed to copy {fileToBackup} to {outputFile}. Exception: {ex.Message}"); // TODO DOR log error.
+                    mLogger.LogError($"Failed to copy '{fileToBackup}' to '{destinationFilePath}'", ex);
                 }
 
-                mFilesHashesHandler.AddFileHash(fileHash, outputFile);
-                Console.WriteLine();
+                mFilesHashesHandler.AddFileHash(fileHash, destinationFilePath);
             }
         }
     }

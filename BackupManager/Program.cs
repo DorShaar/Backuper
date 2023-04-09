@@ -1,7 +1,14 @@
 ﻿using System;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using Backuper.Infra;
 using Backuper.App;
+using BackupManager.Infra;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Backuper
 {
@@ -9,76 +16,74 @@ namespace Backuper
     {
         private static readonly IServiceProvider mServiceProvider = new BackupManagerServiceProvider();
         private static readonly IBackuperService mBackuperService = mServiceProvider.GetRequiredService<IBackuperService>();
-        private static readonly FilesHashesHandler mFilesHashesHandler = mServiceProvider.GetRequiredService<FilesHashesHandler>();
+        private static ILogger mLogger;
 
-        private static void Main()
+        // TODO DOR initialize logger.
+        // public static Program(ILogger logger)
+        // {
+        //     mLogger = logger ?? throw new ArgumentNullException($"{nameof(logger)} is null");
+        // }
+
+        private static async Task Main()
         {
             Console.WriteLine("Backuper is running!");
 
-            // TODO DOR look for BackuperConfig.json in known directories. If found, start compare...
-            // TOdO DOR check if latest updated time is today. if not, start backup procedure.
-            // TODO DOR After compare, copy to known dir location.
-            // TODO DORAfter copy to known dir location,
-            // TODO DOR check for not mapped file, add it with hash.
-            
-            string? userInput = string.Empty;
-            while (!string.Equals(userInput, "exit", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(userInput, "q", StringComparison.OrdinalIgnoreCase))
+            if (!File.Exists(Consts.SettingsFilePath))
             {
-                PrintMenu();
-                userInput = Console.ReadLine();
-                switch (userInput)
-                {
-                    case "1":
-                        RunBackup();
-                        break;
-
-                    case "2":
-                        SynchronizeHashes();
-                        break;
-
-                    case "3":
-                        FindDuplicatedHashes();
-                        break;
-                }
-            }
-        }
-
-        private static void PrintMenu()
-        {
-            Console.WriteLine();
-            Console.WriteLine("Choose one of the next options:");
-            Console.WriteLine("1. Backup");
-            Console.WriteLine("2. Synchronize hashes");
-            Console.WriteLine("3. Duplicate Check");
-            Console.WriteLine();
-            Console.WriteLine("Press \"exit\" or 'q' to quit :");
-            Console.Write("Your input: ");
-        }
-
-        private static void RunBackup()
-        {
-            if (mFilesHashesHandler.HashesCount == 0)
-            {
-                Console.WriteLine("No hashes file provided. Please run Duplicate Check or configure duplicates file");
+                HandleMissingSettingsFile();
                 return;
             }
 
-            mBackuperService.BackupFiles();
+            if (!ShouldStartBackupProcedure())
+            {
+                return;
+            }
+
+            await mBackuperService.BackupFiles(CancellationToken.None);
         }
 
-        private static void SynchronizeHashes()
+        private static void HandleMissingSettingsFile()
         {
-            // TODO DOR
-            // mFilesHashesHandler.UpdateUnregisteredHashes();
-            // mFilesHashesHandler.WriteHashesFiles();
+            mLogger.LogCritical($"Configuration file {Consts.SettingsFilePath} does not exist, " +
+                                $"Please copy example from {Consts.SettingsExampleFilePath} and place it in " +
+                                $"{Consts.SettingsFilePath}.");
+            createSettingsFileTemplateIfNotExist();
         }
 
-        private static void FindDuplicatedHashes()
+        // TODO DOR test this is working.
+        private static void createSettingsFileTemplateIfNotExist()
         {
-            // TODO DOR
-            // mFilesHashesHandler.UpdateDuplicatedHashes();
-            // mFilesHashesHandler.WriteHashesFiles();
+            JObject settingsTemplate = new()
+            {
+                { "fileMapping", "TOdO DOR" }
+            };
+
+            using StreamWriter streamWriter = File.CreateText(Consts.SettingsExampleFilePath);
+            JsonSerializer serializer = new();
+            serializer.Serialize(streamWriter, settingsTemplate);
+        }
+
+        private static bool ShouldStartBackupProcedure()
+        {
+            DateTime lastBackupTime = GetLastBackupTime();
+
+            if (lastBackupTime.AddDays(1) < DateTime.Now)
+            {
+                mLogger.LogInformation($"Should start backup procedure. Last backup time: {lastBackupTime}");
+                return true;
+            }
+            
+            mLogger.LogInformation($"Should not start backup procedure yet. Last backup time: {lastBackupTime}");
+            return false;
+        }
+
+        private static DateTime GetLastBackupTime()
+        {
+             string[] allLines = File.ReadAllLines(Consts.BackupTimeDiaryFilePath);
+        
+             // Gets the last line in file.
+             string lastUpdateTime = allLines[^1];
+             return DateTime.Parse(lastUpdateTime);
         }
     }
 }

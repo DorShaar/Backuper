@@ -3,13 +3,13 @@
     public class DirectoriesMap
     {
         // TOdO DOR add test serialization is working.
-        public required string SourceDirectory { get; init; }
-        public required string DestDirectory { get; init; }
+        public required string SourceRelativeDirectory { get; init; }
+        public required string DestRelativeDirectory { get; init; }
 
         // TODO DOR add test
-        public string GetNewFilePath(string filePath)
+        public string GetNewDestinationFilePath(string filePath)
         {
-            return filePath.Replace(SourceDirectory, DestDirectory);
+            return filePath.Replace(SourceRelativeDirectory, DestRelativeDirectory);
         }
     }
 }

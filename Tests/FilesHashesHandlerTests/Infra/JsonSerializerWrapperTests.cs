@@ -11,9 +11,9 @@ namespace BackupManagerTests.Infra
         [Fact]
         public void SerializeAndDeserialize_Success()
         {
-            JsonSerializerWrapper jsonSerializer = new JsonSerializerWrapper();
+            JsonSerializerWrapper jsonSerializer = new();
 
-            Dictionary<string, List<string>> HashToFilePathDict = new()
+            Dictionary<string, List<string>> hashToFilePathDict = new()
             {
                 { "abc", new List<string> { "123", "456" } },
                 { "def", new List<string> { "789", "456" } }
@@ -23,13 +23,13 @@ namespace BackupManagerTests.Infra
 
             try
             {
-                jsonSerializer.Serialize(HashToFilePathDict, tempFile);
+                jsonSerializer.Serialize(hashToFilePathDict, tempFile);
                 Dictionary<string, List<string>> testedHashToFilePathDict =
                     jsonSerializer.Deserialize<Dictionary<string, List<string>>>(tempFile);
 
-                Assert.Equal(HashToFilePathDict["abc"][0], testedHashToFilePathDict["abc"][0]);
-                Assert.Equal(HashToFilePathDict["abc"][1], testedHashToFilePathDict["abc"][1]);
-                Assert.Equal(HashToFilePathDict["def"][0], testedHashToFilePathDict["def"][0]);
+                Assert.Equal(hashToFilePathDict["abc"][0], testedHashToFilePathDict["abc"][0]);
+                Assert.Equal(hashToFilePathDict["abc"][1], testedHashToFilePathDict["abc"][1]);
+                Assert.Equal(hashToFilePathDict["def"][0], testedHashToFilePathDict["def"][0]);
             }
             finally
             {

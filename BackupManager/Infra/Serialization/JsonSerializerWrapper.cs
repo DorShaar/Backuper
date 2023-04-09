@@ -16,7 +16,7 @@ namespace Backuper.Infra.Serialization
 
         public T Deserialize<T>(string databasePath)
         {
-            JsonSerializerSettings settings = new JsonSerializerSettings
+            JsonSerializerSettings settings = new()
             {
                 NullValueHandling = NullValueHandling.Ignore,
             };
