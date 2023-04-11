@@ -1,11 +1,12 @@
 ﻿using System;
 using System.IO;
-using NDepend.Path;
 
 namespace BackupManager.Infra;
 
 public static class Consts
 {
+    public const string HashesFileName = "hashes.txt";
+    
     private const string mBackuperServiceDirectoryName = "BackuperService";
     
     private const string mSettingsDirectoryName = "Settings";
@@ -23,8 +24,9 @@ public static class Consts
     public static string SettingsFilePath = Path.Combine(mSettingsDirectoryPath, mSettingsFileName);
     public static string SettingsExampleFilePath = Path.Combine(mSettingsDirectoryPath, mSettingsExampleFilePath);
     
-    private static string mDataDirectoryPath = Path.Combine(mBackuperServiceDirectoryPath, mDataDirectoryName);
-    public static string DataFilePath = Path.Combine(mDataDirectoryPath, mDataFileName);
-    public static string BackupTimeDiaryFilePath = Path.Combine(mDataDirectoryPath, mBackupTimeDiaryFileName);
+    public static string DataDirectoryPath = Path.Combine(mBackuperServiceDirectoryPath, mDataDirectoryName);
+    // TOdO dOR use it
+    public static string DataFilePath = Path.Combine(DataDirectoryPath, mDataFileName);
+    public static string BackupTimeDiaryFilePath = Path.Combine(DataDirectoryPath, mBackupTimeDiaryFileName);
     
 }

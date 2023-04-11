@@ -5,7 +5,6 @@ using Backuper.App;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using BackupManager.Infra;
 
 namespace Backuper.Infra
 {
@@ -25,7 +24,6 @@ namespace Backuper.Infra
             serviceCollection.AddSingleton<IObjectSerializer, JsonSerializerWrapper>();
             serviceCollection.AddSingleton<IBackuperService, BackuperService>();
             serviceCollection.AddSingleton<IDuplicateChecker, DuplicateChecker>();
-            serviceCollection.AddSingleton<UnregisteredHashesAdder>();
             serviceCollection.AddSingleton<FilesHashesHandler>();
 
             RegisterConfiguration(serviceCollection);

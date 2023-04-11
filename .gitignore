@@ -257,3 +257,5 @@ __pycache__/
 
 # Coverlet files
 *coverage.json
+
+*.dll

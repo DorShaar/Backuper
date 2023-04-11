@@ -1,5 +1,4 @@
 ﻿using Backuper.App.Serialization;
-using Backuper.App;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,32 +12,22 @@ namespace Backuper.Infra
 {
     public class FilesHashesHandler
     {
-        private const string HashFileName = "hashes.txt";
-
         private readonly IObjectSerializer mSerializer;
-        // TOdO DOR think if should use
-        private readonly IDuplicateChecker mDuplicateChecker;
-        // TOdO DOR think if should use
-        private readonly UnregisteredHashesAdder mUnregisteredHashesAdder;
         private readonly string mHashesFilePath;
         private readonly Dictionary<string, List<string>> mHashToFilePathsMap;
         private readonly Dictionary<string, string> mFilePathToFileHashMap;
         private readonly ILogger<FilesHashesHandler> mLogger;
 
-        public FilesHashesHandler(IDuplicateChecker duplicateChecker,
-            IObjectSerializer serializer,
-            UnregisteredHashesAdder unregisteredHashesAdder,
+        public FilesHashesHandler(IObjectSerializer serializer,
             IOptions<BackuperConfiguration> configuration,
             ILogger<FilesHashesHandler> logger)
         {
-            mDuplicateChecker = duplicateChecker ?? throw new ArgumentNullException(nameof(duplicateChecker));
             mSerializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
-            mUnregisteredHashesAdder = unregisteredHashesAdder ?? throw new ArgumentNullException(nameof(unregisteredHashesAdder));
             string rootDirectory = configuration.Value.RootDirectory ?? throw new NullReferenceException(nameof(configuration.Value.RootDirectory));
             mLogger = logger ?? throw new ArgumentNullException(nameof(logger));
-            mHashesFilePath = Path.Combine(rootDirectory, HashFileName);
+            mHashesFilePath = Path.Combine(rootDirectory, Consts.HashesFileName);
             
-            mHashToFilePathsMap = mSerializer.Deserialize<Dictionary<string, List<string>>>(Path.Combine(rootDirectory, HashFileName));
+            mHashToFilePathsMap = mSerializer.Deserialize<Dictionary<string, List<string>>>(Path.Combine(rootDirectory, Consts.HashesFileName));
             mFilePathToFileHashMap = deduceFilePathToFileHashMap(mHashToFilePathsMap);
         }
 

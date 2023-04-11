@@ -5,6 +5,6 @@ namespace Backuper.App
 {
     public interface IBackuperService
     {
-        Task BackupFiles(CancellationToken cancellationToken);
+        void BackupFiles(CancellationToken cancellationToken);
     }
 }

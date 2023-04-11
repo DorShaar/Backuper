@@ -2,18 +2,18 @@
 using Backuper.App.Serialization;
 using Backuper.Domain.Configuration;
 using Backuper.Infra;
-using BackupManager.Infra;
 using FakeItEasy;
 using Microsoft.Extensions.Options;
 using System.Collections.Generic;
 using System.IO;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace BackupManagerTests.Infra
 {
     public class FilesHashesHandlerTests
     {
-        private readonly IOptions<BackuperConfiguration> mConfiguration = A.Fake<IOptions<BackuperConfiguration>>();
+        private readonly IOptions<BackuperConfiguration> mConfiguration = A.Dummy<IOptions<BackuperConfiguration>>();
 
         public FilesHashesHandlerTests()
         {
@@ -24,10 +24,9 @@ namespace BackupManagerTests.Infra
         public void AddFileHash_FileHashNotExists_FileHashAdded()
         {
             FilesHashesHandler filesHashesHandler = new(
-                A.Dummy<IDuplicateChecker>(),
                 A.Dummy<IObjectSerializer>(),
-                new UnregisteredHashesAdder(mConfiguration),
-                mConfiguration);
+                mConfiguration,
+                NullLogger<FilesHashesHandler>.Instance);
 
             Assert.Equal(0, filesHashesHandler.HashesCount);
 
@@ -39,35 +38,35 @@ namespace BackupManagerTests.Infra
         [Fact]
         public void AddFileHash_FileHashAlreadyExists_PathIsAdded()
         {
-            FilesHashesHandler filesHashesHandler = new FilesHashesHandler(
-                A.Dummy<IDuplicateChecker>(),
-                A.Dummy<IObjectSerializer>(),
-                new UnregisteredHashesAdder(mConfiguration),
-                mConfiguration);
-
-            Assert.Equal(0, filesHashesHandler.HashesCount);
-
-            const string firstFileName = "FileName.ext";
-            const string secondFileName = "FileName2.ext";
-            filesHashesHandler.AddFileHash("ABC123", firstFileName);
-            filesHashesHandler.AddFileHash("ABC123", secondFileName);
-
-            Assert.Equal(1, filesHashesHandler.HashesCount);
-
-            KeyValuePair<string, List<string>> pair = filesHashesHandler.HashToFilePathDict.First();
-
-            Assert.Equal(firstFileName, pair.Value[0]);
-            Assert.Equal(secondFileName, pair.Value[1]);
+            Assert.Fail("TODO DOR");
+            
+            // FilesHashesHandler filesHashesHandler = new(
+            //     A.Dummy<IObjectSerializer>(),
+            //     mConfiguration,
+            //     NullLogger<FilesHashesHandler>.Instance);
+            //
+            // Assert.Equal(0, filesHashesHandler.HashesCount);
+            //
+            // const string firstFileName = "FileName.ext";
+            // const string secondFileName = "FileName2.ext";
+            // filesHashesHandler.AddFileHash("ABC123", firstFileName);
+            // filesHashesHandler.AddFileHash("ABC123", secondFileName);
+            //
+            // Assert.Equal(1, filesHashesHandler.HashesCount);
+            //
+            // KeyValuePair<string, List<string>> pair = filesHashesHandler.HashToFilePathDict.First();
+            //
+            // Assert.Equal(firstFileName, pair.Value[0]);
+            // Assert.Equal(secondFileName, pair.Value[1]);
         }
 
         [Fact]
         public void HashExists_HashAlreadyExists_True()
         {
             FilesHashesHandler filesHashesHandler = new(
-                A.Dummy<IDuplicateChecker>(),
                 A.Dummy<IObjectSerializer>(),
-                new UnregisteredHashesAdder(mConfiguration),
-                mConfiguration);
+                mConfiguration,
+                NullLogger<FilesHashesHandler>.Instance);
 
             const string hash = "ABC123";
             filesHashesHandler.AddFileHash(hash, "fileName");
@@ -79,10 +78,9 @@ namespace BackupManagerTests.Infra
         public void HashExists_HashNotExists_False()
         {
             FilesHashesHandler filesHashesHandler = new(
-                A.Dummy<IDuplicateChecker>(),
                 A.Dummy<IObjectSerializer>(),
-                new UnregisteredHashesAdder(mConfiguration),
-                mConfiguration);
+                mConfiguration,
+                NullLogger<FilesHashesHandler>.Instance);
 
             filesHashesHandler.AddFileHash("ABC123", "fileName");
 
@@ -95,10 +93,9 @@ namespace BackupManagerTests.Infra
             IObjectSerializer objectSerializer = A.Fake<IObjectSerializer>();
 
             FilesHashesHandler filesHashesHandler = new(
-                A.Dummy<IDuplicateChecker>(),
                 objectSerializer,
-                new UnregisteredHashesAdder(mConfiguration),
-                mConfiguration);
+                mConfiguration,
+                NullLogger<FilesHashesHandler>.Instance);
 
             A.CallTo(() => objectSerializer.Deserialize<Dictionary<string, List<string>>>(
                 Path.Combine(mConfiguration.Value.RootDirectory, "hashes.txt")))
@@ -108,19 +105,20 @@ namespace BackupManagerTests.Infra
         [Fact]
         public void WriteHashesFiles_FileCreated()
         {
-            IObjectSerializer objectSerializer = A.Fake<IObjectSerializer>();
-
-            FilesHashesHandler filesHashesHandler = new(
-                A.Fake<IDuplicateChecker>(),
-                objectSerializer,
-                new UnregisteredHashesAdder(mConfiguration),
-                mConfiguration);
-
-            filesHashesHandler.WriteHashesFiles();
-            A.CallTo(() => objectSerializer.Serialize(
-                A<Dictionary<string, List<string>>>.Ignored,
-                Path.Combine(mConfiguration.Value.RootDirectory, "hashes.txt")))
-                .MustHaveHappened();
+            Assert.Fail("TODO DOR");
+            
+            // IObjectSerializer objectSerializer = A.Fake<IObjectSerializer>();
+            //
+            // FilesHashesHandler filesHashesHandler = new(
+            //     objectSerializer,
+            //     mConfiguration,
+            //     NullLogger<FilesHashesHandler>.Instance);
+            //
+            // filesHashesHandler.WriteHashesFiles();
+            // A.CallTo(() => objectSerializer.Serialize(
+            //     A<Dictionary<string, List<string>>>.Ignored,
+            //     Path.Combine(mConfiguration.Value.RootDirectory, "hashes.txt")))
+            //     .MustHaveHappened();
         }
     }
 }

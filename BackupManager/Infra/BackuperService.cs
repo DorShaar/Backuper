@@ -14,12 +14,9 @@ namespace Backuper.Infra
 {
     public class BackuperService : IBackuperService
     {
-        // tODO DOR think about it.
-        private const string BackupDirectoryName = "to_backup";
-
         private readonly FilesHashesHandler mFilesHashesHandler;
+        private readonly bool mShouldBackupToSelf;
         private readonly string mRootBackupSourceDirectoryPath;
-        private readonly string mRootBackupDestinationDirectoryPath;
         private readonly DirectoriesMapping mDirectoriesMapping;
         private readonly ILogger<BackuperService> mLogger;
 
@@ -28,8 +25,8 @@ namespace Backuper.Infra
             ILogger<BackuperService> logger)
         {
             mFilesHashesHandler = filesHashesHandler ?? throw new ArgumentNullException(nameof(filesHashesHandler));
-            // TODO DOR use it.
-            string rootDirectory = configuration.Value.RootDirectory ?? throw new ArgumentNullException(nameof(configuration.Value.RootDirectory));
+            mRootBackupSourceDirectoryPath = configuration.Value.RootDirectory ?? throw new ArgumentNullException(nameof(configuration.Value.RootDirectory));
+            mShouldBackupToSelf = configuration.Value.ShouldBackupToSelf;
             
             if (configuration.Value.DirectoriesSourcesToDirectoriesDestinationMap is null)
             {
@@ -37,18 +34,14 @@ namespace Backuper.Infra
             }
             
             mDirectoriesMapping = new DirectoriesMapping(configuration.Value.DirectoriesSourcesToDirectoriesDestinationMap);
-
             mLogger = logger ?? throw new ArgumentNullException(nameof(logger));
-
-            // TODO DOR think after thinking on BackupDirectoryName.
-            // string driveRootDirectory = Path.GetDirectoryName(mConfiguration.Value.RootDirectory)
-            //                             ?? throw new NullReferenceException($"Directory of '{mConfiguration.Value.RootDirectory}' is empty");
-            // mBackupDriveDirectoryPath = Path.Combine(driveRootDirectory, BackupDirectoryName);
         }
 
         // TODO DOR Add tests.
-        public async Task BackupFiles(CancellationToken cancellationToken)
+        public void BackupFiles(CancellationToken cancellationToken)
         {
+            // TODO dor handle cases of mShouldBackupToSelf. 
+            
             List<Task> backupTasks = new();
             
             foreach (DirectoriesMap directoriesMap in mDirectoriesMapping)
@@ -132,11 +125,18 @@ namespace Backuper.Infra
             mLogger.LogInformation($"Copying {filePathToBackupToFileHashMap.Count} files from '{directoriesMap.SourceRelativeDirectory}' to '{directoriesMap.DestRelativeDirectory}'");
             foreach ((string fileToBackup, string fileHash) in filePathToBackupToFileHashMap)
             {
-                string destinationFilePath = directoriesMap.GetNewDestinationFilePath(fileToBackup);
-                // TODO DOR use mConfiguration.Value.DriveRootDirectory as member.
+                string destinationFilePath = fileToBackup.Replace($"{Path.DirectorySeparatorChar}{directoriesMap.SourceRelativeDirectory}{Path.DirectorySeparatorChar}",
+                $"{Path.DirectorySeparatorChar}{directoriesMap.DestRelativeDirectory}{Path.DirectorySeparatorChar}");
+
+                if (mShouldBackupToSelf)
+                {
+                    // TODO DOR handle.
+                }
+                else
+                {
+                    destinationFilePath = destinationFilePath.Replace(mRootBackupSourceDirectoryPath, Consts.DataDirectoryPath);
+                }
                 
-                // TODO DOR validate logic by adding test.
-                destinationFilePath = destinationFilePath.Replace(mRootBackupSourceDirectoryPath, mRootBackupDestinationDirectoryPath);
                 string outputDirectory = Path.GetDirectoryName(destinationFilePath) ?? throw new NullReferenceException($"Directory of '{destinationFilePath}' is empty"); 
                 Directory.CreateDirectory(outputDirectory);
 
