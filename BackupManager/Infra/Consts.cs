@@ -5,9 +5,10 @@ namespace BackupManager.Infra;
 
 public static class Consts
 {
-    public const string HashesFileName = "hashes.txt";
-    
     private const string mBackuperServiceDirectoryName = "BackuperService";
+    
+    // Used for tests only.
+    private const string mBackuperServiceTestsDirectoryName = "BackuperServiceTests";
     
     private const string mSettingsDirectoryName = "Settings";
     private const string mSettingsFileName = "Setting.json";
@@ -16,15 +17,16 @@ public static class Consts
     private const string mDataDirectoryName = "Data";
     private const string mDataFileName = "Data.json";
     private const string mBackupTimeDiaryFileName = "BackupTimeDiary";
-    
-    private static string mBackuperServiceDirectoryPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-        mBackuperServiceDirectoryName);
 
-    private static string mSettingsDirectoryPath = Path.Combine(mBackuperServiceDirectoryPath, mSettingsDirectoryName);
+    public static string BackuperServiceDirectoryPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+        mBackuperServiceTestsDirectoryName); // For Tests.
+        // mBackuperServiceDirectoryName); // For Production.
+
+    private static string mSettingsDirectoryPath = Path.Combine(BackuperServiceDirectoryPath, mSettingsDirectoryName);
     public static string SettingsFilePath = Path.Combine(mSettingsDirectoryPath, mSettingsFileName);
     public static string SettingsExampleFilePath = Path.Combine(mSettingsDirectoryPath, mSettingsExampleFilePath);
     
-    public static string DataDirectoryPath = Path.Combine(mBackuperServiceDirectoryPath, mDataDirectoryName);
+    public static string DataDirectoryPath = Path.Combine(BackuperServiceDirectoryPath, mDataDirectoryName);
     // TOdO dOR use it
     public static string DataFilePath = Path.Combine(DataDirectoryPath, mDataFileName);
     public static string BackupTimeDiaryFilePath = Path.Combine(DataDirectoryPath, mBackupTimeDiaryFileName);

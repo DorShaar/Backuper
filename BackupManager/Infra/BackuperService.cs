@@ -15,7 +15,7 @@ namespace Backuper.Infra
     public class BackuperService : IBackuperService
     {
         private readonly FilesHashesHandler mFilesHashesHandler;
-        private readonly bool mShouldBackupToSelf;
+        private readonly bool mShouldBackupToKnownDirectory;
         private readonly string mRootBackupSourceDirectoryPath;
         private readonly DirectoriesMapping mDirectoriesMapping;
         private readonly ILogger<BackuperService> mLogger;
@@ -26,7 +26,7 @@ namespace Backuper.Infra
         {
             mFilesHashesHandler = filesHashesHandler ?? throw new ArgumentNullException(nameof(filesHashesHandler));
             mRootBackupSourceDirectoryPath = configuration.Value.RootDirectory ?? throw new ArgumentNullException(nameof(configuration.Value.RootDirectory));
-            mShouldBackupToSelf = configuration.Value.ShouldBackupToSelf;
+            mShouldBackupToKnownDirectory = configuration.Value.ShouldBackupToKnownDirectory;
             
             if (configuration.Value.DirectoriesSourcesToDirectoriesDestinationMap is null)
             {
@@ -63,13 +63,13 @@ namespace Backuper.Infra
 
             Task.WaitAll(backupTasks.ToArray(), cancellationToken);
 
-            // mFilesHashesHandler.Save(); // TOdo dor think about it
+            mFilesHashesHandler.Save();
             UpdateLastBackupTime();
         }
 
         private static void UpdateLastBackupTime()
         {
-            File.AppendAllText(Consts.BackupTimeDiaryFilePath, Environment.NewLine + DateTime.Now);
+            File.AppendAllText(Consts.BackupTimeDiaryFilePath,DateTime.Now + Environment.NewLine);
         }
 
         private Dictionary<string, string> getFilesToBackup(string directoryToBackup)
@@ -128,13 +128,13 @@ namespace Backuper.Infra
                 string destinationFilePath = fileToBackup.Replace($"{Path.DirectorySeparatorChar}{directoriesMap.SourceRelativeDirectory}{Path.DirectorySeparatorChar}",
                 $"{Path.DirectorySeparatorChar}{directoriesMap.DestRelativeDirectory}{Path.DirectorySeparatorChar}");
 
-                if (mShouldBackupToSelf)
+                if (mShouldBackupToKnownDirectory)
                 {
-                    // TODO DOR handle.
+                    destinationFilePath = destinationFilePath.Replace(mRootBackupSourceDirectoryPath, Consts.DataDirectoryPath);
                 }
                 else
                 {
-                    destinationFilePath = destinationFilePath.Replace(mRootBackupSourceDirectoryPath, Consts.DataDirectoryPath);
+                    // TODO DOR handle.
                 }
                 
                 string outputDirectory = Path.GetDirectoryName(destinationFilePath) ?? throw new NullReferenceException($"Directory of '{destinationFilePath}' is empty"); 

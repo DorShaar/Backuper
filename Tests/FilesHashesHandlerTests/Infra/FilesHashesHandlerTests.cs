@@ -1,5 +1,4 @@
-﻿using Backuper.App;
-using Backuper.App.Serialization;
+﻿using Backuper.App.Serialization;
 using Backuper.Domain.Configuration;
 using Backuper.Infra;
 using FakeItEasy;

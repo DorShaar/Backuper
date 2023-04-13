@@ -1,7 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Runtime.InteropServices;
-using System.Security.Principal;
 using System.Threading;
 using Backuper.Infra;
 using Backuper.App;
@@ -10,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using OSOperations;
 
 namespace Backuper
 {
@@ -36,7 +35,7 @@ namespace Backuper
         {
             Console.WriteLine("Backuper is running!");
 
-            if (isRunningAsAdministrator())
+            if (Admin.IsRunningAsAdministrator())
             {
                 mLogger.LogCritical($"Backuper service must run under Administrator privileges");
                 return;
@@ -55,21 +54,7 @@ namespace Backuper
 
             mBackuperService.BackupFiles(CancellationToken.None);
         }
-        
-        private static bool isRunningAsAdministrator()
-        {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-#pragma warning disable CA1416
-                WindowsIdentity windowsIdentity = WindowsIdentity.GetCurrent();
-                WindowsPrincipal windowsPrincipal = new(windowsIdentity);
-                return windowsPrincipal.IsInRole(WindowsBuiltInRole.Administrator);
-#pragma warning restore CA1416                
-            }
 
-            return true;
-        }
-        
         private static void HandleMissingSettingsFile()
         {
             mLogger.LogCritical($"Configuration file {Consts.SettingsFilePath} does not exist, " +

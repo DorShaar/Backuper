@@ -13,39 +13,27 @@ namespace Backuper.Infra
     public class FilesHashesHandler
     {
         private readonly IObjectSerializer mSerializer;
-        private readonly string mHashesFilePath;
         private readonly Dictionary<string, List<string>> mHashToFilePathsMap;
-        private readonly Dictionary<string, string> mFilePathToFileHashMap;
+        private readonly Lazy<Dictionary<string, string>> mFilePathToFileHashMap; // TODO DOR think f needed.
         private readonly ILogger<FilesHashesHandler> mLogger;
-
+        
         public FilesHashesHandler(IObjectSerializer serializer,
-            IOptions<BackuperConfiguration> configuration,
+            IOptions<BackuperConfiguration> configuration, // TODO DOR think if needed.
             ILogger<FilesHashesHandler> logger)
         {
             mSerializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
-            string rootDirectory = configuration.Value.RootDirectory ?? throw new NullReferenceException(nameof(configuration.Value.RootDirectory));
             mLogger = logger ?? throw new ArgumentNullException(nameof(logger));
-            mHashesFilePath = Path.Combine(rootDirectory, Consts.HashesFileName);
+
+            mHashToFilePathsMap = File.Exists(Consts.DataFilePath)
+                ? mSerializer.Deserialize<Dictionary<string, List<string>>>(Consts.DataFilePath)
+                : new Dictionary<string, List<string>>();
             
-            mHashToFilePathsMap = mSerializer.Deserialize<Dictionary<string, List<string>>>(Path.Combine(rootDirectory, Consts.HashesFileName));
-            mFilePathToFileHashMap = deduceFilePathToFileHashMap(mHashToFilePathsMap);
+            mFilePathToFileHashMap = new Lazy<Dictionary<string, string>>(() => deduceFilePathToFileHashMap(mHashToFilePathsMap));
         }
 
         public int HashesCount => mHashToFilePathsMap.Count;
 
         public bool HashExists(string hash) => mHashToFilePathsMap.ContainsKey(hash);
-
-        // tOdO DOR think if needed.
-        // public void UpdateDuplicatedHashes()
-        // {
-        //     mHashToFilePathsMap = mDuplicateChecker.FindDuplicateFiles(mRootDirectory);
-        // }
-
-        // tOdO DOR think if needed.
-        // public void UpdateUnregisteredHashes()
-        // {
-        //     mHashToFilePathsMap = mUnregisteredHashesAdder.UpdateUnregisteredFiles(HashToFilePathDict);
-        // }
 
         public void AddFileHash(string fileHash, string filePath)
         {
@@ -59,7 +47,7 @@ namespace Backuper.Infra
                 mHashToFilePathsMap.Add(fileHash, new List<string> { filePath });
             }
             
-            _ = mFilePathToFileHashMap.TryAdd(filePath, fileHash);
+            _ = mFilePathToFileHashMap.Value.TryAdd(filePath, fileHash);
         }
 
         public (string fileHash, bool isFileHashExist) IsFileHashExist(string filePath)
@@ -68,16 +56,16 @@ namespace Backuper.Infra
             return (fileHash, HashExists(fileHash));
         }
 
-        // TOdO DOR think is needed.
         public void Save()
         {
-            mSerializer.Serialize(mHashToFilePathsMap, mHashesFilePath);
-            WriteOnlyDuplicatesFiles(mHashesFilePath);
+            mSerializer.Serialize(mHashToFilePathsMap, Consts.DataFilePath);
         }
 
+        // ReSharper disable once UnusedMember.Local
         private void WriteOnlyDuplicatesFiles(string savedFilePath)
         {
-            string savedFileDirectory = Path.GetDirectoryName(savedFilePath) ?? throw new NullReferenceException($"Directory of '{savedFilePath}' is empty"); 
+            string savedFileDirectory = Path.GetDirectoryName(savedFilePath)
+                                        ?? throw new NullReferenceException($"Directory of '{savedFilePath}' is empty"); 
             
             string savedOnlyDuplicatesFilePath = Path.Combine(savedFileDirectory, "dup_only" + Path.GetExtension(savedFilePath));
 
@@ -93,7 +81,7 @@ namespace Backuper.Infra
             mSerializer.Serialize(duplicatesOnly, savedOnlyDuplicatesFilePath);
         }
 
-        private Dictionary<string, string> deduceFilePathToFileHashMap(Dictionary<string, List<string>> fileHashToFilePathsMap)
+        private static Dictionary<string, string> deduceFilePathToFileHashMap(Dictionary<string, List<string>> fileHashToFilePathsMap)
         {
             Dictionary<string, string> filePathToFileHashMap = new();
 
