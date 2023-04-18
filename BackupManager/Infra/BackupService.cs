@@ -12,17 +12,17 @@ using Microsoft.Extensions.Options;
 
 namespace Backuper.Infra
 {
-    public class BackuperService : IBackuperService
+    public class BackupService : IBackuperService
     {
         private readonly FilesHashesHandler mFilesHashesHandler;
         private readonly bool mShouldBackupToKnownDirectory;
         private readonly string mRootBackupSourceDirectoryPath;
         private readonly DirectoriesMapping mDirectoriesMapping;
-        private readonly ILogger<BackuperService> mLogger;
+        private readonly ILogger<BackupService> mLogger;
 
-        public BackuperService(FilesHashesHandler filesHashesHandler,
+        public BackupService(FilesHashesHandler filesHashesHandler,
             IOptions<BackuperConfiguration> configuration,
-            ILogger<BackuperService> logger)
+            ILogger<BackupService> logger)
         {
             mFilesHashesHandler = filesHashesHandler ?? throw new ArgumentNullException(nameof(filesHashesHandler));
             mRootBackupSourceDirectoryPath = configuration.Value.RootDirectory ?? throw new ArgumentNullException(nameof(configuration.Value.RootDirectory));
@@ -40,7 +40,7 @@ namespace Backuper.Infra
         // TODO DOR Add tests.
         public void BackupFiles(CancellationToken cancellationToken)
         {
-            // TODO dor handle cases of mShouldBackupToSelf. 
+            // TODO dor handle cases of mShouldBackupToSelf.
             
             List<Task> backupTasks = new();
             

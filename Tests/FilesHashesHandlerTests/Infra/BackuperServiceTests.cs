@@ -49,9 +49,9 @@ public class BackuperServiceTests : TestsBase
 
         using TempDirectory gamesTempDirectory = CreateFilesToBackup();
         
-        BackuperService backuperService = new(filesHashesHandler, options, NullLogger<BackuperService>.Instance);
+        BackupService backupService = new(filesHashesHandler, options, NullLogger<BackupService>.Instance);
 
-        backuperService.BackupFiles(CancellationToken.None);
+        backupService.BackupFiles(CancellationToken.None);
 
         Assert.Equal("just a file", File.ReadAllText(Path.Combine(Consts.DataDirectoryPath, "GamesBackup" ,"file in games directory.txt")));
         Assert.Equal("save the princess!", File.ReadAllText(Path.Combine(Consts.DataDirectoryPath, "GamesBackup", "prince of persia" ,"file in prince of persia directory.txt")));
@@ -60,7 +60,6 @@ public class BackuperServiceTests : TestsBase
         DateTime lastBackupTime = DateTime.Parse(lastBackupTimeStr);
         Assert.Equal(DateTime.Now.Date, lastBackupTime.Date);
 
-        
         List<string> hashes = objectSerializer.Deserialize<Dictionary<string, List<string>>>(Consts.DataFilePath).Keys.ToList();
         Assert.Equal("5B0CCEF73B8DCF768B3EBCFBB902269389C0224202F120C1AA25137AC2C27551", hashes[0]);
         Assert.Equal("674833D4A3B3A2E67001316DE33E5024963B0C429AF2455FF55083BE16592D55", hashes[1]);

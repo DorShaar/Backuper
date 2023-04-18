@@ -14,5 +14,7 @@ namespace Backuper.Domain.Configuration
         public string? RootDirectory { get; set; }
         
         public List<DirectoriesMap>? DirectoriesSourcesToDirectoriesDestinationMap { get; set; }
+        
+        public List<string>? SubscribedDirectories { get; set; }
     }
 }

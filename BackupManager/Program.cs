@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using Backuper.Infra;
 using Backuper.App;
 using BackupManager.Infra;
@@ -14,8 +16,11 @@ namespace Backuper
 {
     internal static class Program
     {
+        private static readonly TimeSpan mCheckInterval = TimeSpan.FromMinutes(10); 
+            
         private static readonly IServiceProvider mServiceProvider = new BackupManagerServiceProvider();
         private static readonly IBackuperService mBackuperService = mServiceProvider.GetRequiredService<IBackuperService>();
+        private static readonly BackupOptionsDetector mBackupOptionsDetector = mServiceProvider.GetRequiredService<BackupOptionsDetector>();
         private static ILogger mLogger;
 
         // TODO DOR Service is doing a check every 10 minutes to see if it should operate.
@@ -31,7 +36,7 @@ namespace Backuper
         //     mLogger = logger ?? throw new ArgumentNullException($"{nameof(logger)} is null");
         // }
 
-        private static void Main()
+        private static async Task Main()
         {
             Console.WriteLine("Backuper is running!");
 
@@ -47,12 +52,22 @@ namespace Backuper
                 return;
             }
 
-            if (!ShouldStartBackupProcedure())
+            while (true)
             {
-                return;
-            }
+                IEnumerable<string>? backupOptions = mBackupOptionsDetector.DetectBackupOptions();
+                // TODO DOR handle null and implement
+                foreach (string backupSettings in backupOptions)
+                {
+                    mBackuperService.BackupFiles(CancellationToken.None);
+                }
 
-            mBackuperService.BackupFiles(CancellationToken.None);
+                await Task.Delay(mCheckInterval).ConfigureAwait(false);
+                // TODO DOR think how to use.
+                // if (!ShouldStartBackupProcedure())
+                // {
+                //     return;
+                // }
+            }
         }
 
         private static void HandleMissingSettingsFile()
@@ -78,6 +93,8 @@ namespace Backuper
 
         private static bool ShouldStartBackupProcedure()
         {
+            // TODO DOR modify logic to not backup by time but by files.
+            
             DateTime lastBackupTime = GetLastBackupTime();
 
             if (lastBackupTime.AddDays(1) < DateTime.Now)

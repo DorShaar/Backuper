@@ -11,7 +11,7 @@ public static class Consts
     private const string mBackuperServiceTestsDirectoryName = "BackuperServiceTests";
     
     private const string mSettingsDirectoryName = "Settings";
-    private const string mSettingsFileName = "Setting.json";
+    public const string SettingsFileName = "BackupSetting.json";
     private const string mSettingsExampleFilePath = "SettingsExample.json";
 
     private const string mDataDirectoryName = "Data";
@@ -23,7 +23,7 @@ public static class Consts
         // mBackuperServiceDirectoryName); // For Production.
 
     private static string mSettingsDirectoryPath = Path.Combine(BackuperServiceDirectoryPath, mSettingsDirectoryName);
-    public static string SettingsFilePath = Path.Combine(mSettingsDirectoryPath, mSettingsFileName);
+    public static string SettingsFilePath = Path.Combine(mSettingsDirectoryPath, SettingsFileName);
     public static string SettingsExampleFilePath = Path.Combine(mSettingsDirectoryPath, mSettingsExampleFilePath);
     
     public static string DataDirectoryPath = Path.Combine(BackuperServiceDirectoryPath, mDataDirectoryName);

@@ -1,10 +1,11 @@
-﻿using Backuper.App.Serialization;
+﻿using Backuper.App;
+using Backuper.App.Serialization;
 using Backuper.Domain.Configuration;
 using Backuper.Infra.Serialization;
-using Backuper.App;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using BackupManager.Infra;
 
 namespace Backuper.Infra
 {
@@ -22,9 +23,10 @@ namespace Backuper.Infra
             ServiceCollection serviceCollection = new();
 
             serviceCollection.AddSingleton<IObjectSerializer, JsonSerializerWrapper>();
-            serviceCollection.AddSingleton<IBackuperService, BackuperService>();
+            serviceCollection.AddSingleton<IBackuperService, BackupService>();
             serviceCollection.AddSingleton<IDuplicateChecker, DuplicateChecker>();
             serviceCollection.AddSingleton<FilesHashesHandler>();
+            serviceCollection.AddSingleton<BackupOptionsDetector>();
 
             RegisterConfiguration(serviceCollection);
 
