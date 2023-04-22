@@ -1,10 +1,6 @@
-﻿using Backuper.App.Serialization;
-using Backuper.Domain.Configuration;
-using Backuper.Infra;
+﻿using BackupManager.App.Serialization;
+using BackupManager.Infra;
 using FakeItEasy;
-using Microsoft.Extensions.Options;
-using System.Collections.Generic;
-using System.IO;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
@@ -12,20 +8,10 @@ namespace BackupManagerTests.Infra
 {
     public class FilesHashesHandlerTests
     {
-        private readonly IOptions<BackuperConfiguration> mConfiguration = A.Dummy<IOptions<BackuperConfiguration>>();
-
-        public FilesHashesHandlerTests()
-        {
-            mConfiguration.Value.RootDirectory = "root";
-        }
-
         [Fact]
         public void AddFileHash_FileHashNotExists_FileHashAdded()
         {
-            FilesHashesHandler filesHashesHandler = new(
-                A.Dummy<IObjectSerializer>(),
-                mConfiguration,
-                NullLogger<FilesHashesHandler>.Instance);
+            FilesHashesHandler filesHashesHandler = new(A.Dummy<IObjectSerializer>(), NullLogger<FilesHashesHandler>.Instance);
 
             Assert.Equal(0, filesHashesHandler.HashesCount);
 
@@ -62,10 +48,7 @@ namespace BackupManagerTests.Infra
         [Fact]
         public void HashExists_HashAlreadyExists_True()
         {
-            FilesHashesHandler filesHashesHandler = new(
-                A.Dummy<IObjectSerializer>(),
-                mConfiguration,
-                NullLogger<FilesHashesHandler>.Instance);
+            FilesHashesHandler filesHashesHandler = new(A.Dummy<IObjectSerializer>(), NullLogger<FilesHashesHandler>.Instance);
 
             const string hash = "ABC123";
             filesHashesHandler.AddFileHash(hash, "fileName");
@@ -76,29 +59,11 @@ namespace BackupManagerTests.Infra
         [Fact]
         public void HashExists_HashNotExists_False()
         {
-            FilesHashesHandler filesHashesHandler = new(
-                A.Dummy<IObjectSerializer>(),
-                mConfiguration,
-                NullLogger<FilesHashesHandler>.Instance);
+            FilesHashesHandler filesHashesHandler = new(A.Dummy<IObjectSerializer>(), NullLogger<FilesHashesHandler>.Instance);
 
             filesHashesHandler.AddFileHash("ABC123", "fileName");
 
             Assert.False(filesHashesHandler.HashExists("ABC1235"));
-        }
-
-        [Fact]
-        public void Ctor_DeserializeCalledForLoadingDB()
-        {
-            IObjectSerializer objectSerializer = A.Fake<IObjectSerializer>();
-
-            FilesHashesHandler filesHashesHandler = new(
-                objectSerializer,
-                mConfiguration,
-                NullLogger<FilesHashesHandler>.Instance);
-
-            A.CallTo(() => objectSerializer.Deserialize<Dictionary<string, List<string>>>(
-                Path.Combine(mConfiguration.Value.RootDirectory, "hashes.txt")))
-                .MustHaveHappenedOnceExactly();
         }
 
         [Fact]

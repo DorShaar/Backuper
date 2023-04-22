@@ -3,15 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using Backuper.App.Serialization;
-using Backuper.Domain.Configuration;
-using Backuper.Domain.Mapping;
-using Backuper.Infra;
-using Backuper.Infra.Serialization;
+using BackupManager.Domain.Mapping;
+using BackupManager.Domain.Settings;
+using BackupManager.Infra.Serialization;
 using BackupManager.Infra;
-using FakeItEasy;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 using Temporaries;
 using Xunit;
 
@@ -24,7 +20,7 @@ public class BackuperServiceTests : TestsBase
     {
         JsonSerializerWrapper objectSerializer = new();
 
-        BackuperConfiguration configuration = new()
+        BackupSettings backupSettings = new()
         {
             RootDirectory = Directory.GetCurrentDirectory(),
             ShouldBackupToKnownDirectory = true,
@@ -43,15 +39,13 @@ public class BackuperServiceTests : TestsBase
             }
         };
         
-        IOptions<BackuperConfiguration> options = Options.Create(configuration);
-        
-        FilesHashesHandler filesHashesHandler = new(objectSerializer, options, NullLogger<FilesHashesHandler>.Instance);
+        FilesHashesHandler filesHashesHandler = new(objectSerializer, NullLogger<FilesHashesHandler>.Instance);
 
         using TempDirectory gamesTempDirectory = CreateFilesToBackup();
         
-        BackupService backupService = new(filesHashesHandler, options, NullLogger<BackupService>.Instance);
+        BackupService backupService = new(filesHashesHandler, NullLogger<BackupService>.Instance);
 
-        backupService.BackupFiles(CancellationToken.None);
+        backupService.BackupFiles(backupSettings, CancellationToken.None);
 
         Assert.Equal("just a file", File.ReadAllText(Path.Combine(Consts.DataDirectoryPath, "GamesBackup" ,"file in games directory.txt")));
         Assert.Equal("save the princess!", File.ReadAllText(Path.Combine(Consts.DataDirectoryPath, "GamesBackup", "prince of persia" ,"file in prince of persia directory.txt")));

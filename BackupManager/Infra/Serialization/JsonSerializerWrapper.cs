@@ -1,9 +1,9 @@
-﻿using Backuper.App.Serialization;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System;
 using System.IO;
+using BackupManager.App.Serialization;
 
-namespace Backuper.Infra.Serialization
+namespace BackupManager.Infra.Serialization
 {
     public class JsonSerializerWrapper : IObjectSerializer
     {

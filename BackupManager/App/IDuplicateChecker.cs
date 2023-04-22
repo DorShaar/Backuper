@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Backuper.App
+namespace BackupManager.App
 {
     public interface IDuplicateChecker
     {

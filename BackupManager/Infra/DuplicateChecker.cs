@@ -1,10 +1,10 @@
-﻿using Backuper.App;
-using BackupManager.Infra.Hash;
+﻿using BackupManager.Infra.Hash;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using BackupManager.App;
 
-namespace Backuper.Infra
+namespace BackupManager.Infra
 {
     public class DuplicateChecker : IDuplicateChecker
     {

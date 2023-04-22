@@ -1,4 +1,4 @@
-﻿using Backuper.Infra.Serialization;
+﻿using BackupManager.Infra.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;

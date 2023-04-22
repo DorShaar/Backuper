@@ -1,14 +1,12 @@
-﻿using Backuper.App.Serialization;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using Microsoft.Extensions.Options;
-using Backuper.Domain.Configuration;
+using BackupManager.App.Serialization;
 using BackupManager.Infra;
 using BackupManager.Infra.Hash;
 using Microsoft.Extensions.Logging;
 
-namespace Backuper.Infra
+namespace BackupManager.Infra
 {
     public class FilesHashesHandler
     {
@@ -17,9 +15,7 @@ namespace Backuper.Infra
         private readonly Lazy<Dictionary<string, string>> mFilePathToFileHashMap; // TODO DOR think f needed.
         private readonly ILogger<FilesHashesHandler> mLogger;
         
-        public FilesHashesHandler(IObjectSerializer serializer,
-            IOptions<BackuperConfiguration> configuration, // TODO DOR think if needed.
-            ILogger<FilesHashesHandler> logger)
+        public FilesHashesHandler(IObjectSerializer serializer, ILogger<FilesHashesHandler> logger)
         {
             mSerializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
             mLogger = logger ?? throw new ArgumentNullException(nameof(logger));

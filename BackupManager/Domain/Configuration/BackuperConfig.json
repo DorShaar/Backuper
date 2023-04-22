@@ -1,9 +1,0 @@
-﻿{
-     "RootDirectory": "E:/Dor's backups",
-     "DirectoriesSourcesToDirectoriesDestinationMap": [
-          {
-               "SourceDirectory": "Salary",
-               "DestDirectory": "Salary"
-          }
-     ]
-}

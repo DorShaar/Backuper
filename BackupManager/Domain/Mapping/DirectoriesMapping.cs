@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 
-namespace Backuper.Domain.Mapping
+namespace BackupManager.Domain.Mapping
 {
     public class DirectoriesMapping : IEnumerable<DirectoriesMap>
     {

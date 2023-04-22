@@ -1,4 +1,4 @@
-﻿namespace Backuper.App.Serialization
+﻿namespace BackupManager.App.Serialization
 {
     public interface IObjectSerializer
     {
