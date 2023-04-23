@@ -4,6 +4,6 @@
     {
         public required string SourceRelativeDirectory { get; init; }
         
-        public string? DestRelativeDirectory { get; set; }
+        public required string DestRelativeDirectory { get; set; }
     }
 }

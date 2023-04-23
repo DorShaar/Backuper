@@ -36,11 +36,13 @@ public static class Consts
     
     #region Data
     private const string mDataDirectoryName = "Data";
+    private const string mBackupsDirectoryName = "Backups";
     private const string mDataFileName = "Data.json";
     private const string mBackupTimeDiaryFileName = "BackupTimeDiary";
 
     public static string DataDirectoryPath => Path.Combine(mBackupServiceDirectoryPath, mDataDirectoryName);
     public static string DataFilePath => Path.Combine(DataDirectoryPath, mDataFileName);
     public static string BackupTimeDiaryFilePath => Path.Combine(DataDirectoryPath, mBackupTimeDiaryFileName);
+    public static string BackupsDirectoryPath => Path.Combine(DataDirectoryPath, mBackupsDirectoryName);
     #endregion Data
 }

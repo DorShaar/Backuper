@@ -29,16 +29,16 @@ public class BackupOptionsDetector
     {
         mLogger.LogInformation($"Detecting backup settings...");
         
-        List<BackupSettings>? settingsFiles = TryGetSettingsFromDrives();
+        List<BackupSettings>? settingsList = TryGetSettingsFromDrives();
         IEnumerable<BackupSettings>? settingsFilesFromSubscribedDirectories = TryGetSettingsFromSubscribedDirectories();
         
         if (settingsFilesFromSubscribedDirectories is not null)
         {
-            settingsFiles ??= new List<BackupSettings>();
-            settingsFiles.AddRange(settingsFilesFromSubscribedDirectories);
+            settingsList ??= new List<BackupSettings>();
+            settingsList.AddRange(settingsFilesFromSubscribedDirectories);
         }
 
-        return settingsFiles;
+        return settingsList;
     }
 
     // TODO DOR test real drive situation.
@@ -145,7 +145,7 @@ public class BackupOptionsDetector
         {
             if (string.IsNullOrWhiteSpace(directorySourceToDirectoryDestination.DestRelativeDirectory))
             {
-                directorySourceToDirectoryDestination.DestRelativeDirectory = Consts.DataDirectoryPath;
+                directorySourceToDirectoryDestination.DestRelativeDirectory = Consts.BackupsDirectoryPath;
             }
         }
     }

@@ -91,12 +91,6 @@ public sealed class WindowsBackgroundService : BackgroundService
                 {
                     await Task.Delay(mConfiguration.CurrentValue.CheckForBackupSettingsInterval, cancellationToken).ConfigureAwait(false);
                 }
-                
-                // TODO DOR think how to use.
-                // if (!ShouldStartBackupProcedure())
-                // {
-                //     return;
-                // }
             }
         }
         catch (TaskCanceledException)
@@ -141,30 +135,5 @@ public sealed class WindowsBackgroundService : BackgroundService
         string executionDirectoryPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? throw new NullReferenceException("No parent directory for execution assembly");
         string exampleConfigurationFle = Path.Combine(executionDirectoryPath, "Domain", "Configuration", "BackupConfig.json");
         File.Copy(exampleConfigurationFle, Consts.SettingsExampleFilePath);
-    }
-
-    private bool ShouldStartBackupProcedure()
-    {
-        // TODO DOR modify logic to not backup by time but by files.
-        
-        DateTime lastBackupTime = GetLastBackupTime();
-
-        if (lastBackupTime.AddDays(1) < DateTime.Now)
-        {
-            mLogger.LogInformation($"Should start backup procedure. Last backup time: {lastBackupTime}");
-            return true;
-        }
-        
-        mLogger.LogInformation($"Should not start backup procedure yet. Last backup time: {lastBackupTime}");
-        return false;
-    }
-
-    private static DateTime GetLastBackupTime()
-    {
-         string[] allLines = File.ReadAllLines(Consts.BackupTimeDiaryFilePath);
-    
-         // Gets the last line in file.
-         string lastUpdateTime = allLines[^1];
-         return DateTime.Parse(lastUpdateTime);
     }
 }

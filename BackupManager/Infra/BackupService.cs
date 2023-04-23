@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -114,18 +115,19 @@ public class BackupService : IBackupService
         DirectoriesMap directoriesMap)
     {
         mLogger.LogInformation($"Copying {filePathToBackupToFileHashMap.Count} files from '{directoriesMap.SourceRelativeDirectory}' to '{directoriesMap.DestRelativeDirectory}'");
+
         foreach ((string fileToBackup, string fileHash) in filePathToBackupToFileHashMap)
         {
-            string destinationFilePath = fileToBackup.Replace($"{Path.DirectorySeparatorChar}{directoriesMap.SourceRelativeDirectory}{Path.DirectorySeparatorChar}",
-            $"{Path.DirectorySeparatorChar}{directoriesMap.DestRelativeDirectory}{Path.DirectorySeparatorChar}");
+            string fileToBackupWithoutCharSeparators = fileToBackup.TrimEnd(Path.DirectorySeparatorChar);
+            string sourceRelativeDirectory = directoriesMap.SourceRelativeDirectory.TrimEnd(Path.DirectorySeparatorChar);
+            string destinationDirectory = directoriesMap.DestRelativeDirectory.TrimEnd(Path.DirectorySeparatorChar);
+            string destinationFilePath = fileToBackupWithoutCharSeparators.Replace(sourceRelativeDirectory, destinationDirectory);
 
             if (backupSettings.ShouldBackupToKnownDirectory)
             {
-                destinationFilePath = Consts.DataDirectoryPath;
-
                 if (backupSettings.RootDirectory is not null)
                 {
-                    destinationFilePath = destinationFilePath.Replace(backupSettings.RootDirectory, Consts.DataDirectoryPath);
+                    destinationFilePath = destinationFilePath.Replace(backupSettings.RootDirectory, Consts.BackupsDirectoryPath);
                 }
             }
             else
@@ -134,7 +136,7 @@ public class BackupService : IBackupService
             }
             
             string outputDirectory = Path.GetDirectoryName(destinationFilePath) ?? throw new NullReferenceException($"Directory of '{destinationFilePath}' is empty"); 
-            Directory.CreateDirectory(outputDirectory);
+            _ = Directory.CreateDirectory(outputDirectory);
 
             try
             {
