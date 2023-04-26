@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using BackupManager.App.Serialization;
 
+// TODO DOR to common dll.
 namespace BackupManager.Infra.Serialization
 {
     public class JsonSerializerWrapper : IObjectSerializer

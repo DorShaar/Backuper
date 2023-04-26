@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,23 +8,28 @@ using BackupManager.Domain.Mapping;
 using BackupManager.Domain.Settings;
 using Microsoft.Extensions.Logging;
 
-namespace BackupManager.Infra;
+namespace BackupManager.Infra.Backup;
 
-public class BackupService : IBackupService
+public abstract class BackupServiceBase : IBackupService
 {
-    private readonly FilesHashesHandler mFilesHashesHandler;
-    private readonly ILogger<BackupService> mLogger;
+    protected readonly FilesHashesHandler mFilesHashesHandler;
+    private readonly ILogger<BackupServiceBase> mLogger;
 
-    public BackupService(FilesHashesHandler filesHashesHandler, ILogger<BackupService> logger)
+    public virtual void Dispose()
+    {
+        GC.SuppressFinalize(this);
+    }
+
+    protected BackupServiceBase(FilesHashesHandler filesHashesHandler, ILogger<BackupServiceBase> logger)
     {
         mFilesHashesHandler = filesHashesHandler ?? throw new ArgumentNullException(nameof(filesHashesHandler));
         mLogger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
-
-    // TODO DOR Add tests.
+    
     public void BackupFiles(BackupSettings backupSettings, CancellationToken cancellationToken)
     {
         // TODO dor handle cases of mShouldBackupToSelf.
+        // TODO DOR Add tests for mShouldBackupToSelf.
         
         List<Task> backupTasks = new();
         
@@ -39,7 +43,7 @@ public class BackupService : IBackupService
                 sourceDirectoryToBackup = Path.Combine(backupSettings.RootDirectory, directoriesMap.SourceRelativeDirectory);
             }
             
-            Dictionary<string, string> filePathToFileHashMap = getFilesToBackup(sourceDirectoryToBackup);
+            Dictionary<string, string> filePathToFileHashMap = GetFilesToBackup(sourceDirectoryToBackup);
 
             if (filePathToFileHashMap.Count == 0)
             {
@@ -57,12 +61,15 @@ public class BackupService : IBackupService
         UpdateLastBackupTime();
     }
 
-    private static void UpdateLastBackupTime()
-    {
-        File.AppendAllText(Consts.BackupTimeDiaryFilePath,DateTime.Now + Environment.NewLine);
-    }
+    protected abstract void AddDirectoriesToSearchQueue(Queue<string> directoriesToSearch, string currentSearchDirectory);
+    
+    protected abstract IEnumerable<string> EnumerateFiles(string directory);
 
-    private Dictionary<string, string> getFilesToBackup(string directoryToBackup)
+    protected abstract (string fileHash, bool isFileHashExist) GetFileHashData(string filePath);
+    
+    protected abstract void CopyFile(string fileToBackup, string destinationFilePath);
+
+    private Dictionary<string, string> GetFilesToBackup(string directoryToBackup)
     {
         Dictionary<string, string> filePathToFileHashMap = new();
 
@@ -82,12 +89,7 @@ public class BackupService : IBackupService
             string currentSearchDirectory = directoriesToSearch.Dequeue();
             mLogger.LogDebug($"Collecting files from directory '{currentSearchDirectory}'");
 
-            // Adding subdirectories to search.
-            foreach (string directory in Directory.EnumerateDirectories(currentSearchDirectory))
-            {
-                directoriesToSearch.Enqueue(directory);
-            }
-
+            AddDirectoriesToSearchQueue(directoriesToSearch, currentSearchDirectory);
             AddFilesToBackupOnlyIfFileNotBackupedAlready(filePathToFileHashMap, currentSearchDirectory);
         }
 
@@ -95,11 +97,16 @@ public class BackupService : IBackupService
         return filePathToFileHashMap;
     }
 
+    private static void UpdateLastBackupTime()
+    {
+        File.AppendAllText(Consts.BackupTimeDiaryFilePath,DateTime.Now + Environment.NewLine);
+    }
+
     private void AddFilesToBackupOnlyIfFileNotBackupedAlready(IDictionary<string, string> filePathToFileHashMap, string directory)
     {
-        foreach (string filePath in Directory.EnumerateFiles(directory))
+        foreach (string filePath in EnumerateFiles(directory))
         {
-            (string fileHash, bool isFileHashExist) = mFilesHashesHandler.IsFileHashExist(filePath);
+            (string fileHash, bool isFileHashExist) = GetFileHashData(filePath);
             if (isFileHashExist)
             {
                 continue;
@@ -140,15 +147,16 @@ public class BackupService : IBackupService
 
             try
             {
-                File.Copy(fileToBackup, destinationFilePath, overwrite: true);
+                CopyFile(fileToBackup, destinationFilePath);
                 mLogger.LogInformation($"Copied '{fileToBackup}' to '{destinationFilePath}'");
+                
+                string relativeFilePathToBackup = Path.GetRelativePath(directoriesMap.SourceRelativeDirectory, fileToBackup);
+                mFilesHashesHandler.AddFileHash(fileHash, relativeFilePathToBackup);
             }
             catch (IOException ex)
             {
                 mLogger.LogError(ex, $"Failed to copy '{fileToBackup}' to '{destinationFilePath}'");
             }
-
-            mFilesHashesHandler.AddFileHash(fileHash, destinationFilePath);
         }
     }
 }

@@ -6,7 +6,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using BackupManager.App;
 using BackupManager.Domain.Configuration;
+using BackupManager.Domain.Enums;
 using BackupManager.Domain.Settings;
+using BackupManager.Infra.Backup;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -84,7 +86,9 @@ public sealed class WindowsBackgroundService : BackgroundService
                 
                     foreach (BackupSettings backupSettings in backupOptionsList)
                     {
-                        mBackupService.BackupFiles(backupSettings, CancellationToken.None);
+                        // TODO DOR create backuper type according to settings.
+                        // TODO DOR add tests and use test (search for #1234)
+                        mBackupService.BackupFiles(backupSettings, cancellationToken);
                     }
                 }
                 finally

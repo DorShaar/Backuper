@@ -2,6 +2,7 @@
 using BackupManager.App.Serialization;
 using BackupManager.Domain.Configuration;
 using BackupManager.Infra;
+using BackupManager.Infra.Backup;
 using BackupManager.Infra.Serialization;
 using BackupManager.Infra.Service;
 using Microsoft.Extensions.Configuration;
@@ -27,14 +28,15 @@ LoggerProviderOptions.RegisterProviderOptions<EventLogSettings, EventLogLoggerPr
 
 builder.Services.AddHostedService<WindowsBackgroundService>();
 builder.Services.AddSingleton<IObjectSerializer, JsonSerializerWrapper>();
-builder.Services.AddSingleton<IBackupService, BackupService>();
+builder.Services.AddSingleton<IBackupService, BackupServiceBase>(); // TODO DOR now replace with factory.
 builder.Services.AddSingleton<IDuplicateChecker, DuplicateChecker>();
 builder.Services.AddSingleton<FilesHashesHandler>();
 builder.Services.AddSingleton<BackupOptionsDetector>();
 builder.Services.Configure<BackupServiceConfiguration>(builder.Configuration);
 builder.Services.AddOptions();
 
-builder.Configuration.AddJsonFile(Consts.SettingsFilePath, optional: true);
+builder.Configuration.AddJsonFile(Consts.SettingsFilePath, optional: true, reloadOnChange: true);
+builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
 // See: https://github.com/dotnet/runtime/issues/47303
 builder.Logging.AddConfiguration(

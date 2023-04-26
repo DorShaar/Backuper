@@ -15,7 +15,7 @@ public class TestsBase : IDisposable
             Assert.Fail("Must run tests with admin privileges");
         }
         
-        if (Path.GetFileName(Path.GetDirectoryName(Consts.DataDirectoryPath)) == "BackuperService")
+        if (Path.GetFileName(Path.GetDirectoryName(Consts.DataDirectoryPath)) == Consts.BackupServiceDirectoryName)
         {
             Assert.Fail("Cannot run tests on real directory. Please Change it before running tests.");
         }

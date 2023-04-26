@@ -6,14 +6,14 @@ namespace BackupManager.Infra;
 public static class Consts
 {
     #region Top Directory
-    private const string mBackuperServiceDirectoryName = "BackuperService";
+    public const string BackupServiceDirectoryName = "BackupService";
     
     // Used for tests only.
-    private const string mBackupServiceTestsDirectoryName = "BackuperServiceTests";
+    private const string mBackupServiceTestsDirectoryName = "BackupServiceTests";
     
     private static string mBackupServiceDirectoryPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-        // mBackupServiceTestsDirectoryName); // For Tests.
-        mBackuperServiceDirectoryName); // For Production.
+        mBackupServiceTestsDirectoryName); // For Tests.
+        // BackupServiceDirectoryName); // For Production.
     #endregion Top Directory
 
     #region Settings
@@ -45,4 +45,10 @@ public static class Consts
     public static string BackupTimeDiaryFilePath => Path.Combine(DataDirectoryPath, mBackupTimeDiaryFileName);
     public static string BackupsDirectoryPath => Path.Combine(DataDirectoryPath, mBackupsDirectoryName);
     #endregion Data
+
+    #region Temp
+
+    private const string mTempDirectoryName = "Temp";
+    public static string TempDirectoryPath => Path.Combine(mBackupServiceDirectoryPath, mTempDirectoryName);
+    #endregion Temp
 }

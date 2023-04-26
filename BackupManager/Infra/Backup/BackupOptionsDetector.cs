@@ -1,14 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using BackupManager.App.Serialization;
 using BackupManager.Domain.Configuration;
+using BackupManager.Domain.Enums;
 using BackupManager.Domain.Mapping;
 using BackupManager.Domain.Settings;
+using MediaDevices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace BackupManager.Infra;
+namespace BackupManager.Infra.Backup;
 
 public class BackupOptionsDetector
 {
@@ -28,9 +31,23 @@ public class BackupOptionsDetector
     public List<BackupSettings>? DetectBackupOptions()
     {
         mLogger.LogInformation($"Detecting backup settings...");
-        
-        List<BackupSettings>? settingsList = TryGetSettingsFromDrives();
+
+        List<BackupSettings>? settingsList = null;
+        IEnumerable<BackupSettings>? settingsFilesFromDrives = TryGetSettingsFromDrives();
+        IEnumerable<BackupSettings>? settingsFilesFromMediaDevices = TryGetSettingsFromMediaDevices();
         IEnumerable<BackupSettings>? settingsFilesFromSubscribedDirectories = TryGetSettingsFromSubscribedDirectories();
+        
+        if (settingsFilesFromDrives is not null)
+        {
+            settingsList ??= new List<BackupSettings>();
+            settingsList.AddRange(settingsFilesFromDrives);
+        }
+        
+        if (settingsFilesFromMediaDevices is not null)
+        {
+            settingsList ??= new List<BackupSettings>();
+            settingsList.AddRange(settingsFilesFromMediaDevices);
+        }
         
         if (settingsFilesFromSubscribedDirectories is not null)
         {
@@ -42,7 +59,7 @@ public class BackupOptionsDetector
     }
 
     // TODO DOR test real drive situation.
-    private List<BackupSettings>? TryGetSettingsFromDrives()
+    private IEnumerable<BackupSettings>? TryGetSettingsFromDrives()
     {
         List<BackupSettings>? settingList = null;
         
@@ -69,6 +86,49 @@ public class BackupOptionsDetector
         return settingList;
     }
 
+#pragma warning disable CA1416
+    private IEnumerable<BackupSettings>? TryGetSettingsFromMediaDevices()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return null;
+        }
+        
+        List<BackupSettings>? settingList = null;
+        
+        foreach (MediaDevice device in MediaDevice.GetDevices())
+        {
+            device.Connect();
+            
+            mLogger.LogInformation($"Detected device {device.Description}");
+
+            const string deviceStorageRootPath = @"\Internal shared storage";
+            MediaDirectoryInfo? deviceRootDirectory = device.GetDirectoryInfo(deviceStorageRootPath);
+
+            if (deviceRootDirectory is null)
+            {
+                mLogger.LogError($"Could not find root path of device {device.Description}");
+                return null;
+            }
+
+            BackupSettings? settings = TryGetSettingsFileFromDeviceDirectory(deviceRootDirectory);
+
+            if (settings is null)
+            {
+                continue;
+            }
+            
+            settingList ??= new List<BackupSettings>();
+            settingList.Add(settings);
+            
+            device.Disconnect();
+            device.Dispose();
+        }
+
+        return settingList;
+    }
+#pragma warning restore CA1416
+
     private IEnumerable<BackupSettings>? TryGetSettingsFromSubscribedDirectories()
     {
         if (mSubscribedDirectories is null)
@@ -92,6 +152,36 @@ public class BackupOptionsDetector
 
         return settingsList;
     }
+    
+#pragma warning disable CA1416
+    private BackupSettings? TryGetSettingsFileFromDeviceDirectory(MediaDirectoryInfo deviceRootDirectory)
+    {
+        MediaFileInfo[] backupSettingsFiles = deviceRootDirectory.EnumerateFiles($"*{Consts.SettingsFileName}").ToArray();
+
+        if (backupSettingsFiles.Length == 0)
+        {
+            mLogger.LogInformation($"Could not find settings file in directory '{deviceRootDirectory.FullName}'");
+            return null;
+        }
+        
+        if (backupSettingsFiles.Length > 1)
+        {
+            mLogger.LogInformation($"Found more than one setting files in directory '{deviceRootDirectory.FullName}', taking only the first");
+        }
+
+        MediaFileInfo backupSettingsMediaFileInfo = backupSettingsFiles[0];
+        string tempMediaDirectoryBackSettingsFilePath = Path.Combine(Consts.TempDirectoryPath, Path.GetRandomFileName());
+        mLogger.LogInformation($"Copying '{backupSettingsMediaFileInfo.FullName}' to {tempMediaDirectoryBackSettingsFilePath}");
+        _ = Directory.CreateDirectory(Consts.TempDirectoryPath);
+        
+        backupSettingsMediaFileInfo.CopyTo(tempMediaDirectoryBackSettingsFilePath);
+        BackupSettings? settings = TryGetBackupSettingsFromFile(tempMediaDirectoryBackSettingsFilePath,
+            rootDirectory: deviceRootDirectory.FullName,
+            SourceType.MediaDevice);
+        
+        return settings;
+    }
+#pragma warning restore CA1416
 
     private BackupSettings? TryGetSettingsFileFromDirectory(string directory)
     {
@@ -114,17 +204,17 @@ public class BackupOptionsDetector
         }
 
         string backupSettingsFilePath = backupSettingsFiles[0];
-        BackupSettings? settings = TryGetBackupSettingsFromFile(backupSettingsFilePath, rootDirectory: directory);
+        BackupSettings? settings = TryGetBackupSettingsFromFile(backupSettingsFilePath, rootDirectory: directory, SourceType.DriveOrDirectory);
         
         return settings;
     }
     
-    private BackupSettings? TryGetBackupSettingsFromFile(string backupSettingsFilePath, string? rootDirectory)
+    private BackupSettings? TryGetBackupSettingsFromFile(string backupSettingsFilePath, string? rootDirectory, SourceType sourceType)
     {
         try
         {
             BackupSettings settings = mObjectSerializer.Deserialize<BackupSettings>(backupSettingsFilePath);
-            updateBackupSettings(settings, rootDirectory);
+            updateBackupSettings(settings, rootDirectory, sourceType);
             return settings;
         }
         catch (Exception ex)
@@ -134,7 +224,7 @@ public class BackupOptionsDetector
         }
     }
 
-    private void updateBackupSettings(BackupSettings backupSettings, string? rootDirectory)
+    private void updateBackupSettings(BackupSettings backupSettings, string? rootDirectory, SourceType sourceType)
     {
         if (backupSettings.RootDirectory is not null && rootDirectory is not null)
         {
@@ -148,5 +238,7 @@ public class BackupOptionsDetector
                 directorySourceToDirectoryDestination.DestRelativeDirectory = Consts.BackupsDirectoryPath;
             }
         }
+
+        backupSettings.SourceType = sourceType;
     }
 }
