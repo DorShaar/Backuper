@@ -29,6 +29,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="JsonSerialization">
+      <HintPath>..\dlls\JsonSerialization.dll</HintPath>
+    </Reference>
     <Reference Include="OSOperations">
       <HintPath>..\dlls\OSOperations.dll</HintPath>
     </Reference>

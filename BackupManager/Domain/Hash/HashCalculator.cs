@@ -2,9 +2,9 @@
 using System.IO;
 using System.Security.Cryptography;
 
-namespace BackupManager.Infra.Hash
+namespace BackupManager.Domain.Hash
 {
-    public static class HashCalculator
+    internal static class HashCalculator
     {
         public static string CalculateHash(string filePath)
         {

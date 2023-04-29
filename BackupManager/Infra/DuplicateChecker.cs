@@ -1,8 +1,8 @@
-﻿using BackupManager.Infra.Hash;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using BackupManager.App;
+using BackupManager.Domain.Hash;
 
 namespace BackupManager.Infra
 {
@@ -10,8 +10,8 @@ namespace BackupManager.Infra
     {
         public void WriteDuplicateFiles(string rootDirectory, string duplicateFilesOutputFilePath)
         {
-            string directory = Path.GetDirectoryName(duplicateFilesOutputFilePath);
-            if (!Directory.Exists(directory))
+            string? directory = Path.GetDirectoryName(duplicateFilesOutputFilePath);
+            if (string.IsNullOrWhiteSpace(directory) || !Directory.Exists(directory))
             {
                 Console.WriteLine($"{directory} does not exists");
                 return;
@@ -78,7 +78,7 @@ namespace BackupManager.Infra
 
         private void AddFileHashToGivenDict(Dictionary<string, List<string>> duplicatesFiles, string fileHash, string filePath)
         {
-            if (duplicatesFiles.TryGetValue(fileHash, out List<string> paths))
+            if (duplicatesFiles.TryGetValue(fileHash, out List<string>? paths))
             {
                 Console.WriteLine($"Hash {fileHash} found duplicate with file {filePath}");
                 paths.Add(filePath);

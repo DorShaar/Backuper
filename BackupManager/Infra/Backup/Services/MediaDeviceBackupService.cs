@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using BackupManager.Domain.Enums;
+using BackupManager.Domain.Hash;
 using MediaDevices;
 using Microsoft.Extensions.Logging;
 using Temporaries;
@@ -42,14 +44,24 @@ public class MediaDeviceBackupService : BackupServiceBase
         return mediaDirectoryInfo.EnumerateFiles().Select(mediaFileInfo => mediaFileInfo.FullName);
     }
 
-    protected override (string fileHash, bool isFileHashExist) GetFileHashData(string filePath)
+    protected override (string? fileHash, bool isAlreadyBackuped) GetFileHashData(string filePath, SearchMethod searchMethod)
     {
+        bool isAlreadyBackuped = mFilesHashesHandler.IsFilePathExist(filePath);
+
+        if (isAlreadyBackuped)
+        {
+            // Since found as already backuped, calculating hash again is not required. 
+            return (null, true);
+        }
+        
         _ = Directory.CreateDirectory(Consts.TempDirectoryPath);
         
         string tempFilePath = Path.Combine(Consts.TempDirectoryPath, Path.GetRandomFileName());
         using TempFile tempFile = new(tempFilePath);
         CopyFile(filePath, tempFile.Path);
-        return mFilesHashesHandler.IsFileHashExist(tempFile.Path);
+        string fileHash = mFilesHashesHandler.CalculateHash(tempFile.Path);
+
+        return (fileHash, false);
     }
 
     protected override void CopyFile(string fileToBackup, string destinationFilePath)

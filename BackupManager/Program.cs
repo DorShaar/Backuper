@@ -1,12 +1,12 @@
 ﻿using BackupManager.App;
-using BackupManager.App.Serialization;
 using BackupManager.Domain.Configuration;
+using BackupManager.Domain.Hash;
 using BackupManager.Infra;
 using BackupManager.Infra.Backup;
 using BackupManager.Infra.Backup.Detectors;
 using BackupManager.Infra.Backup.Services;
-using BackupManager.Infra.Serialization;
 using BackupManager.Infra.Service;
+using JsonSerialization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -29,9 +29,8 @@ LoggerProviderOptions.RegisterProviderOptions<EventLogSettings, EventLogLoggerPr
 #pragma warning restore CA1416
 
 builder.Services.AddHostedService<WindowsBackgroundService>();
-builder.Services.AddSingleton<IObjectSerializer, JsonSerializerWrapper>();
+builder.Services.AddSingleton<IJsonSerializer, JsonSerializer>();
 builder.Services.AddSingleton<BackupServiceFactory>();
-builder.Services.AddSingleton<MediaDeviceBackupService>();
 builder.Services.AddSingleton<DriveBackupService>();
 builder.Services.AddSingleton<BackupOptionsDetector>();
 builder.Services.AddSingleton<FilesHashesHandler>();

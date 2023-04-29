@@ -19,10 +19,16 @@ public class TestsBase : IDisposable
         {
             Assert.Fail("Cannot run tests on real directory. Please Change it before running tests.");
         }
+
+        _ = Directory.CreateDirectory(Consts.DataDirectoryPath);
     }
 
     public void Dispose()
     {
-        Directory.Delete(Path.GetDirectoryName(Consts.DataDirectoryPath), recursive: true);
+        string backupServiceDirectoryPath = Path.GetDirectoryName(Consts.DataDirectoryPath)!;
+        if (Directory.Exists(backupServiceDirectoryPath))
+        {
+            Directory.Delete(backupServiceDirectoryPath, recursive: true);
+        }
     }
 }

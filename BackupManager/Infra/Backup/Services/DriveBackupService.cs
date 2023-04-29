@@ -1,5 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using BackupManager.Domain.Enums;
+using BackupManager.Domain.Hash;
 using Microsoft.Extensions.Logging;
 
 namespace BackupManager.Infra.Backup.Services;
@@ -23,9 +26,15 @@ public class DriveBackupService : BackupServiceBase
         return Directory.EnumerateFiles(directory);
     }
 
-    protected override (string fileHash, bool isFileHashExist) GetFileHashData(string filePath)
+    protected override (string fileHash, bool isAlreadyBackuped) GetFileHashData(string filePath, SearchMethod searchMethod)
     {
-        return mFilesHashesHandler.IsFileHashExist(filePath);
+        string fileHash = mFilesHashesHandler.CalculateHash(filePath);
+        return searchMethod switch
+        {
+            SearchMethod.Hash => (fileHash, mFilesHashesHandler.IsHashExists(fileHash)),
+            SearchMethod.FilePath => (fileHash, mFilesHashesHandler.IsFilePathExist(filePath)),
+            _ => throw new NotSupportedException($"Search method {searchMethod} not supported at the moment")
+        };
     }
 
     protected override void CopyFile(string fileToBackup, string destinationFilePath)

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using BackupManager.Domain.Mapping;
 using BackupManager.Domain.Settings;
-using BackupManager.Infra.Serialization;
+using JsonSerialization;
 using Temporaries;
 using Xunit;
 
@@ -31,7 +31,7 @@ public class BackupSettingsTest
             ShouldBackupToKnownDirectory = false
         };
 
-        JsonSerializerWrapper jsonSerializer = new();
+        JsonSerializer jsonSerializer = new();
 
         using TempFile settingsFile = new();
         

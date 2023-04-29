@@ -86,8 +86,7 @@ public sealed class WindowsBackgroundService : BackgroundService
                 
                     foreach (BackupSettings backupSettings in backupOptionsList)
                     {
-                        // TODO DOR add tests and use test (search for #1234)
-                        IBackupService backupService = mBackupServiceFactory.Create(backupSettings.SourceType);
+                        IBackupService backupService = mBackupServiceFactory.Create(backupSettings);
                         backupService.BackupFiles(backupSettings, cancellationToken);
                     }
                 }

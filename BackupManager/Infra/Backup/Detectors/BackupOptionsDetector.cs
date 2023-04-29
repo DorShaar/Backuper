@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using BackupManager.App.Serialization;
 using BackupManager.Domain.Configuration;
 using BackupManager.Domain.Enums;
 using BackupManager.Domain.Mapping;
 using BackupManager.Domain.Settings;
+using JsonSerialization;
 using MediaDevices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -16,15 +16,15 @@ namespace BackupManager.Infra.Backup.Detectors;
 public class BackupOptionsDetector
 {
     private readonly IEnumerable<string>? mSubscribedDirectories;
-    private readonly IObjectSerializer mObjectSerializer;
+    private readonly IJsonSerializer mJsonSerializer;
     private readonly ILogger<BackupOptionsDetector> mLogger;
 
     public BackupOptionsDetector(IOptions<BackupServiceConfiguration> configuration,
-        IObjectSerializer objectSerializer,
+        IJsonSerializer objectSerializer,
         ILogger<BackupOptionsDetector> logger)
     {
         mSubscribedDirectories = configuration.Value.SubscribedDirectories;
-        mObjectSerializer = objectSerializer ?? throw new ArgumentNullException(nameof(objectSerializer)); 
+        mJsonSerializer = objectSerializer ?? throw new ArgumentNullException(nameof(objectSerializer)); 
         mLogger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
     
@@ -111,7 +111,7 @@ public class BackupOptionsDetector
                 return null;
             }
 
-            BackupSettings? settings = TryGetSettingsFileFromMediaDeviceDirectory(deviceRootDirectory);
+            BackupSettings? settings = TryGetSettingsFileFromMediaDeviceDirectory(deviceRootDirectory, device.Description);
 
             if (settings is null)
             {
@@ -154,7 +154,7 @@ public class BackupOptionsDetector
     }
     
 #pragma warning disable CA1416
-    private BackupSettings? TryGetSettingsFileFromMediaDeviceDirectory(MediaDirectoryInfo deviceRootDirectory)
+    private BackupSettings? TryGetSettingsFileFromMediaDeviceDirectory(MediaDirectoryInfo deviceRootDirectory, string mediaDeviceName)
     {
         MediaFileInfo[] backupSettingsFiles = deviceRootDirectory.EnumerateFiles($"*{Consts.SettingsFileName}").ToArray();
 
@@ -178,6 +178,12 @@ public class BackupOptionsDetector
         BackupSettings? settings = TryGetBackupSettingsFromFile(tempMediaDirectoryBackSettingsFilePath,
             rootDirectory: deviceRootDirectory.FullName,
             SourceType.MediaDevice);
+
+        if (settings is not null)
+        {
+            settings.SearchMethod = SearchMethod.FilePath;
+            settings.MediaDeviceName = mediaDeviceName;
+        }
         
         return settings;
     }
@@ -206,6 +212,11 @@ public class BackupOptionsDetector
         string backupSettingsFilePath = backupSettingsFiles[0];
         BackupSettings? settings = TryGetBackupSettingsFromFile(backupSettingsFilePath, rootDirectory: directory, SourceType.DriveOrDirectory);
         
+        if (settings is not null)
+        {
+            settings.SearchMethod = SearchMethod.Hash;
+        }
+        
         return settings;
     }
     
@@ -213,7 +224,7 @@ public class BackupOptionsDetector
     {
         try
         {
-            BackupSettings settings = mObjectSerializer.Deserialize<BackupSettings>(backupSettingsFilePath);
+            BackupSettings settings = mJsonSerializer.Deserialize<BackupSettings>(backupSettingsFilePath);
             updateBackupSettings(settings, rootDirectory, sourceType);
             return settings;
         }

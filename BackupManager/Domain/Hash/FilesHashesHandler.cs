@@ -1,20 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using BackupManager.App.Serialization;
-using BackupManager.Infra.Hash;
+using BackupManager.Infra;
+using JsonSerialization;
 using Microsoft.Extensions.Logging;
 
-namespace BackupManager.Infra
+namespace BackupManager.Domain.Hash
 {
     public class FilesHashesHandler
     {
-        private readonly IObjectSerializer mSerializer;
+        private readonly IJsonSerializer mSerializer;
         private readonly Lazy<Dictionary<string, List<string>>> mHashToFilePathsMap;
-        private readonly Lazy<Dictionary<string, string>> mFilePathToFileHashMap; // TODO DOR think if needed.
+        private readonly Lazy<Dictionary<string, string>> mFilePathToFileHashMap;
         private readonly ILogger<FilesHashesHandler> mLogger;
         
-        public FilesHashesHandler(IObjectSerializer serializer, ILogger<FilesHashesHandler> logger)
+        public FilesHashesHandler(IJsonSerializer serializer, ILogger<FilesHashesHandler> logger)
         {
             mSerializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
             mLogger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -26,7 +26,11 @@ namespace BackupManager.Infra
 
         public int HashesCount => mHashToFilePathsMap.Value.Count;
 
-        public bool HashExists(string hash) => mHashToFilePathsMap.Value.ContainsKey(hash);
+        public bool IsHashExists(string hash) => mHashToFilePathsMap.Value.ContainsKey(hash);
+
+        public bool IsFilePathExist(string filePath) => mFilePathToFileHashMap.Value.ContainsKey(filePath);
+
+        public string CalculateHash(string filePath) => HashCalculator.CalculateHash(filePath);
 
         public void AddFileHash(string fileHash, string filePath)
         {
@@ -41,12 +45,6 @@ namespace BackupManager.Infra
             }
             
             _ = mFilePathToFileHashMap.Value.TryAdd(filePath, fileHash);
-        }
-
-        public (string fileHash, bool isFileHashExist) IsFileHashExist(string filePath)
-        {
-            string fileHash = HashCalculator.CalculateHash(filePath);
-            return (fileHash, HashExists(fileHash));
         }
 
         public void Save()

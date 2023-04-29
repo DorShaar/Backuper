@@ -2,11 +2,12 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using BackupManager.Domain.Hash;
 using BackupManager.Domain.Mapping;
 using BackupManager.Domain.Settings;
 using BackupManager.Infra;
 using BackupManager.Infra.Backup.Services;
-using BackupManager.Infra.Serialization;
+using JsonSerialization;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
@@ -18,7 +19,7 @@ public class MediaDeviceBackupServiceTests : TestsBase
     // [Fact]
     public void BackupFiles_FilesAndDirectoriesToBackup_FilesAndDirectoriesAreBackuped()
     {
-        JsonSerializerWrapper objectSerializer = new();
+        JsonSerializer jsonSerializer = new();
 
         BackupSettings backupSettings = new()
         {
@@ -33,19 +34,20 @@ public class MediaDeviceBackupServiceTests : TestsBase
             }
         };
         
-        FilesHashesHandler filesHashesHandler = new(objectSerializer, NullLogger<FilesHashesHandler>.Instance);
+        FilesHashesHandler filesHashesHandler = new(jsonSerializer, NullLogger<FilesHashesHandler>.Instance);
 
         MediaDeviceBackupService backupService = new("Redmi Note 8 Pro", filesHashesHandler, NullLogger<DriveBackupService>.Instance);
 
         backupService.BackupFiles(backupSettings, CancellationToken.None);
 
-        Assert.True(File.Exists(Path.Combine(Consts.BackupsDirectoryPath, "Screenshots" ,"Screenshot_2020-03-12-20-42-59-175_com.facebook.katana.jpg")));
+        Assert.True(File.Exists(Path.Combine(Consts.BackupsDirectoryPath, "Screenshots", "Screenshot_2020-03-12-20-42-59-175_com.facebook.katana.jpg")));
+        Assert.True(File.Exists(Path.Combine(Consts.BackupsDirectoryPath, "Screenshots", "another dir", "Screenshot_same_copy.jpg")));
 
         string lastBackupTimeStr = File.ReadAllLines(Consts.BackupTimeDiaryFilePath)[^1];
         DateTime lastBackupTime = DateTime.Parse(lastBackupTimeStr);
         Assert.Equal(DateTime.Now.Date, lastBackupTime.Date);
 
-        Dictionary<string, List<string>> hashesToFilePath = objectSerializer.Deserialize<Dictionary<string, List<string>>>(Consts.DataFilePath);
-        Assert.Equal("DCIM/Screenshots_tests/Screenshot_2020-03-12-20-42-59-175_com.facebook.katana.jpg", hashesToFilePath["5B0CCEF73B8DCF768B3EBCFBB902269389C0224202F120C1AA25137AC2C27551"][0]);
+        Dictionary<string, List<string>> hashesToFilePath = jsonSerializer.Deserialize<Dictionary<string, List<string>>>(Consts.DataFilePath);
+        Assert.Equal(Path.Combine("\\DCIM","Screenshots_tests", "Screenshot_2020-03-12-20-42-59-175_com.facebook.katana.jpg"), hashesToFilePath["2C913FF054E9A626ED7D49A6B26CC9CE912AC39DA0E1EFD5A3077988955B97C6"][0]);
     }
 }
