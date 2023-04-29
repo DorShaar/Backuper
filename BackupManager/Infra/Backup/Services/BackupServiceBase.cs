@@ -8,12 +8,12 @@ using BackupManager.Domain.Mapping;
 using BackupManager.Domain.Settings;
 using Microsoft.Extensions.Logging;
 
-namespace BackupManager.Infra.Backup;
+namespace BackupManager.Infra.Backup.Services;
 
 public abstract class BackupServiceBase : IBackupService
 {
     protected readonly FilesHashesHandler mFilesHashesHandler;
-    private readonly ILogger<BackupServiceBase> mLogger;
+    protected readonly ILogger<BackupServiceBase> mLogger;
 
     public virtual void Dispose()
     {
@@ -25,6 +25,16 @@ public abstract class BackupServiceBase : IBackupService
         mFilesHashesHandler = filesHashesHandler ?? throw new ArgumentNullException(nameof(filesHashesHandler));
         mLogger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
+    
+    protected abstract void AddDirectoriesToSearchQueue(Queue<string> directoriesToSearch, string currentSearchDirectory);
+    
+    protected abstract IEnumerable<string> EnumerateFiles(string directory);
+
+    protected abstract (string fileHash, bool isFileHashExist) GetFileHashData(string filePath);
+    
+    protected abstract void CopyFile(string fileToBackup, string destinationFilePath);
+    
+    protected abstract bool IsDirectoryExists(string directory);
     
     public void BackupFiles(BackupSettings backupSettings, CancellationToken cancellationToken)
     {
@@ -61,19 +71,11 @@ public abstract class BackupServiceBase : IBackupService
         UpdateLastBackupTime();
     }
 
-    protected abstract void AddDirectoriesToSearchQueue(Queue<string> directoriesToSearch, string currentSearchDirectory);
-    
-    protected abstract IEnumerable<string> EnumerateFiles(string directory);
-
-    protected abstract (string fileHash, bool isFileHashExist) GetFileHashData(string filePath);
-    
-    protected abstract void CopyFile(string fileToBackup, string destinationFilePath);
-
     private Dictionary<string, string> GetFilesToBackup(string directoryToBackup)
     {
         Dictionary<string, string> filePathToFileHashMap = new();
-
-        if (!Directory.Exists(directoryToBackup))
+        
+        if (!IsDirectoryExists(directoryToBackup))
         {
             mLogger.LogError($"'{directoryToBackup}' does not exists");
             return filePathToFileHashMap;
@@ -125,7 +127,7 @@ public abstract class BackupServiceBase : IBackupService
 
         foreach ((string fileToBackup, string fileHash) in filePathToBackupToFileHashMap)
         {
-            string fileToBackupWithoutCharSeparators = fileToBackup.TrimEnd(Path.DirectorySeparatorChar);
+            string fileToBackupWithoutCharSeparators = fileToBackup.Trim(Path.DirectorySeparatorChar);
             string sourceRelativeDirectory = directoriesMap.SourceRelativeDirectory.TrimEnd(Path.DirectorySeparatorChar);
             string destinationDirectory = directoriesMap.DestRelativeDirectory.TrimEnd(Path.DirectorySeparatorChar);
             string destinationFilePath = fileToBackupWithoutCharSeparators.Replace(sourceRelativeDirectory, destinationDirectory);

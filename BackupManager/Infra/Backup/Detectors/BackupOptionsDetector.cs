@@ -11,7 +11,7 @@ using MediaDevices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace BackupManager.Infra.Backup;
+namespace BackupManager.Infra.Backup.Detectors;
 
 public class BackupOptionsDetector
 {
@@ -111,7 +111,7 @@ public class BackupOptionsDetector
                 return null;
             }
 
-            BackupSettings? settings = TryGetSettingsFileFromDeviceDirectory(deviceRootDirectory);
+            BackupSettings? settings = TryGetSettingsFileFromMediaDeviceDirectory(deviceRootDirectory);
 
             if (settings is null)
             {
@@ -154,7 +154,7 @@ public class BackupOptionsDetector
     }
     
 #pragma warning disable CA1416
-    private BackupSettings? TryGetSettingsFileFromDeviceDirectory(MediaDirectoryInfo deviceRootDirectory)
+    private BackupSettings? TryGetSettingsFileFromMediaDeviceDirectory(MediaDirectoryInfo deviceRootDirectory)
     {
         MediaFileInfo[] backupSettingsFiles = deviceRootDirectory.EnumerateFiles($"*{Consts.SettingsFileName}").ToArray();
 

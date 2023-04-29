@@ -1,12 +1,12 @@
 ﻿using BackupManager.Domain.Configuration;
-using BackupManager.Infra.Backup;
+using BackupManager.Infra.Backup.Detectors;
 using BackupManager.Infra.Serialization;
 using FakeItEasy;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Xunit;
 
-namespace BackupManagerTests.Infra;
+namespace BackupManagerTests.Infra.Backup.Detectors;
 
 public class BackupOptionsDetectorTests
 {

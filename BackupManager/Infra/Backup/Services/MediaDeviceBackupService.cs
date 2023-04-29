@@ -6,10 +6,9 @@ using MediaDevices;
 using Microsoft.Extensions.Logging;
 using Temporaries;
 
-namespace BackupManager.Infra.Backup;
+namespace BackupManager.Infra.Backup.Services;
 
 #pragma warning disable CA1416
-// TOdO DOR call in factory.
 public class MediaDeviceBackupService : BackupServiceBase
 {
     private readonly MediaDevice mMediaDevice;
@@ -19,6 +18,7 @@ public class MediaDeviceBackupService : BackupServiceBase
         ILogger<BackupServiceBase> logger) : base(filesHashesHandler, logger)
     {
         mMediaDevice = MediaDevice.GetDevices().First(device => device.FriendlyName == deviceName);
+        mMediaDevice.Connect();
     }
 
     public override void Dispose()
@@ -44,6 +44,8 @@ public class MediaDeviceBackupService : BackupServiceBase
 
     protected override (string fileHash, bool isFileHashExist) GetFileHashData(string filePath)
     {
+        _ = Directory.CreateDirectory(Consts.TempDirectoryPath);
+        
         string tempFilePath = Path.Combine(Consts.TempDirectoryPath, Path.GetRandomFileName());
         using TempFile tempFile = new(tempFilePath);
         CopyFile(filePath, tempFile.Path);
@@ -54,6 +56,20 @@ public class MediaDeviceBackupService : BackupServiceBase
     {
         MediaFileInfo mediaFileInfo = mMediaDevice.GetFileInfo(fileToBackup);
         mediaFileInfo.CopyTo(destinationFilePath);
+    }
+
+    protected override bool IsDirectoryExists(string directory)
+    {
+        try
+        {
+            _ = mMediaDevice.GetDirectoryInfo(directory);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            mLogger.LogError(ex, $"Could not get directory info for {directory}");
+            return false;
+        }
     }
 }
 #pragma warning restore CA1416

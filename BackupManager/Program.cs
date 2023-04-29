@@ -3,6 +3,8 @@ using BackupManager.App.Serialization;
 using BackupManager.Domain.Configuration;
 using BackupManager.Infra;
 using BackupManager.Infra.Backup;
+using BackupManager.Infra.Backup.Detectors;
+using BackupManager.Infra.Backup.Services;
 using BackupManager.Infra.Serialization;
 using BackupManager.Infra.Service;
 using Microsoft.Extensions.Configuration;
@@ -28,10 +30,12 @@ LoggerProviderOptions.RegisterProviderOptions<EventLogSettings, EventLogLoggerPr
 
 builder.Services.AddHostedService<WindowsBackgroundService>();
 builder.Services.AddSingleton<IObjectSerializer, JsonSerializerWrapper>();
-builder.Services.AddSingleton<IBackupService, BackupServiceBase>(); // TODO DOR now replace with factory.
-builder.Services.AddSingleton<IDuplicateChecker, DuplicateChecker>();
-builder.Services.AddSingleton<FilesHashesHandler>();
+builder.Services.AddSingleton<BackupServiceFactory>();
+builder.Services.AddSingleton<MediaDeviceBackupService>();
+builder.Services.AddSingleton<DriveBackupService>();
 builder.Services.AddSingleton<BackupOptionsDetector>();
+builder.Services.AddSingleton<FilesHashesHandler>();
+builder.Services.AddSingleton<IDuplicateChecker, DuplicateChecker>();
 builder.Services.Configure<BackupServiceConfiguration>(builder.Configuration);
 builder.Services.AddOptions();
 

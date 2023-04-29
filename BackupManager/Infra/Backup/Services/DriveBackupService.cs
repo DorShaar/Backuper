@@ -2,9 +2,8 @@
 using System.IO;
 using Microsoft.Extensions.Logging;
 
-namespace BackupManager.Infra.Backup;
+namespace BackupManager.Infra.Backup.Services;
 
-// TOdO DOR call in factory.
 public class DriveBackupService : BackupServiceBase
 {
     public DriveBackupService(FilesHashesHandler filesHashesHandler, ILogger<BackupServiceBase> logger) : base(filesHashesHandler, logger)
@@ -32,5 +31,10 @@ public class DriveBackupService : BackupServiceBase
     protected override void CopyFile(string fileToBackup, string destinationFilePath)
     {
         File.Copy(fileToBackup, destinationFilePath, overwrite: true);
+    }
+
+    protected override bool IsDirectoryExists(string directory)
+    {
+        return Directory.Exists(directory);
     }
 }

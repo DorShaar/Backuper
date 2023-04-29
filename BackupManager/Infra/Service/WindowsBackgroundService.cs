@@ -6,9 +6,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using BackupManager.App;
 using BackupManager.Domain.Configuration;
-using BackupManager.Domain.Enums;
 using BackupManager.Domain.Settings;
 using BackupManager.Infra.Backup;
+using BackupManager.Infra.Backup.Detectors;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -20,17 +20,17 @@ public sealed class WindowsBackgroundService : BackgroundService
 {
     private static readonly TimeSpan mDefaultCheckForBackupSettingsInterval = TimeSpan.FromMinutes(5);
     
-    private readonly IBackupService mBackupService;
+    private readonly BackupServiceFactory mBackupServiceFactory;
     private readonly BackupOptionsDetector mBackupOptionsDetector;
     private readonly IOptionsMonitor<BackupServiceConfiguration> mConfiguration;
     private readonly ILogger<WindowsBackgroundService> mLogger;
 
-    public WindowsBackgroundService(IBackupService backupService,
+    public WindowsBackgroundService(BackupServiceFactory backupServiceFactory,
         BackupOptionsDetector backupOptionsDetector,
         IOptionsMonitor<BackupServiceConfiguration> configuration,
         ILogger<WindowsBackgroundService> logger)
     {
-        mBackupService = backupService;
+        mBackupServiceFactory = backupServiceFactory;
         mBackupOptionsDetector = backupOptionsDetector;
         mConfiguration = configuration;
         mLogger = logger;
@@ -86,9 +86,9 @@ public sealed class WindowsBackgroundService : BackgroundService
                 
                     foreach (BackupSettings backupSettings in backupOptionsList)
                     {
-                        // TODO DOR create backuper type according to settings.
                         // TODO DOR add tests and use test (search for #1234)
-                        mBackupService.BackupFiles(backupSettings, cancellationToken);
+                        IBackupService backupService = mBackupServiceFactory.Create(backupSettings.SourceType);
+                        backupService.BackupFiles(backupSettings, cancellationToken);
                     }
                 }
                 finally
@@ -117,8 +117,6 @@ public sealed class WindowsBackgroundService : BackgroundService
         }
     }
     
-    
-    // TODO DOR Service is doing a check every 10 minutes to see if it should operate.
     // TODO DOR maybe add an ability to detect if new device is added.
     // There are two kinds of operations:
     // 1. new device detected - start backup from that device if it is registered. The device may have different names every time,

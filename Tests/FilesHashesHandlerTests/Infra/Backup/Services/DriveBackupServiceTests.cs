@@ -6,12 +6,12 @@ using BackupManager.Domain.Mapping;
 using BackupManager.Domain.Settings;
 using BackupManager.Infra.Serialization;
 using BackupManager.Infra;
-using BackupManager.Infra.Backup;
+using BackupManager.Infra.Backup.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 using Temporaries;
 using Xunit;
 
-namespace BackupManagerTests.Infra;
+namespace BackupManagerTests.Infra.Backup.Services;
 
 public class DriveBackupServiceTests : TestsBase
 {
@@ -43,11 +43,11 @@ public class DriveBackupServiceTests : TestsBase
 
         using TempDirectory gamesTempDirectory = CreateFilesToBackup();
         
-        DriveBackupService backupServiceBase = new(filesHashesHandler, NullLogger<DriveBackupService>.Instance);
+        DriveBackupService backupService = new(filesHashesHandler, NullLogger<DriveBackupService>.Instance);
 
-        backupServiceBase.BackupFiles(backupSettings, CancellationToken.None);
+        backupService.BackupFiles(backupSettings, CancellationToken.None);
 
-        Assert.Equal("just a file", File.ReadAllText(Path.Combine(Consts.DataDirectoryPath, "Backups", "GamesBackup" ,"file in games directory.txt")));
+        Assert.Equal("just a file", File.ReadAllText(Path.Combine(Consts.BackupsDirectoryPath, "GamesBackup" ,"file in games directory.txt")));
         Assert.Equal("save the princess!", File.ReadAllText(Path.Combine(Consts.DataDirectoryPath, "Backups", "GamesBackup", "prince of persia" ,"file in prince of persia directory.txt")));
 
         string lastBackupTimeStr = File.ReadAllLines(Consts.BackupTimeDiaryFilePath)[^1];

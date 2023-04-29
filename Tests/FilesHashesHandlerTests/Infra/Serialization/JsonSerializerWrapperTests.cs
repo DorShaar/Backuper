@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using Xunit;
 
-namespace BackupManagerTests.Infra
+namespace BackupManagerTests.Infra.Serialization
 {
     public class JsonSerializerWrapperTests
     {
