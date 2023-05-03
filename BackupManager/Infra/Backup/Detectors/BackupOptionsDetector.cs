@@ -10,6 +10,7 @@ using JsonSerialization;
 using MediaDevices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Temporaries;
 
 namespace BackupManager.Infra.Backup.Detectors;
 
@@ -98,31 +99,38 @@ public class BackupOptionsDetector
         
         foreach (MediaDevice device in MediaDevice.GetDevices())
         {
-            device.Connect();
-            
-            mLogger.LogInformation($"Detected device {device.Description}");
-
-            const string deviceStorageRootPath = @"\Internal shared storage";
-            MediaDirectoryInfo? deviceRootDirectory = device.GetDirectoryInfo(deviceStorageRootPath);
-
-            if (deviceRootDirectory is null)
+            try
             {
-                mLogger.LogError($"Could not find root path of device {device.Description}");
-                return null;
+                device.Connect();
+            
+                mLogger.LogInformation($"Detected device {device.Description}");
+
+                const string deviceStorageRootPath = @"\Internal shared storage";
+                MediaDirectoryInfo? deviceRootDirectory = device.GetDirectoryInfo(deviceStorageRootPath);
+
+                if (deviceRootDirectory is null)
+                {
+                    mLogger.LogError($"Could not find root path of device {device.Description}");
+                    return null;
+                }
+                
+                BackupSettings? settings = TryGetSettingsFileFromMediaDeviceDirectory(deviceRootDirectory, device.Description);
+
+                if (settings is null)
+                {
+                    continue;
+                }
+            
+                settingList ??= new List<BackupSettings>();
+                settingList.Add(settings);
+            
+                device.Disconnect();
+                device.Dispose();
             }
-
-            BackupSettings? settings = TryGetSettingsFileFromMediaDeviceDirectory(deviceRootDirectory, device.Description);
-
-            if (settings is null)
+            catch (Exception ex)
             {
-                continue;
+                mLogger.LogError(ex, $"Failed to get settings from media device'{device.Description}");
             }
-            
-            settingList ??= new List<BackupSettings>();
-            settingList.Add(settings);
-            
-            device.Disconnect();
-            device.Dispose();
         }
 
         return settingList;
@@ -170,12 +178,12 @@ public class BackupOptionsDetector
         }
 
         MediaFileInfo backupSettingsMediaFileInfo = backupSettingsFiles[0];
-        string tempMediaDirectoryBackSettingsFilePath = Path.Combine(Consts.TempDirectoryPath, Path.GetRandomFileName());
+        using TempFile tempMediaDirectoryBackSettingsFilePath = new(Path.Combine(Consts.TempDirectoryPath, Path.GetRandomFileName()));
         mLogger.LogInformation($"Copying '{backupSettingsMediaFileInfo.FullName}' to {tempMediaDirectoryBackSettingsFilePath}");
         _ = Directory.CreateDirectory(Consts.TempDirectoryPath);
         
-        backupSettingsMediaFileInfo.CopyTo(tempMediaDirectoryBackSettingsFilePath);
-        BackupSettings? settings = TryGetBackupSettingsFromFile(tempMediaDirectoryBackSettingsFilePath,
+        backupSettingsMediaFileInfo.CopyTo(tempMediaDirectoryBackSettingsFilePath.Path);
+        BackupSettings? settings = TryGetBackupSettingsFromFile(tempMediaDirectoryBackSettingsFilePath.Path,
             rootDirectory: deviceRootDirectory.FullName,
             SourceType.MediaDevice);
 
@@ -183,6 +191,7 @@ public class BackupOptionsDetector
         {
             settings.SearchMethod = SearchMethod.FilePath;
             settings.MediaDeviceName = mediaDeviceName;
+            settings.RootDirectory = deviceRootDirectory.Name;
         }
         
         return settings;
@@ -230,7 +239,7 @@ public class BackupOptionsDetector
         }
         catch (Exception ex)
         {
-            mLogger.LogInformation($"Failed to deserialize '{backupSettingsFilePath}'", ex);
+            mLogger.LogError(ex, $"Failed to deserialize '{backupSettingsFilePath}'");
             return null;
         }
     }

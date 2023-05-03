@@ -40,6 +40,16 @@ public abstract class BackupServiceBase : IBackupService
     
     public void BackupFiles(BackupSettings backupSettings, CancellationToken cancellationToken)
     {
+        // TODO DOR now - handle bug - Copied '\Internal shared storage\VoiceRecorder\Recording_15.m4a' to 'C:/Program Files/BackupService/Data/Backups/Recording_15.m4a'
+        // instaed of Copied '\Internal shared storage\VoiceRecorder\Recording_15.m4a' to 'C:/Program Files/BackupService/Data/Backups/VoiceRecorder/Recording_15.m4a'
+        
+        // TODO DOR fix exception 2023-05-03 23:05:22.645 +03:00 [Error] "The requested resource is in use. (0x800700AA)"
+        // System.Runtime.InteropServices.COMException (0x800700AA): The requested resource is in use. (0x800700AA)
+        // at MediaDevices.Internal.IPortableDeviceContent.EnumObjects(UInt32 dwFlags, String pszParentObjectID, IPortableDeviceValues pFilter, IEnumPortableDeviceObjectIDs& ppenum)
+        // at MediaDevices.Internal.Item.GetChildren()+MoveNext()
+        // at System.Linq.Enumerable.WhereSelectEnumerableIterator`2.MoveNext()
+        // at BackupManager.Infra.Backup.Services.MediaDeviceBackupService.AddDirectoriesToSearchQueue(Queue`1 directoriesToSearch, String currentSearchDirectory) in MediaDeviceBackupService.cs:line 35
+
         // TODO dor handle cases of mShouldBackupToSelf.
         // TODO DOR Add tests for mShouldBackupToSelf.
         

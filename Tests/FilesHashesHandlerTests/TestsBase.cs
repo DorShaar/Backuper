@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using BackupManager.Infra;
+using JsonSerialization;
 using OSOperations;
 using Xunit;
 
@@ -8,6 +9,8 @@ namespace BackupManagerTests;
 
 public class TestsBase : IDisposable
 {
+    protected readonly IJsonSerializer mJsonSerializer = new JsonSerializer();
+    
     protected TestsBase()
     {
         if (!Admin.IsRunningAsAdministrator())

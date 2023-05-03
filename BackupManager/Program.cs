@@ -15,7 +15,6 @@ using Microsoft.Extensions.Logging.Configuration;
 using Microsoft.Extensions.Logging.EventLog;
 using Serilog;
 using Serilog.Core;
-using Serilog.Events;
 
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
@@ -46,7 +45,8 @@ builder.Logging.AddConfiguration(
     builder.Configuration.GetSection("Logging"));
 
 Logger? logger = new LoggerConfiguration()
-    .WriteTo.File(Consts.LogsFilePath, LogEventLevel.Debug)
+    .MinimumLevel.Debug()
+    .WriteTo.RollingFile(Consts.LogsFilePathWithoutExtension+"-{Date}.log")
     .CreateLogger();
 
 builder.Logging.AddSerilog(logger);

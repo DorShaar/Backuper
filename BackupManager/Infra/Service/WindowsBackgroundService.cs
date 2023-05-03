@@ -115,13 +115,7 @@ public sealed class WindowsBackgroundService : BackgroundService
             Environment.Exit(1);
         }
     }
-    
-    // TODO DOR maybe add an ability to detect if new device is added.
-    // There are two kinds of operations:
-    // 1. new device detected - start backup from that device if it is registered. The device may have different names every time,
-    // so rely on device name is not smart. We should know if a device is backup-able is by a configuration file in it.
-    // 2. Known backup directory has files in it, so we should start backup procedure to a device.
-    
+
     private void HandleMissingSettingsFile()
     {
         string errorMessage = $"Configuration file {Consts.SettingsFilePath} does not exist, " +

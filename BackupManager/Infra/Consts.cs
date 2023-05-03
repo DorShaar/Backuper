@@ -12,8 +12,8 @@ public static class Consts
     private const string mBackupServiceTestsDirectoryName = "BackupServiceTests";
     
     private static string mBackupServiceDirectoryPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-        mBackupServiceTestsDirectoryName); // For Tests.
-        // BackupServiceDirectoryName); // For Production.
+        // mBackupServiceTestsDirectoryName); // For Tests.
+        BackupServiceDirectoryName); // For Production.
     #endregion Top Directory
 
     #region Settings
@@ -28,10 +28,10 @@ public static class Consts
 
     #region Logs
     private const string mLogsDirectoryName = "Logs";
-    private const string mLogsFilesName = "backuper.log";
+    private const string mLogsFilesNameWithoutExtension = "backuper";
     
     private static string mLogsDirectoryPath => Path.Combine(mBackupServiceDirectoryPath, mLogsDirectoryName);
-    public static string LogsFilePath => Path.Combine(mLogsDirectoryPath, mLogsFilesName);
+    public static string LogsFilePathWithoutExtension => Path.Combine(mLogsDirectoryPath, mLogsFilesNameWithoutExtension);
     #endregion Logs
     
     #region Data
