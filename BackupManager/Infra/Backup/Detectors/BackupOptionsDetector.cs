@@ -129,7 +129,7 @@ public class BackupOptionsDetector
             }
             catch (Exception ex)
             {
-                mLogger.LogError(ex, $"Failed to get settings from media device'{device.Description}");
+                mLogger.LogError(ex, $"Failed to get settings from media device '{device.Description}'");
             }
         }
 

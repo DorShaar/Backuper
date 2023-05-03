@@ -9,7 +9,7 @@ namespace BackupManager.Infra.Backup.Services;
 
 public class DriveBackupService : BackupServiceBase
 {
-    public DriveBackupService(FilesHashesHandler filesHashesHandler, ILogger<BackupServiceBase> logger) : base(filesHashesHandler, logger)
+    public DriveBackupService(FilesHashesHandler filesHashesHandler, ILoggerFactory loggerFactory) : base(filesHashesHandler, loggerFactory)
     {
     }
 

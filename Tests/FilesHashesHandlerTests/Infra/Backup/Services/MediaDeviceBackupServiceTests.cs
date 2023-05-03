@@ -36,7 +36,7 @@ public class MediaDeviceBackupServiceTests : TestsBase
         
         FilesHashesHandler filesHashesHandler = new(jsonSerializer, NullLogger<FilesHashesHandler>.Instance);
 
-        MediaDeviceBackupService backupService = new("Redmi Note 8 Pro", filesHashesHandler, NullLogger<DriveBackupService>.Instance);
+        MediaDeviceBackupService backupService = new("Redmi Note 8 Pro", filesHashesHandler, NullLoggerFactory.Instance);
 
         backupService.BackupFiles(backupSettings, CancellationToken.None);
 

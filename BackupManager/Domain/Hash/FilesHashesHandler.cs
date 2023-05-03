@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using BackupManager.Infra;
@@ -10,8 +11,8 @@ namespace BackupManager.Domain.Hash
     public class FilesHashesHandler
     {
         private readonly IJsonSerializer mSerializer;
-        private readonly Lazy<Dictionary<string, List<string>>> mHashToFilePathsMap;
-        private readonly Lazy<Dictionary<string, string>> mFilePathToFileHashMap;
+        private readonly Lazy<ConcurrentDictionary<string, List<string>>> mHashToFilePathsMap;
+        private readonly Lazy<ConcurrentDictionary<string, string>> mFilePathToFileHashMap;
         private readonly ILogger<FilesHashesHandler> mLogger;
         
         public FilesHashesHandler(IJsonSerializer serializer, ILogger<FilesHashesHandler> logger)
@@ -19,9 +20,9 @@ namespace BackupManager.Domain.Hash
             mSerializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
             mLogger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-            mHashToFilePathsMap = new Lazy<Dictionary<string, List<string>>>(TryReadHashToFilePathsMap);
+            mHashToFilePathsMap = new Lazy<ConcurrentDictionary<string, List<string>>>(TryReadHashToFilePathsMap);
 
-            mFilePathToFileHashMap = new Lazy<Dictionary<string, string>>(() => DeduceFilePathToFileHashMap(mHashToFilePathsMap.Value));
+            mFilePathToFileHashMap = new Lazy<ConcurrentDictionary<string, string>>(() => DeduceFilePathToFileHashMap(mHashToFilePathsMap.Value));
         }
 
         public int HashesCount => mHashToFilePathsMap.Value.Count;
@@ -41,7 +42,7 @@ namespace BackupManager.Domain.Hash
             }
             else
             {
-                mHashToFilePathsMap.Value.Add(fileHash, new List<string> { filePath });
+                mHashToFilePathsMap.Value.TryAdd(fileHash, new List<string> { filePath });
             }
             
             _ = mFilePathToFileHashMap.Value.TryAdd(filePath, fileHash);
@@ -72,30 +73,30 @@ namespace BackupManager.Domain.Hash
             mSerializer.Serialize(duplicatesOnly, savedOnlyDuplicatesFilePath);
         }
 
-        private Dictionary<string, List<string>> TryReadHashToFilePathsMap()
+        private ConcurrentDictionary<string, List<string>> TryReadHashToFilePathsMap()
         {
             try
             {
                 return File.Exists(Consts.DataFilePath) 
-                    ? mSerializer.Deserialize<Dictionary<string, List<string>>>(Consts.DataFilePath)
-                    : new Dictionary<string, List<string>>();
+                    ? mSerializer.Deserialize<ConcurrentDictionary<string, List<string>>>(Consts.DataFilePath)
+                    : new ConcurrentDictionary<string, List<string>>();
             }
             catch (Exception ex)
             {
                 mLogger.LogError(ex, $"Failed to deserialize '{Consts.DataFilePath}', initializing new hash map to file path dictionary");
-                return new Dictionary<string, List<string>>();
+                return new ConcurrentDictionary<string, List<string>>();
             }
         }
 
-        private static Dictionary<string, string> DeduceFilePathToFileHashMap(Dictionary<string, List<string>> fileHashToFilePathsMap)
+        private static ConcurrentDictionary<string, string> DeduceFilePathToFileHashMap(ConcurrentDictionary<string, List<string>> fileHashToFilePathsMap)
         {
-            Dictionary<string, string> filePathToFileHashMap = new();
+            ConcurrentDictionary<string, string> filePathToFileHashMap = new();
 
             foreach ((string fileHash, List<string> filesPaths) in fileHashToFilePathsMap)
             {
                 foreach (string filePath in filesPaths)
                 {
-                    filePathToFileHashMap.Add(filePath, fileHash);
+                    _ = filePathToFileHashMap.TryAdd(filePath, fileHash);
                 }
             }
 

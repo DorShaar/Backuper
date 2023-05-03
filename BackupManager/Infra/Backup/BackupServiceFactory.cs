@@ -42,7 +42,7 @@ public class BackupServiceFactory
             throw new ArgumentException($"Invalid device name '{mediaDeviceName}'");
         }
         
-        mMediaDeviceBackupService = new MediaDeviceBackupService(mediaDeviceName, mFilesHashesHandler, mLoggerFactory.CreateLogger<MediaDeviceBackupService>());
+        mMediaDeviceBackupService = new MediaDeviceBackupService(mediaDeviceName, mFilesHashesHandler, mLoggerFactory);
         return mMediaDeviceBackupService;
     }
 }

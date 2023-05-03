@@ -44,7 +44,7 @@ public class DriveBackupServiceTests : TestsBase
 
         using TempDirectory gamesTempDirectory = CreateFilesToBackup();
         
-        DriveBackupService backupService = new(filesHashesHandler, NullLogger<DriveBackupService>.Instance);
+        DriveBackupService backupService = new(filesHashesHandler, NullLoggerFactory.Instance);
 
         backupService.BackupFiles(backupSettings, CancellationToken.None);
 
@@ -88,7 +88,7 @@ public class DriveBackupServiceTests : TestsBase
 
         using TempDirectory gamesTempDirectory = CreateFilesToBackup();
         
-        DriveBackupService backupService = new(filesHashesHandler, NullLogger<DriveBackupService>.Instance);
+        DriveBackupService backupService = new(filesHashesHandler, NullLoggerFactory.Instance);
 
         backupService.BackupFiles(backupSettings, CancellationToken.None);
 

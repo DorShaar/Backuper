@@ -29,4 +29,6 @@ public class BackupSettings
     public string? RootDirectory { get; set; }
         
     public required List<DirectoriesMap> DirectoriesSourcesToDirectoriesDestinationMap { get; set; }
+
+    public bool AllowMultithreading { get; set; } = true;
 }

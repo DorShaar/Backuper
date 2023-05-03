@@ -8,6 +8,7 @@ using BackupManager.Domain.Enums;
 using BackupManager.Domain.Hash;
 using BackupManager.Domain.Mapping;
 using BackupManager.Domain.Settings;
+using BackupManager.Infra.TasksRunners;
 using Microsoft.Extensions.Logging;
 
 namespace BackupManager.Infra.Backup.Services;
@@ -16,16 +17,18 @@ public abstract class BackupServiceBase : IBackupService
 {
     protected readonly FilesHashesHandler mFilesHashesHandler;
     protected readonly ILogger<BackupServiceBase> mLogger;
+    private readonly ILoggerFactory mLoggerFactory;
 
     public virtual void Dispose()
     {
         GC.SuppressFinalize(this);
     }
 
-    protected BackupServiceBase(FilesHashesHandler filesHashesHandler, ILogger<BackupServiceBase> logger)
+    protected BackupServiceBase(FilesHashesHandler filesHashesHandler, ILoggerFactory loggerFactory)
     {
         mFilesHashesHandler = filesHashesHandler ?? throw new ArgumentNullException(nameof(filesHashesHandler));
-        mLogger = logger ?? throw new ArgumentNullException(nameof(logger));
+        mLoggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+        mLogger = loggerFactory.CreateLogger<BackupServiceBase>();
     }
     
     protected abstract void AddDirectoriesToSearchQueue(Queue<string> directoriesToSearch, string currentSearchDirectory);
@@ -43,20 +46,20 @@ public abstract class BackupServiceBase : IBackupService
         // TODO DOR now - handle bug - Copied '\Internal shared storage\VoiceRecorder\Recording_15.m4a' to 'C:/Program Files/BackupService/Data/Backups/Recording_15.m4a'
         // instaed of Copied '\Internal shared storage\VoiceRecorder\Recording_15.m4a' to 'C:/Program Files/BackupService/Data/Backups/VoiceRecorder/Recording_15.m4a'
         
-        // TODO DOR fix exception 2023-05-03 23:05:22.645 +03:00 [Error] "The requested resource is in use. (0x800700AA)"
-        // System.Runtime.InteropServices.COMException (0x800700AA): The requested resource is in use. (0x800700AA)
-        // at MediaDevices.Internal.IPortableDeviceContent.EnumObjects(UInt32 dwFlags, String pszParentObjectID, IPortableDeviceValues pFilter, IEnumPortableDeviceObjectIDs& ppenum)
-        // at MediaDevices.Internal.Item.GetChildren()+MoveNext()
-        // at System.Linq.Enumerable.WhereSelectEnumerableIterator`2.MoveNext()
-        // at BackupManager.Infra.Backup.Services.MediaDeviceBackupService.AddDirectoriesToSearchQueue(Queue`1 directoriesToSearch, String currentSearchDirectory) in MediaDeviceBackupService.cs:line 35
-
         // TODO dor handle cases of mShouldBackupToSelf.
         // TODO DOR Add tests for mShouldBackupToSelf.
-        
-        List<Task> backupTasks = new();
+
+        ushort numberOfParallelDirectoriesToCopy = backupSettings.AllowMultithreading ? (ushort)4 : (ushort)1; 
+        TasksRunner tasksRunner = new(numberOfParallelDirectoriesToCopy, mLoggerFactory.CreateLogger<TasksRunner>()); 
         
         foreach (DirectoriesMap directoriesMap in backupSettings.DirectoriesSourcesToDirectoriesDestinationMap)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                mLogger.LogInformation($"Cancel requested");
+                break;
+            }
+            
             mLogger.LogInformation($"Handling backup from '{directoriesMap.SourceRelativeDirectory}' to '{directoriesMap.DestRelativeDirectory}'");
 
             string sourceDirectoryToBackup = directoriesMap.SourceRelativeDirectory;
@@ -65,7 +68,8 @@ public abstract class BackupServiceBase : IBackupService
                 sourceDirectoryToBackup = Path.Combine(backupSettings.RootDirectory, directoriesMap.SourceRelativeDirectory);
             }
             
-            Dictionary<string, string> filePathToFileHashMap = GetFilesToBackup(sourceDirectoryToBackup, backupSettings.SearchMethod);
+            Dictionary<string, string> filePathToFileHashMap = 
+                GetFilesToBackup(sourceDirectoryToBackup, backupSettings.SearchMethod, cancellationToken);
 
             if (filePathToFileHashMap.Count == 0)
             {
@@ -73,17 +77,21 @@ public abstract class BackupServiceBase : IBackupService
                 continue;
             }
 
-            Task backupTask = Task.Run(() => BackupFiles(backupSettings, filePathToFileHashMap, directoriesMap), cancellationToken);
-            backupTasks.Add(backupTask);
+            Task backupTask = 
+                Task.Run(() =>
+                {
+                    BackupFiles(backupSettings, filePathToFileHashMap, directoriesMap, cancellationToken);
+                    mFilesHashesHandler.Save();                    
+                }, cancellationToken);
+            
+            tasksRunner.RunTask(backupTask, cancellationToken);
         }
 
-        Task.WaitAll(backupTasks.ToArray(), cancellationToken);
-
-        mFilesHashesHandler.Save();
+        tasksRunner.WaitAll(cancellationToken);
         UpdateLastBackupTime();
     }
 
-    private Dictionary<string, string> GetFilesToBackup(string directoryToBackup, SearchMethod searchMethod)
+    private Dictionary<string, string> GetFilesToBackup(string directoryToBackup, SearchMethod searchMethod, CancellationToken cancellationToken)
     {
         Dictionary<string, string> filePathToFileHashMap = new();
         
@@ -100,11 +108,17 @@ public abstract class BackupServiceBase : IBackupService
 
         while (directoriesToSearch.Count > 0)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                mLogger.LogInformation($"Cancel requested");
+                break;
+            }
+            
             string currentSearchDirectory = directoriesToSearch.Dequeue();
             mLogger.LogDebug($"Collecting files from directory '{currentSearchDirectory}'");
 
             AddDirectoriesToSearchQueue(directoriesToSearch, currentSearchDirectory);
-            AddFilesToBackupOnlyIfFileNotBackupedAlready(filePathToFileHashMap, currentSearchDirectory, searchMethod);
+            AddFilesToBackupOnlyIfFileNotBackupedAlready(filePathToFileHashMap, currentSearchDirectory, searchMethod, cancellationToken);
         }
 
         mLogger.LogInformation($"Finished iterative operation for finding updated files from '{directoryToBackup}'");
@@ -118,10 +132,17 @@ public abstract class BackupServiceBase : IBackupService
 
     private void AddFilesToBackupOnlyIfFileNotBackupedAlready(IDictionary<string, string> filePathToFileHashMap,
         string directory,
-        SearchMethod searchMethod)
+        SearchMethod searchMethod,
+        CancellationToken cancellationToken)
     {
         foreach (string filePath in EnumerateFiles(directory))
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                mLogger.LogInformation($"Cancel requested");
+                break;
+            }
+            
             (string? fileHash, bool isAlreadyBackuped) = GetFileHashData(filePath, searchMethod);
             if (isAlreadyBackuped)
             {
@@ -141,12 +162,19 @@ public abstract class BackupServiceBase : IBackupService
 
     private void BackupFiles(BackupSettings backupSettings,
         Dictionary<string, string> filePathToBackupToFileHashMap,
-        DirectoriesMap directoriesMap)
+        DirectoriesMap directoriesMap,
+        CancellationToken cancellationToken)
     {
         mLogger.LogInformation($"Copying {filePathToBackupToFileHashMap.Count} files from '{directoriesMap.SourceRelativeDirectory}' to '{directoriesMap.DestRelativeDirectory}'");
 
         foreach ((string fileToBackup, string fileHash) in filePathToBackupToFileHashMap)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                mLogger.LogInformation($"Cancel requested");
+                break;
+            }
+            
             string relativeFilePathToBackup = fileToBackup.Trim(Path.DirectorySeparatorChar)
                 .Remove(0, (backupSettings.RootDirectory ?? string.Empty).Length);
             string destinationFilePath = buildDestinationFilePath(relativeFilePathToBackup, directoriesMap, backupSettings);
