@@ -162,13 +162,26 @@ public abstract class BackupServiceBase : IBackupService
         DirectoriesMap directoriesMap,
         BackupSettings backupSettings)
     {
+        string relativeDestinationFilePath = buildRelativeDestinationFilePath(relativeSourceFilePath, directoriesMap);
+        
         // TODO DOR handle not case of backupSettings.ShouldBackupToKnownDirectory.
         string rootDirectoryPath = backupSettings.ShouldBackupToKnownDirectory ? Consts.BackupsDirectoryPath : "TOdo DOR";
-        string relativeSourceDirectory = directoriesMap.SourceRelativeDirectory.Trim(Path.DirectorySeparatorChar).Replace('\\', '/');;
-        string relativeDestinationDirectory = directoriesMap.DestRelativeDirectory.Trim(Path.DirectorySeparatorChar).Replace('\\', '/');;
-        string fixedRelativeSourceFilePath = relativeSourceFilePath.Trim(Path.DirectorySeparatorChar).Replace('\\', '/');
-        string relativeDestinationFilePath = fixedRelativeSourceFilePath.Replace(relativeSourceDirectory, relativeDestinationDirectory);
 
         return Path.Combine(rootDirectoryPath, relativeDestinationFilePath);
+    }
+
+    private string buildRelativeDestinationFilePath(string relativeSourceFilePath, DirectoriesMap directoriesMap)
+    {
+        string fixedRelativeSourceFilePath = relativeSourceFilePath.Trim(Path.DirectorySeparatorChar).Replace('\\', '/');
+        
+        if (string.IsNullOrWhiteSpace(directoriesMap.DestRelativeDirectory))
+        {
+            return fixedRelativeSourceFilePath;
+        }
+        
+        string relativeSourceDirectory = directoriesMap.SourceRelativeDirectory.Trim(Path.DirectorySeparatorChar).Replace('\\', '/');
+        string relativeDestinationDirectory = directoriesMap.DestRelativeDirectory.Trim(Path.DirectorySeparatorChar).Replace('\\', '/');
+        string relativeDestinationFilePath = fixedRelativeSourceFilePath.Replace(relativeSourceDirectory, relativeDestinationDirectory);
+        return relativeDestinationFilePath;
     }
 }
