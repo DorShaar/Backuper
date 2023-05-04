@@ -35,6 +35,9 @@
     <Reference Include="OSOperations">
       <HintPath>..\dlls\OSOperations.dll</HintPath>
     </Reference>
+    <Reference Include="SmartTasks">
+      <HintPath>..\dlls\SmartTasks.dll</HintPath>
+    </Reference>
     <Reference Include="Temporaries">
       <HintPath>..\dlls\Temporaries.dll</HintPath>
     </Reference>

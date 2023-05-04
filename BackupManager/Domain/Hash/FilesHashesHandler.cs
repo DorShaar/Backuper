@@ -37,6 +37,12 @@ namespace BackupManager.Domain.Hash
         {
             if (mHashToFilePathsMap.Value.TryGetValue(fileHash, out List<string>? paths))
             {
+                if (paths.Contains(filePath))
+                {
+                    mLogger.LogDebug($"File '{filePath}' with Hash {fileHash} already exists");
+                    return;
+                }
+                
                 mLogger.LogDebug($"File '{filePath}' with Hash {fileHash} has duplicates: '{string.Join(',', paths)}'");
                 paths.Add(filePath);
             }

@@ -42,9 +42,34 @@ namespace BackupManagerTests.Domain.Hash
             Assert.True(filesHashesHandler.IsFilePathExist(secondFileName));
             Assert.True(filesHashesHandler.IsHashExists(hash));
         }
+        
+        [Fact]
+        public void AddFileHash_FileHashAlreadyExists_PathIsNotAddedToTheSameHashIfAlreadyExistsInList()
+        {
+            FilesHashesHandler filesHashesHandler = new(mJsonSerializer, NullLogger<FilesHashesHandler>.Instance);
+            
+            Assert.Equal(0, filesHashesHandler.HashesCount);
+            
+            const string firstFileName = "FileName.ext";
+            const string secondFileName = "FileName2.ext";
+            const string hash = "ABC123";
+            filesHashesHandler.AddFileHash(hash, firstFileName);
+            filesHashesHandler.AddFileHash(hash, secondFileName);
+            filesHashesHandler.AddFileHash(hash, firstFileName);
+            
+            Assert.Equal(1, filesHashesHandler.HashesCount);
+
+            Assert.True(filesHashesHandler.IsFilePathExist(firstFileName));
+            Assert.True(filesHashesHandler.IsFilePathExist(secondFileName));
+            Assert.True(filesHashesHandler.IsHashExists(hash));
+            
+            filesHashesHandler.Save();
+            Dictionary<string, List<string>> fileHashToFilePathMap = mJsonSerializer.Deserialize<Dictionary<string, List<string>>>(Consts.DataFilePath);
+            Assert.Equal(2, fileHashToFilePathMap[hash].Count);
+        }
 
         [Fact]
-        public void HashExists_HashAlreadyExists_True()
+        public void IsHashExists_HashAlreadyExists_True()
         {
             FilesHashesHandler filesHashesHandler = new(A.Dummy<IJsonSerializer>(), NullLogger<FilesHashesHandler>.Instance);
 
@@ -55,7 +80,7 @@ namespace BackupManagerTests.Domain.Hash
         }
 
         [Fact]
-        public void HashExists_HashNotExists_False()
+        public void IsHashExists_HashNotExists_False()
         {
             FilesHashesHandler filesHashesHandler = new(A.Dummy<IJsonSerializer>(), NullLogger<FilesHashesHandler>.Instance);
 
@@ -67,9 +92,7 @@ namespace BackupManagerTests.Domain.Hash
         [Fact]
         public void Save_ToFilesWithSameHash_DataFileCreatedAsExpected()
         {
-            IJsonSerializer jsonSerializer = new JsonSerializer();
-            
-            FilesHashesHandler filesHashesHandler = new(jsonSerializer, NullLogger<FilesHashesHandler>.Instance);
+            FilesHashesHandler filesHashesHandler = new(mJsonSerializer, NullLogger<FilesHashesHandler>.Instance);
             filesHashesHandler.AddFileHash("expectedHash", "expectedFilePath1");
             filesHashesHandler.AddFileHash("expectedHash", "expectedFilePath2");
             
@@ -77,7 +100,7 @@ namespace BackupManagerTests.Domain.Hash
             
             filesHashesHandler.Save();
             File.Exists(Consts.DataFilePath);
-            Dictionary<string, List<string>> fileHashToFilePathMap = jsonSerializer.Deserialize<Dictionary<string, List<string>>>(Consts.DataFilePath);
+            Dictionary<string, List<string>> fileHashToFilePathMap = mJsonSerializer.Deserialize<Dictionary<string, List<string>>>(Consts.DataFilePath);
 
             List<string> files = fileHashToFilePathMap["expectedHash"];
             Assert.Contains("expectedFilePath1", files);

@@ -8,8 +8,8 @@ using BackupManager.Domain.Enums;
 using BackupManager.Domain.Hash;
 using BackupManager.Domain.Mapping;
 using BackupManager.Domain.Settings;
-using BackupManager.Infra.TasksRunners;
 using Microsoft.Extensions.Logging;
+using SmartTasks;
 
 namespace BackupManager.Infra.Backup.Services;
 
@@ -45,18 +45,14 @@ public abstract class BackupServiceBase : IBackupService
     {
         // TODO DOR now - handle bug - Copied '\Internal shared storage\VoiceRecorder\Recording_15.m4a' to 'C:/Program Files/BackupService/Data/Backups/Recording_15.m4a'
         // instaed of Copied '\Internal shared storage\VoiceRecorder\Recording_15.m4a' to 'C:/Program Files/BackupService/Data/Backups/VoiceRecorder/Recording_15.m4a'
-        
-        // TOdO DOR fix duplicates in Data.json like this:
-        // "6259E4EAA218325E0F3BAE48621E926C936C79A992F5EF3A3B72817959DD8728": [
-        // "\\VoiceRecorder\\Recording_9.m4a",
-        // "\\VoiceRecorder\\Recording_9.m4a"
-        //     ],
-        
+
         // TODO dor handle cases of mShouldBackupToSelf.
         // TODO DOR Add tests for mShouldBackupToSelf.
 
         ushort numberOfParallelDirectoriesToCopy = backupSettings.AllowMultithreading ? (ushort)4 : (ushort)1; 
-        TasksRunner tasksRunner = new(numberOfParallelDirectoriesToCopy, mLoggerFactory.CreateLogger<TasksRunner>()); 
+        TasksRunner tasksRunner = new(numberOfParallelDirectoriesToCopy,
+            TimeSpan.FromMilliseconds(500),
+            mLoggerFactory.CreateLogger<TasksRunner>()); 
         
         foreach (DirectoriesMap directoriesMap in backupSettings.DirectoriesSourcesToDirectoriesDestinationMap)
         {

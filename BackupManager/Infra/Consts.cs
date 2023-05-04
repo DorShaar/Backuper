@@ -11,9 +11,10 @@ public static class Consts
     // Used for tests only.
     private const string mBackupServiceTestsDirectoryName = "BackupServiceTests";
     
+    // TODO DOR now
     private static string mBackupServiceDirectoryPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-        // mBackupServiceTestsDirectoryName); // For Tests.
-        BackupServiceDirectoryName); // For Production.
+        mBackupServiceTestsDirectoryName); // For Tests.
+        // BackupServiceDirectoryName); // For Production.
     #endregion Top Directory
 
     #region Settings
