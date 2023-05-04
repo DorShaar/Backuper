@@ -46,6 +46,12 @@ public abstract class BackupServiceBase : IBackupService
         // TODO DOR now - handle bug - Copied '\Internal shared storage\VoiceRecorder\Recording_15.m4a' to 'C:/Program Files/BackupService/Data/Backups/Recording_15.m4a'
         // instaed of Copied '\Internal shared storage\VoiceRecorder\Recording_15.m4a' to 'C:/Program Files/BackupService/Data/Backups/VoiceRecorder/Recording_15.m4a'
         
+        // TOdO DOR fix duplicates in Data.json like this:
+        // "6259E4EAA218325E0F3BAE48621E926C936C79A992F5EF3A3B72817959DD8728": [
+        // "\\VoiceRecorder\\Recording_9.m4a",
+        // "\\VoiceRecorder\\Recording_9.m4a"
+        //     ],
+        
         // TODO dor handle cases of mShouldBackupToSelf.
         // TODO DOR Add tests for mShouldBackupToSelf.
 
@@ -87,7 +93,7 @@ public abstract class BackupServiceBase : IBackupService
             tasksRunner.RunTask(backupTask, cancellationToken);
         }
 
-        tasksRunner.WaitAll(cancellationToken);
+        _ = tasksRunner.WaitAll(cancellationToken);
         UpdateLastBackupTime();
     }
 
