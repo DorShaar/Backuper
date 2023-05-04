@@ -46,9 +46,6 @@ public abstract class BackupServiceBase : IBackupService
         // TODO DOR now - handle bug - Copied '\Internal shared storage\VoiceRecorder\Recording_15.m4a' to 'C:/Program Files/BackupService/Data/Backups/Recording_15.m4a'
         // instaed of Copied '\Internal shared storage\VoiceRecorder\Recording_15.m4a' to 'C:/Program Files/BackupService/Data/Backups/VoiceRecorder/Recording_15.m4a'
 
-        // TODO dor handle cases of mShouldBackupToSelf.
-        // TODO DOR Add tests for mShouldBackupToSelf.
-
         ushort numberOfParallelDirectoriesToCopy = backupSettings.AllowMultithreading ? (ushort)4 : (ushort)1; 
         TasksRunner tasksRunner = new(numberOfParallelDirectoriesToCopy,
             TimeSpan.FromMilliseconds(500),
@@ -205,6 +202,7 @@ public abstract class BackupServiceBase : IBackupService
         string relativeDestinationFilePath = buildRelativeDestinationFilePath(relativeSourceFilePath, directoriesMap);
         
         // TODO DOR handle not case of backupSettings.ShouldBackupToKnownDirectory.
+        // TOdO DOR add tests.
         string rootDirectoryPath = backupSettings.ShouldBackupToKnownDirectory ? Consts.BackupsDirectoryPath : "TOdo DOR";
 
         return Path.Combine(rootDirectoryPath, relativeDestinationFilePath);
