@@ -86,8 +86,14 @@ public sealed class WindowsBackgroundService : BackgroundService
                 
                     foreach (BackupSettings backupSettings in backupOptionsList)
                     {
+                        if (cancellationToken.IsCancellationRequested)
+                        {
+                            mLogger.LogInformation($"Cancel requested");
+                            break;
+                        }
+                        
                         IBackupService backupService = mBackupServiceFactory.Create(backupSettings);
-                        backupService.BackupFiles(backupSettings, cancellationToken);
+                        await backupService.BackupFiles(backupSettings, cancellationToken).ConfigureAwait(false);
                     }
                 }
                 finally

@@ -7,6 +7,8 @@ namespace BackupManager.Domain.Settings;
 
 public class BackupSettings
 {
+    public string? Description { get; set; }
+    
     public SourceType SourceType { get; set; }
     
     [JsonIgnore]
@@ -31,4 +33,16 @@ public class BackupSettings
     public required List<DirectoriesMap> DirectoriesSourcesToDirectoriesDestinationMap { get; set; }
 
     public bool AllowMultithreading { get; set; } = true;
+
+    public override string ToString()
+    {
+        return $@"BackupSettings:
+{nameof(Description)}: {Description}
+{nameof(SourceType)}: {SourceType}
+{nameof(SearchMethod)}: {SearchMethod}
+{nameof(ShouldBackupToKnownDirectory)}: {ShouldBackupToKnownDirectory}
+{nameof(MediaDeviceName)}: {MediaDeviceName}
+{nameof(RootDirectory)}: {RootDirectory}
+{nameof(AllowMultithreading)}: {AllowMultithreading}";
+    }
 }

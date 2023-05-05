@@ -56,6 +56,7 @@ namespace BackupManager.Domain.Hash
 
         public void Save()
         {
+            mLogger.LogInformation($"Saving hash to file paths data to '{Consts.DataFilePath}'");
             mSerializer.Serialize(mHashToFilePathsMap.Value, Consts.DataFilePath);
         }
 

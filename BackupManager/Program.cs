@@ -45,7 +45,7 @@ builder.Logging.AddConfiguration(
     builder.Configuration.GetSection("Logging"));
 
 Logger? logger = new LoggerConfiguration()
-    .MinimumLevel.Debug()
+    .MinimumLevel.Verbose()
     .WriteTo.RollingFile(Consts.LogsFilePathWithoutExtension+"-{Date}.log")
     .CreateLogger();
 

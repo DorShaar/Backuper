@@ -18,6 +18,7 @@ public abstract class BackupServiceBase : IBackupService
     protected readonly FilesHashesHandler mFilesHashesHandler;
     protected readonly ILogger<BackupServiceBase> mLogger;
     private readonly ILoggerFactory mLoggerFactory;
+    private readonly TimeSpan mIntervalForCheckingAvailableSlot = TimeSpan.FromMilliseconds(500);
 
     public virtual void Dispose()
     {
@@ -41,15 +42,21 @@ public abstract class BackupServiceBase : IBackupService
     
     protected abstract bool IsDirectoryExists(string directory);
     
-    public void BackupFiles(BackupSettings backupSettings, CancellationToken cancellationToken)
+    public async Task BackupFiles(BackupSettings backupSettings, CancellationToken cancellationToken)
     {
-        // TODO DOR now - handle bug - Copied '\Internal shared storage\VoiceRecorder\Recording_15.m4a' to 'C:/Program Files/BackupService/Data/Backups/Recording_15.m4a'
-        // instaed of Copied '\Internal shared storage\VoiceRecorder\Recording_15.m4a' to 'C:/Program Files/BackupService/Data/Backups/VoiceRecorder/Recording_15.m4a'
+        mLogger.LogInformation($"Start backup '{backupSettings.Description}'");
+        
+        ushort numberOfParallelDirectoriesToCopy = backupSettings.AllowMultithreading ? (ushort)4 : (ushort)1;
 
-        ushort numberOfParallelDirectoriesToCopy = backupSettings.AllowMultithreading ? (ushort)4 : (ushort)1; 
-        TasksRunner tasksRunner = new(numberOfParallelDirectoriesToCopy,
-            TimeSpan.FromMilliseconds(500),
-            mLoggerFactory.CreateLogger<TasksRunner>()); 
+        TasksRunnerConfigurations tasksRunnerConfigurations = new()
+        {
+            AllowedParallelTasks = numberOfParallelDirectoriesToCopy,
+            IntervalForCheckingAvailableSlot = mIntervalForCheckingAvailableSlot,
+            NoAvailableSlotLogInterval = 10000,
+            Logger = mLoggerFactory.CreateLogger<TasksRunner>()
+        };
+
+        TasksRunner tasksRunner = new(tasksRunnerConfigurations);
         
         foreach (DirectoriesMap directoriesMap in backupSettings.DirectoriesSourcesToDirectoriesDestinationMap)
         {
@@ -76,18 +83,20 @@ public abstract class BackupServiceBase : IBackupService
                 continue;
             }
 
-            Task backupTask = 
-                Task.Run(() =>
-                {
-                    BackupFiles(backupSettings, filePathToFileHashMap, directoriesMap, cancellationToken);
-                    mFilesHashesHandler.Save();                    
-                }, cancellationToken);
+            // LongRunning hints the task scheduler to create new thread.
+            Task backupTask = Task.Factory.StartNew(() =>
+            {
+                BackupFiles(backupSettings, filePathToFileHashMap, directoriesMap, cancellationToken);
+                mFilesHashesHandler.Save();
+            }, TaskCreationOptions.LongRunning);
             
-            tasksRunner.RunTask(backupTask, cancellationToken);
+            await tasksRunner.RunTask(backupTask, cancellationToken).ConfigureAwait(false);
         }
 
-        _ = tasksRunner.WaitAll(cancellationToken);
+        _ = await tasksRunner.WaitAll(cancellationToken).ConfigureAwait(false);
         UpdateLastBackupTime();
+        
+        mLogger.LogInformation($"Finished backup '{backupSettings.Description}'");
     }
 
     private Dictionary<string, string> GetFilesToBackup(string directoryToBackup, SearchMethod searchMethod, CancellationToken cancellationToken)

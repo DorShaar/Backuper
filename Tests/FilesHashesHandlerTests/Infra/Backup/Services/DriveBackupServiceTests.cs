@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using BackupManager.Domain.Hash;
 using BackupManager.Domain.Mapping;
 using BackupManager.Domain.Settings;
@@ -17,7 +18,7 @@ namespace BackupManagerTests.Infra.Backup.Services;
 public class DriveBackupServiceTests : TestsBase
 {
     [Fact]
-    public void BackupFiles_FilesAndDirectoriesToBackup_DestRelativeDirectoryConfigured_FilesAndDirectoriesAreBackupedIntoDestRelativeDirectory()
+    public async Task BackupFiles_FilesAndDirectoriesToBackup_DestRelativeDirectoryConfigured_FilesAndDirectoriesAreBackupedIntoDestRelativeDirectory()
     {
         JsonSerializer objectSerializer = new();
 
@@ -46,7 +47,7 @@ public class DriveBackupServiceTests : TestsBase
         
         DriveBackupService backupService = new(filesHashesHandler, NullLoggerFactory.Instance);
 
-        backupService.BackupFiles(backupSettings, CancellationToken.None);
+        await backupService.BackupFiles(backupSettings, CancellationToken.None).ConfigureAwait(false);
 
         Assert.Equal("just a file", File.ReadAllText(Path.Combine(Consts.BackupsDirectoryPath, "GamesBackup" ,"file in games directory.txt")));
         Assert.Equal("save the princess!", File.ReadAllText(Path.Combine(Consts.BackupsDirectoryPath, "GamesBackup", "prince of persia" ,"file in prince of persia directory.txt")));
@@ -66,7 +67,7 @@ public class DriveBackupServiceTests : TestsBase
     }
     
     [Fact]
-    public void BackupFiles_FilesAndDirectoriesToBackup_EmptyDestRelativeDirectory_FilesAndDirectoriesAreBackupedIntoBackupDirectoryWithPreservingStructure()
+    public async Task BackupFiles_FilesAndDirectoriesToBackup_EmptyDestRelativeDirectory_FilesAndDirectoriesAreBackupedIntoBackupDirectoryWithPreservingStructure()
     {
         JsonSerializer objectSerializer = new();
 
@@ -90,7 +91,7 @@ public class DriveBackupServiceTests : TestsBase
         
         DriveBackupService backupService = new(filesHashesHandler, NullLoggerFactory.Instance);
 
-        backupService.BackupFiles(backupSettings, CancellationToken.None);
+        await backupService.BackupFiles(backupSettings, CancellationToken.None).ConfigureAwait(false);
 
         Assert.Equal("just a file", File.ReadAllText(Path.Combine(Consts.BackupsDirectoryPath, "Games" ,"file in games directory.txt")));
         Assert.Equal("save the princess!", File.ReadAllText(Path.Combine(Consts.BackupsDirectoryPath, "Games", "prince of persia" ,"file in prince of persia directory.txt")));

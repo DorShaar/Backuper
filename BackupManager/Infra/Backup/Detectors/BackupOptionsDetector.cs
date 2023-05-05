@@ -251,14 +251,6 @@ public class BackupOptionsDetector
             backupSettings.RootDirectory = rootDirectory;
         }
 
-        foreach (DirectoriesMap directorySourceToDirectoryDestination in backupSettings.DirectoriesSourcesToDirectoriesDestinationMap)
-        {
-            if (string.IsNullOrWhiteSpace(directorySourceToDirectoryDestination.DestRelativeDirectory))
-            {
-                directorySourceToDirectoryDestination.DestRelativeDirectory = Consts.BackupsDirectoryPath;
-            }
-        }
-
         backupSettings.SourceType = sourceType;
     }
 }
