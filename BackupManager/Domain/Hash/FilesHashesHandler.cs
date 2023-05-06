@@ -2,13 +2,15 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using BackupManager.Infra;
 using JsonSerialization;
 using Microsoft.Extensions.Logging;
 
 namespace BackupManager.Domain.Hash
 {
-    public class FilesHashesHandler
+    public class FilesHashesHandler : IFilesHashesHandler 
     {
         private readonly IJsonSerializer mSerializer;
         private readonly Lazy<ConcurrentDictionary<string, List<string>>> mHashToFilePathsMap;
@@ -54,14 +56,14 @@ namespace BackupManager.Domain.Hash
             _ = mFilePathToFileHashMap.Value.TryAdd(filePath, fileHash);
         }
 
-        public void Save()
+        public async Task Save(CancellationToken cancellationToken)
         {
             mLogger.LogInformation($"Saving hash to file paths data to '{Consts.DataFilePath}'");
-            mSerializer.Serialize(mHashToFilePathsMap.Value, Consts.DataFilePath);
+            await mSerializer.SerializeAsync(mHashToFilePathsMap.Value, Consts.DataFilePath, cancellationToken).ConfigureAwait(false);
         }
 
         // ReSharper disable once UnusedMember.Local
-        private void WriteOnlyDuplicatesFiles(string savedFilePath)
+        private async Task WriteOnlyDuplicatesFiles(string savedFilePath, CancellationToken cancellationToken)
         {
             string savedFileDirectory = Path.GetDirectoryName(savedFilePath)
                                         ?? throw new NullReferenceException($"Directory of '{savedFilePath}' is empty"); 
@@ -77,7 +79,7 @@ namespace BackupManager.Domain.Hash
                 }
             }
 
-            mSerializer.Serialize(duplicatesOnly, savedOnlyDuplicatesFilePath);
+            await mSerializer.SerializeAsync(duplicatesOnly, savedOnlyDuplicatesFilePath, cancellationToken);
         }
 
         private ConcurrentDictionary<string, List<string>> TryReadHashToFilePathsMap()
@@ -85,7 +87,7 @@ namespace BackupManager.Domain.Hash
             try
             {
                 return File.Exists(Consts.DataFilePath) 
-                    ? mSerializer.Deserialize<ConcurrentDictionary<string, List<string>>>(Consts.DataFilePath)
+                    ? mSerializer.DeserializeAsync<ConcurrentDictionary<string, List<string>>>(Consts.DataFilePath, CancellationToken.None).Result
                     : new ConcurrentDictionary<string, List<string>>();
             }
             catch (Exception ex)

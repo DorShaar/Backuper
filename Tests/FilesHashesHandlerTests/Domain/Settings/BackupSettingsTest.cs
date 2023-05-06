@@ -1,18 +1,19 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using BackupManager.Domain.Mapping;
 using BackupManager.Domain.Settings;
-using JsonSerialization;
 using Temporaries;
 using Xunit;
 
 namespace BackupManagerTests.Domain.Settings;
 
-public class BackupSettingsTest
+public class BackupSettingsTest : TestsBase
 {
     [Fact]
-    public void Deserialize_ValidInput_PerformedAsExpected()
+    public async Task Deserialize_ValidInput_PerformedAsExpected()
     {
-        BackupSettings settings = new()
+        BackupSerializedSettings settings = new()
         {
             DirectoriesSourcesToDirectoriesDestinationMap = new List<DirectoriesMap>
             {
@@ -27,23 +28,20 @@ public class BackupSettingsTest
                     DestRelativeDirectory = "Files/Documents and important files",
                 }
             },
-            RootDirectory = "D",
             ShouldBackupToKnownDirectory = false
         };
 
-        JsonSerializer jsonSerializer = new();
-
         using TempFile settingsFile = new();
         
-        jsonSerializer.Serialize(settings, settingsFile.Path);
-        BackupSettings deserializedSettings = jsonSerializer.Deserialize<BackupSettings>(settingsFile.Path);
+        await mJsonSerializer.SerializeAsync(settings, settingsFile.Path, CancellationToken.None).ConfigureAwait(false);
+        BackupSerializedSettings deserializedSettings =
+            await mJsonSerializer.DeserializeAsync<BackupSerializedSettings>(settingsFile.Path, CancellationToken.None).ConfigureAwait(false);
         
         Assert.Equal("Games", deserializedSettings.DirectoriesSourcesToDirectoriesDestinationMap[0].SourceRelativeDirectory);
         Assert.Equal("GamesBackup", deserializedSettings.DirectoriesSourcesToDirectoriesDestinationMap[0].DestRelativeDirectory);
         Assert.Equal("Documents and important files", deserializedSettings.DirectoriesSourcesToDirectoriesDestinationMap[1].SourceRelativeDirectory);
         Assert.Equal("Files/Documents and important files", deserializedSettings.DirectoriesSourcesToDirectoriesDestinationMap[1].DestRelativeDirectory);
         
-        Assert.Equal(settings.RootDirectory, deserializedSettings.RootDirectory);
         Assert.Equal(settings.ShouldBackupToKnownDirectory, deserializedSettings.ShouldBackupToKnownDirectory);
     }
 }

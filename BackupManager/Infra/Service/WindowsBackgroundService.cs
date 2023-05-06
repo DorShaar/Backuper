@@ -4,7 +4,7 @@ using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using BackupManager.App;
+using BackupManager.App.Backup.Services;
 using BackupManager.Domain.Configuration;
 using BackupManager.Domain.Settings;
 using BackupManager.Infra.Backup;
@@ -21,17 +21,17 @@ public sealed class WindowsBackgroundService : BackgroundService
     private static readonly TimeSpan mDefaultCheckForBackupSettingsInterval = TimeSpan.FromMinutes(5);
     
     private readonly BackupServiceFactory mBackupServiceFactory;
-    private readonly BackupOptionsDetector mBackupOptionsDetector;
+    private readonly BackupSettingsDetector mBackupSettingsDetector;
     private readonly IOptionsMonitor<BackupServiceConfiguration> mConfiguration;
     private readonly ILogger<WindowsBackgroundService> mLogger;
 
     public WindowsBackgroundService(BackupServiceFactory backupServiceFactory,
-        BackupOptionsDetector backupOptionsDetector,
+        BackupSettingsDetector backupSettingsDetector,
         IOptionsMonitor<BackupServiceConfiguration> configuration,
         ILogger<WindowsBackgroundService> logger)
     {
         mBackupServiceFactory = backupServiceFactory;
-        mBackupOptionsDetector = backupOptionsDetector;
+        mBackupSettingsDetector = backupSettingsDetector;
         mConfiguration = configuration;
         mLogger = logger;
 
@@ -74,7 +74,7 @@ public sealed class WindowsBackgroundService : BackgroundService
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                List<BackupSettings>? backupOptionsList = mBackupOptionsDetector.DetectBackupOptions();
+                List<BackupSettings>? backupOptionsList = await mBackupSettingsDetector.DetectBackupSettings(cancellationToken).ConfigureAwait(false);
 
                 try
                 {
@@ -93,7 +93,14 @@ public sealed class WindowsBackgroundService : BackgroundService
                         }
                         
                         IBackupService backupService = mBackupServiceFactory.Create(backupSettings);
-                        await backupService.BackupFiles(backupSettings, cancellationToken).ConfigureAwait(false);
+                        try
+                        {
+                            await backupService.BackupFiles(backupSettings, cancellationToken).ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            mLogger.LogError(ex, $"Backup for '{backupSettings.Description}' stopped due to error. Settings: {backupSettings}");
+                        }
                     }
                 }
                 finally
@@ -108,7 +115,7 @@ public sealed class WindowsBackgroundService : BackgroundService
         }
         catch (Exception ex)
         {
-            mLogger.LogError(ex, "{Message}", ex.Message);
+            mLogger.LogError(ex, "Backup operation stopped due to error");
 
             // Terminates this process and returns an exit code to the operating system.
             // This is required to avoid the 'BackgroundServiceExceptionBehavior', which

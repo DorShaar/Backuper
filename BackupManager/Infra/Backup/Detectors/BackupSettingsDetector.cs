@@ -2,9 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using BackupManager.Domain.Configuration;
 using BackupManager.Domain.Enums;
-using BackupManager.Domain.Mapping;
 using BackupManager.Domain.Settings;
 using JsonSerialization;
 using MediaDevices;
@@ -14,29 +15,29 @@ using Temporaries;
 
 namespace BackupManager.Infra.Backup.Detectors;
 
-public class BackupOptionsDetector
+public class BackupSettingsDetector
 {
     private readonly IEnumerable<string>? mSubscribedDirectories;
     private readonly IJsonSerializer mJsonSerializer;
-    private readonly ILogger<BackupOptionsDetector> mLogger;
+    private readonly ILogger<BackupSettingsDetector> mLogger;
 
-    public BackupOptionsDetector(IOptions<BackupServiceConfiguration> configuration,
+    public BackupSettingsDetector(IOptions<BackupServiceConfiguration> configuration,
         IJsonSerializer objectSerializer,
-        ILogger<BackupOptionsDetector> logger)
+        ILogger<BackupSettingsDetector> logger)
     {
         mSubscribedDirectories = configuration.Value.SubscribedDirectories;
         mJsonSerializer = objectSerializer ?? throw new ArgumentNullException(nameof(objectSerializer)); 
         mLogger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
     
-    public List<BackupSettings>? DetectBackupOptions()
+    public async Task<List<BackupSettings>?> DetectBackupSettings(CancellationToken cancellationToken)
     {
         mLogger.LogInformation($"Detecting backup settings...");
 
         List<BackupSettings>? settingsList = null;
-        IEnumerable<BackupSettings>? settingsFilesFromDrives = TryGetSettingsFromDrives();
-        IEnumerable<BackupSettings>? settingsFilesFromMediaDevices = TryGetSettingsFromMediaDevices();
-        IEnumerable<BackupSettings>? settingsFilesFromSubscribedDirectories = TryGetSettingsFromSubscribedDirectories();
+        IEnumerable<BackupSettings>? settingsFilesFromDrives = await TryGetSettingsFromDrives(cancellationToken).ConfigureAwait(false);
+        IEnumerable<BackupSettings>? settingsFilesFromMediaDevices = await TryGetSettingsFromMediaDevices(cancellationToken).ConfigureAwait(false);
+        IEnumerable<BackupSettings>? settingsFilesFromSubscribedDirectories = await TryGetSettingsFromSubscribedDirectories(cancellationToken).ConfigureAwait(false);
         
         if (settingsFilesFromDrives is not null)
         {
@@ -60,7 +61,7 @@ public class BackupOptionsDetector
     }
 
     // TODO DOR test real drive situation.
-    private IEnumerable<BackupSettings>? TryGetSettingsFromDrives()
+    private async Task<IEnumerable<BackupSettings>?> TryGetSettingsFromDrives(CancellationToken cancellationToken)
     {
         List<BackupSettings>? settingList = null;
         
@@ -73,7 +74,7 @@ public class BackupOptionsDetector
             
             mLogger.LogInformation($"Detected drive {drive.Name}");
 
-            BackupSettings? settings = TryGetSettingsFileFromDirectory(drive.Name);
+            BackupSettings? settings = await TryGetSettingsFileFromDirectory(drive.Name, cancellationToken).ConfigureAwait(false);
 
             if (settings is null)
             {
@@ -88,7 +89,7 @@ public class BackupOptionsDetector
     }
 
 #pragma warning disable CA1416
-    private IEnumerable<BackupSettings>? TryGetSettingsFromMediaDevices()
+    private async Task<IEnumerable<BackupSettings>?> TryGetSettingsFromMediaDevices(CancellationToken cancellationToken)
     {
         if (!OperatingSystem.IsWindows())
         {
@@ -114,7 +115,9 @@ public class BackupOptionsDetector
                     return null;
                 }
                 
-                BackupSettings? settings = TryGetSettingsFileFromMediaDeviceDirectory(deviceRootDirectory, device.Description);
+                BackupSettings? settings = await TryGetSettingsFileFromMediaDeviceDirectory(deviceRootDirectory,
+                    device.Description,
+                    cancellationToken).ConfigureAwait(false);
 
                 if (settings is null)
                 {
@@ -137,7 +140,7 @@ public class BackupOptionsDetector
     }
 #pragma warning restore CA1416
 
-    private IEnumerable<BackupSettings>? TryGetSettingsFromSubscribedDirectories()
+    private async Task<IEnumerable<BackupSettings>?> TryGetSettingsFromSubscribedDirectories(CancellationToken cancellationToken)
     {
         if (mSubscribedDirectories is null)
         {
@@ -148,7 +151,7 @@ public class BackupOptionsDetector
         List<BackupSettings>? settingsList = null;
         foreach (string subscribedDirectory in mSubscribedDirectories)
         {
-            BackupSettings? settings = TryGetSettingsFileFromDirectory(subscribedDirectory);
+            BackupSettings? settings = await TryGetSettingsFileFromDirectory(subscribedDirectory, cancellationToken).ConfigureAwait(false);
             if (settings is null)
             {
                 continue;
@@ -162,7 +165,9 @@ public class BackupOptionsDetector
     }
     
 #pragma warning disable CA1416
-    private BackupSettings? TryGetSettingsFileFromMediaDeviceDirectory(MediaDirectoryInfo deviceRootDirectory, string mediaDeviceName)
+    private async Task<BackupSettings?> TryGetSettingsFileFromMediaDeviceDirectory(MediaDirectoryInfo deviceRootDirectory,
+        string mediaDeviceName,
+        CancellationToken cancellationToken)
     {
         MediaFileInfo[] backupSettingsFiles = deviceRootDirectory.EnumerateFiles($"*{Consts.SettingsFileName}").ToArray();
 
@@ -183,22 +188,22 @@ public class BackupOptionsDetector
         _ = Directory.CreateDirectory(Consts.TempDirectoryPath);
         
         backupSettingsMediaFileInfo.CopyTo(tempMediaDirectoryBackSettingsFilePath.Path);
-        BackupSettings? settings = TryGetBackupSettingsFromFile(tempMediaDirectoryBackSettingsFilePath.Path,
-            rootDirectory: deviceRootDirectory.FullName,
-            SourceType.MediaDevice);
+        BackupSettings? settings = await TryGetBackupSettingsFromFile(tempMediaDirectoryBackSettingsFilePath.Path,
+            rootDirectory: deviceRootDirectory.Name,
+            SourceType.MediaDevice,
+            cancellationToken).ConfigureAwait(false);
 
         if (settings is not null)
         {
             settings.SearchMethod = SearchMethod.FilePath;
             settings.MediaDeviceName = mediaDeviceName;
-            settings.RootDirectory = deviceRootDirectory.Name;
         }
         
         return settings;
     }
 #pragma warning restore CA1416
 
-    private BackupSettings? TryGetSettingsFileFromDirectory(string directory)
+    private async Task<BackupSettings?> TryGetSettingsFileFromDirectory(string directory, CancellationToken cancellationToken)
     {
         if (!Directory.Exists(directory))
         {
@@ -219,38 +224,34 @@ public class BackupOptionsDetector
         }
 
         string backupSettingsFilePath = backupSettingsFiles[0];
-        BackupSettings? settings = TryGetBackupSettingsFromFile(backupSettingsFilePath, rootDirectory: directory, SourceType.DriveOrDirectory);
-        
-        if (settings is not null)
-        {
-            settings.SearchMethod = SearchMethod.Hash;
-        }
+        BackupSettings? settings = await TryGetBackupSettingsFromFile(backupSettingsFilePath,
+            rootDirectory: directory,
+            SourceType.DriveOrDirectory,
+            cancellationToken).ConfigureAwait(false);
         
         return settings;
     }
     
-    private BackupSettings? TryGetBackupSettingsFromFile(string backupSettingsFilePath, string? rootDirectory, SourceType sourceType)
+    private async Task<BackupSettings?> TryGetBackupSettingsFromFile(string backupSettingsFilePath,
+        string? rootDirectory,
+        SourceType sourceType,
+        CancellationToken cancellationToken)
     {
         try
         {
-            BackupSettings settings = mJsonSerializer.Deserialize<BackupSettings>(backupSettingsFilePath);
-            updateBackupSettings(settings, rootDirectory, sourceType);
-            return settings;
+            BackupSerializedSettings backupSerializedSettings =
+                await mJsonSerializer.DeserializeAsync<BackupSerializedSettings>(backupSettingsFilePath, cancellationToken).ConfigureAwait(false);
+            
+            return new BackupSettings(backupSerializedSettings)
+            {
+                RootDirectory = rootDirectory,
+                SourceType = sourceType
+            };
         }
         catch (Exception ex)
         {
             mLogger.LogError(ex, $"Failed to deserialize '{backupSettingsFilePath}'");
             return null;
         }
-    }
-
-    private void updateBackupSettings(BackupSettings backupSettings, string? rootDirectory, SourceType sourceType)
-    {
-        if (backupSettings.RootDirectory is not null && rootDirectory is not null)
-        {
-            backupSettings.RootDirectory = rootDirectory;
-        }
-
-        backupSettings.SourceType = sourceType;
     }
 }

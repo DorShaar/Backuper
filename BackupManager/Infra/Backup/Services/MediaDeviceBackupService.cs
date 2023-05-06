@@ -16,7 +16,7 @@ public class MediaDeviceBackupService : BackupServiceBase
     private readonly MediaDevice mMediaDevice;
     
     public MediaDeviceBackupService(string deviceName,
-        FilesHashesHandler filesHashesHandler,
+        IFilesHashesHandler filesHashesHandler,
         ILoggerFactory loggerFactory) : base(filesHashesHandler, loggerFactory)
     {
         mMediaDevice = MediaDevice.GetDevices().First(device => device.FriendlyName == deviceName);

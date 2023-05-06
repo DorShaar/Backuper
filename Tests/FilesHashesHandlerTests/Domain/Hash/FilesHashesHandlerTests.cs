@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using BackupManager.Domain.Hash;
 using BackupManager.Infra;
 using FakeItEasy;
@@ -44,7 +46,7 @@ namespace BackupManagerTests.Domain.Hash
         }
         
         [Fact]
-        public void AddFileHash_FileHashAlreadyExists_PathIsNotAddedToTheSameHashIfAlreadyExistsInList()
+        public async Task AddFileHash_FileHashAlreadyExists_PathIsNotAddedToTheSameHashIfAlreadyExistsInList()
         {
             FilesHashesHandler filesHashesHandler = new(mJsonSerializer, NullLogger<FilesHashesHandler>.Instance);
             
@@ -63,8 +65,9 @@ namespace BackupManagerTests.Domain.Hash
             Assert.True(filesHashesHandler.IsFilePathExist(secondFileName));
             Assert.True(filesHashesHandler.IsHashExists(hash));
             
-            filesHashesHandler.Save();
-            Dictionary<string, List<string>> fileHashToFilePathMap = mJsonSerializer.Deserialize<Dictionary<string, List<string>>>(Consts.DataFilePath);
+            await filesHashesHandler.Save(CancellationToken.None).ConfigureAwait(false);
+            Dictionary<string, List<string>> fileHashToFilePathMap =
+                await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(Consts.DataFilePath, CancellationToken.None).ConfigureAwait(false);
             Assert.Equal(2, fileHashToFilePathMap[hash].Count);
         }
 
@@ -90,7 +93,7 @@ namespace BackupManagerTests.Domain.Hash
         }
 
         [Fact]
-        public void Save_ToFilesWithSameHash_DataFileCreatedAsExpected()
+        public async Task Save_ToFilesWithSameHash_DataFileCreatedAsExpected()
         {
             FilesHashesHandler filesHashesHandler = new(mJsonSerializer, NullLogger<FilesHashesHandler>.Instance);
             filesHashesHandler.AddFileHash("expectedHash", "expectedFilePath1");
@@ -98,9 +101,10 @@ namespace BackupManagerTests.Domain.Hash
             
             File.Delete(Consts.DataFilePath);
             
-            filesHashesHandler.Save();
+            await filesHashesHandler.Save(CancellationToken.None).ConfigureAwait(false);
             File.Exists(Consts.DataFilePath);
-            Dictionary<string, List<string>> fileHashToFilePathMap = mJsonSerializer.Deserialize<Dictionary<string, List<string>>>(Consts.DataFilePath);
+            Dictionary<string, List<string>> fileHashToFilePathMap =
+                await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(Consts.DataFilePath, CancellationToken.None).ConfigureAwait(false);
 
             List<string> files = fileHashToFilePathMap["expectedHash"];
             Assert.Contains("expectedFilePath1", files);

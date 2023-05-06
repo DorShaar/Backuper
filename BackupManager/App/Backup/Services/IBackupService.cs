@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BackupManager.Domain.Settings;
 
-namespace BackupManager.App;
+namespace BackupManager.App.Backup.Services;
 
 public interface IBackupService : IDisposable
 {

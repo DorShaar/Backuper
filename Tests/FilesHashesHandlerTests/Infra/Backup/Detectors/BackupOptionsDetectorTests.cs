@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using BackupManager.Domain.Configuration;
 using BackupManager.Domain.Settings;
 using BackupManager.Infra.Backup.Detectors;
@@ -13,24 +15,24 @@ public class BackupOptionsDetectorTests : TestsBase
 {
     [Fact(Skip = "Requires real device connected without BackupSettings.json")]
     // [Fact]
-    public void DetectBackupOptions_RealDeviceConnected_DeviceHasNoSettingsFile_ReturnNull()
+    public async Task DetectBackupOptions_RealDeviceConnected_DeviceHasNoSettingsFile_ReturnNull()
     {
-        BackupOptionsDetector backupOptionsDetector = new(A.Dummy<IOptions<BackupServiceConfiguration>>(),
+        BackupSettingsDetector backupSettingsDetector = new(A.Dummy<IOptions<BackupServiceConfiguration>>(),
             mJsonSerializer,
-            NullLogger<BackupOptionsDetector>.Instance);
+            NullLogger<BackupSettingsDetector>.Instance);
         
-        Assert.Null(backupOptionsDetector.DetectBackupOptions());
+        Assert.Null(await backupSettingsDetector.DetectBackupSettings(CancellationToken.None).ConfigureAwait(false));
     }
     
     [Fact(Skip = "Requires real device connected with BackupSettings.json without RootDirectory Section")]
     // [Fact]
-    public void DetectBackupOptions_RealDeviceConnected_DeviceHasSettingsFileWithoutRootDirectorySection_ReturnSettingsWithRootDirectory()
+    public async Task DetectBackupOptions_RealDeviceConnected_DeviceHasSettingsFileWithoutRootDirectorySection_ReturnSettingsWithRootDirectory()
     {
-        BackupOptionsDetector backupOptionsDetector = new(A.Dummy<IOptions<BackupServiceConfiguration>>(),
+        BackupSettingsDetector backupSettingsDetector = new(A.Dummy<IOptions<BackupServiceConfiguration>>(),
             mJsonSerializer,
-            NullLogger<BackupOptionsDetector>.Instance);
+            NullLogger<BackupSettingsDetector>.Instance);
 
-        List<BackupSettings>? settingsList = backupOptionsDetector.DetectBackupOptions();
+        List<BackupSettings>? settingsList = await backupSettingsDetector.DetectBackupSettings(CancellationToken.None).ConfigureAwait(false);
         Assert.NotNull(settingsList);
         BackupSettings settings = settingsList[0];
         Assert.Equal("Internal shared storage", settings.RootDirectory); 

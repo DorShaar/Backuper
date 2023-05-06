@@ -8,7 +8,6 @@ using BackupManager.Domain.Mapping;
 using BackupManager.Domain.Settings;
 using BackupManager.Infra;
 using BackupManager.Infra.Backup.Services;
-using JsonSerialization;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
@@ -20,11 +19,8 @@ public class MediaDeviceBackupServiceTests : TestsBase
     // [Fact]
     public async Task BackupFiles_FilesAndDirectoriesToBackup_FilesAndDirectoriesAreBackuped()
     {
-        JsonSerializer jsonSerializer = new();
-
-        BackupSettings backupSettings = new()
+        BackupSerializedSettings backupSerializedSettings = new()
         {
-            RootDirectory = "Internal shared storage",
             DirectoriesSourcesToDirectoriesDestinationMap = new List<DirectoriesMap>
             {
                 new()
@@ -34,8 +30,13 @@ public class MediaDeviceBackupServiceTests : TestsBase
                 }
             }
         };
+
+        BackupSettings backupSettings = new(backupSerializedSettings)
+        {
+            RootDirectory = "Internal shared storage"
+        };
         
-        FilesHashesHandler filesHashesHandler = new(jsonSerializer, NullLogger<FilesHashesHandler>.Instance);
+        FilesHashesHandler filesHashesHandler = new(mJsonSerializer, NullLogger<FilesHashesHandler>.Instance);
 
         MediaDeviceBackupService backupService = new("Redmi Note 8 Pro", filesHashesHandler, NullLoggerFactory.Instance);
 
@@ -48,7 +49,8 @@ public class MediaDeviceBackupServiceTests : TestsBase
         DateTime lastBackupTime = DateTime.Parse(lastBackupTimeStr);
         Assert.Equal(DateTime.Now.Date, lastBackupTime.Date);
 
-        Dictionary<string, List<string>> hashesToFilePath = jsonSerializer.Deserialize<Dictionary<string, List<string>>>(Consts.DataFilePath);
+        Dictionary<string, List<string>> hashesToFilePath =
+            await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(Consts.DataFilePath, CancellationToken.None).ConfigureAwait(false);
         Assert.Equal(Path.Combine("\\DCIM", "Screenshots_tests", "Screenshot_2020-03-12-20-42-59-175_com.facebook.katana.jpg"), hashesToFilePath["2C913FF054E9A626ED7D49A6B26CC9CE912AC39DA0E1EFD5A3077988955B97C6"][0]);
     }
     
@@ -56,11 +58,8 @@ public class MediaDeviceBackupServiceTests : TestsBase
     // [Fact]
     public async Task BackupFiles_FilesAndDirectoriesToBackup_EmptyDestRelativeDirectory_FilesAndDirectoriesAreBackupedIntoBackupDirectoryWithPreservingStructure()
     {
-        JsonSerializer jsonSerializer = new();
-
-        BackupSettings backupSettings = new()
+        BackupSerializedSettings backupSerializedSettings = new()
         {
-            RootDirectory = "Internal shared storage",
             DirectoriesSourcesToDirectoriesDestinationMap = new List<DirectoriesMap>
             {
                 new()
@@ -71,7 +70,12 @@ public class MediaDeviceBackupServiceTests : TestsBase
             }
         };
         
-        FilesHashesHandler filesHashesHandler = new(jsonSerializer, NullLogger<FilesHashesHandler>.Instance);
+        BackupSettings backupSettings = new(backupSerializedSettings)
+        {
+            RootDirectory = "Internal shared storage"
+        };
+        
+        FilesHashesHandler filesHashesHandler = new(mJsonSerializer, NullLogger<FilesHashesHandler>.Instance);
 
         MediaDeviceBackupService backupService = new("Redmi Note 8 Pro", filesHashesHandler, NullLoggerFactory.Instance);
 
@@ -84,7 +88,8 @@ public class MediaDeviceBackupServiceTests : TestsBase
         DateTime lastBackupTime = DateTime.Parse(lastBackupTimeStr);
         Assert.Equal(DateTime.Now.Date, lastBackupTime.Date);
 
-        Dictionary<string, List<string>> hashesToFilePath = jsonSerializer.Deserialize<Dictionary<string, List<string>>>(Consts.DataFilePath);
+        Dictionary<string, List<string>> hashesToFilePath =
+            await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(Consts.DataFilePath, CancellationToken.None).ConfigureAwait(false);
         Assert.Equal(Path.Combine("\\DCIM","Screenshots_tests", "Screenshot_2020-03-12-20-42-59-175_com.facebook.katana.jpg"), hashesToFilePath["2C913FF054E9A626ED7D49A6B26CC9CE912AC39DA0E1EFD5A3077988955B97C6"][0]);
     }
     
@@ -92,11 +97,8 @@ public class MediaDeviceBackupServiceTests : TestsBase
     // [Fact]
     public async Task BackupFiles_FilesAndDirectoriesToBackup_SourceRelativeDirectoryIsOneLevelOnly_EmptyDestRelativeDirectory_FilesAndDirectoriesAreBackupedIntoBackupDirectoryWithPreservingStructure()
     {
-        JsonSerializer jsonSerializer = new();
-
-        BackupSettings backupSettings = new()
+        BackupSerializedSettings backupSerializedSettings = new()
         {
-            RootDirectory = "Internal shared storage",
             DirectoriesSourcesToDirectoriesDestinationMap = new List<DirectoriesMap>
             {
                 new()
@@ -107,7 +109,12 @@ public class MediaDeviceBackupServiceTests : TestsBase
             }
         };
         
-        FilesHashesHandler filesHashesHandler = new(jsonSerializer, NullLogger<FilesHashesHandler>.Instance);
+        BackupSettings backupSettings = new(backupSerializedSettings)
+        {
+            RootDirectory = "Internal shared storage"
+        };
+        
+        FilesHashesHandler filesHashesHandler = new(mJsonSerializer, NullLogger<FilesHashesHandler>.Instance);
 
         MediaDeviceBackupService backupService = new("Redmi Note 8 Pro", filesHashesHandler, NullLoggerFactory.Instance);
 
@@ -119,7 +126,8 @@ public class MediaDeviceBackupServiceTests : TestsBase
         DateTime lastBackupTime = DateTime.Parse(lastBackupTimeStr);
         Assert.Equal(DateTime.Now.Date, lastBackupTime.Date);
 
-        Dictionary<string, List<string>> hashesToFilePath = jsonSerializer.Deserialize<Dictionary<string, List<string>>>(Consts.DataFilePath);
+        Dictionary<string, List<string>> hashesToFilePath =
+            await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(Consts.DataFilePath, CancellationToken.None).ConfigureAwait(false);
         Assert.Equal(Path.Combine("\\TestDir","deviceId.txt"), hashesToFilePath["726B219710AB5B7155C93F8E1854849BF48EAD801A97CB546B69E5BC2E7DC12F"][0]);
     }
 }

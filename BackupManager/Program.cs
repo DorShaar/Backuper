@@ -31,8 +31,9 @@ builder.Services.AddHostedService<WindowsBackgroundService>();
 builder.Services.AddSingleton<IJsonSerializer, JsonSerializer>();
 builder.Services.AddSingleton<BackupServiceFactory>();
 builder.Services.AddSingleton<DriveBackupService>();
-builder.Services.AddSingleton<BackupOptionsDetector>();
-builder.Services.AddSingleton<FilesHashesHandler>();
+builder.Services.AddSingleton<BackupSettingsDetector>();
+// TODO DOR use mongo
+builder.Services.AddSingleton<IFilesHashesHandler, FilesHashesHandler>();
 builder.Services.AddSingleton<IDuplicateChecker, DuplicateChecker>();
 builder.Services.Configure<BackupServiceConfiguration>(builder.Configuration);
 builder.Services.AddOptions();
@@ -40,6 +41,7 @@ builder.Services.AddOptions();
 builder.Configuration.AddJsonFile(Consts.SettingsFilePath, optional: true, reloadOnChange: true);
 builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
+// TODO DOR add kibana
 // See: https://github.com/dotnet/runtime/issues/47303
 builder.Logging.AddConfiguration(
     builder.Configuration.GetSection("Logging"));
