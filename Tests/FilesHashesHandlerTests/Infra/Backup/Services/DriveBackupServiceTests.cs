@@ -18,7 +18,7 @@ namespace BackupManagerTests.Infra.Backup.Services;
 public class DriveBackupServiceTests : TestsBase
 {
     [Fact]
-    public async Task BackupFiles_FilesAndDirectoriesToBackup_DestRelativeDirectoryConfigured_FilesAndDirectoriesAreBackupedIntoDestRelativeDirectory()
+    public async Task BackupFiles_FilesAndDirectoriesToBackup_DestRelativeDirectoryConfigured_FilesAndDirectoriesAreBackedUpIntoDestRelativeDirectory()
     {
         BackupSerializedSettings backupSerializedSettings = new()
         {
@@ -61,8 +61,8 @@ public class DriveBackupServiceTests : TestsBase
 
         Dictionary<string, List<string>> hashesToFilePath =
             await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(Consts.DataFilePath, CancellationToken.None);
-        Assert.Equal(Path.Combine("\\Games", "file in games directory.txt"), hashesToFilePath["5B0CCEF73B8DCF768B3EBCFBB902269389C0224202F120C1AA25137AC2C27551"][0]);
-        Assert.Equal(Path.Combine("\\Games", "prince of persia", "file in prince of persia directory.txt"),
+        Assert.Equal(Path.Combine("/Games/file in games directory.txt"), hashesToFilePath["5B0CCEF73B8DCF768B3EBCFBB902269389C0224202F120C1AA25137AC2C27551"][0]);
+        Assert.Equal(Path.Combine("/Games/prince of persia/file in prince of persia directory.txt"),
             hashesToFilePath["674833D4A3B3A2E67001316DE33E5024963B0C429AF2455FF55083BE16592D55"][0]);
         
         // Make sure source files were copied and not moved or deleted.
@@ -71,7 +71,7 @@ public class DriveBackupServiceTests : TestsBase
     }
     
     [Fact]
-    public async Task BackupFiles_FilesAndDirectoriesToBackup_EmptyDestRelativeDirectory_FilesAndDirectoriesAreBackupedIntoBackupDirectoryWithPreservingStructure()
+    public async Task BackupFiles_FilesAndDirectoriesToBackup_EmptyDestRelativeDirectory_FilesAndDirectoriesAreBackedUpIntoBackupDirectoryWithPreservingStructure()
     {
         BackupSerializedSettings backupSerializedSettings = new()
         {
@@ -109,8 +109,8 @@ public class DriveBackupServiceTests : TestsBase
 
         Dictionary<string, List<string>> hashesToFilePath =
             await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(Consts.DataFilePath, CancellationToken.None).ConfigureAwait(false);
-        Assert.Equal(Path.Combine("\\Games", "file in games directory.txt"), hashesToFilePath["5B0CCEF73B8DCF768B3EBCFBB902269389C0224202F120C1AA25137AC2C27551"][0]);
-        Assert.Equal(Path.Combine("\\Games", "prince of persia", "file in prince of persia directory.txt"),
+        Assert.Equal(Path.Combine("/Games/file in games directory.txt"), hashesToFilePath["5B0CCEF73B8DCF768B3EBCFBB902269389C0224202F120C1AA25137AC2C27551"][0]);
+        Assert.Equal(Path.Combine("/Games/prince of persia/file in prince of persia directory.txt"),
             hashesToFilePath["674833D4A3B3A2E67001316DE33E5024963B0C429AF2455FF55083BE16592D55"][0]);
         
         // Make sure source files were copied and not moved or deleted.
@@ -143,12 +143,12 @@ public class DriveBackupServiceTests : TestsBase
         DriveBackupService backupService = new(filesHashesHandler, NullLoggerFactory.Instance);
 
         await backupService.BackupFiles(backupSettings, CancellationToken.None).ConfigureAwait(false);
-
+        
         A.CallTo(() => filesHashesHandler.Save(A<CancellationToken>.Ignored)).MustNotHaveHappened();
     }
     
     [Fact]
-    public async Task BackupFiles_FilesAndDirectoriesToBackup_ShouldBackupToKnownDirectoryIsFalse_FilesAndDirectoriesAreBackupedIntoDestRelativeDirectory()
+    public async Task BackupFiles_FilesAndDirectoriesToBackup_ShouldBackupToKnownDirectoryIsFalse_FilesAndDirectoriesAreBackedUpIntoDestRelativeDirectory()
     {
         BackupSerializedSettings backupSerializedSettings = new()
         {
@@ -188,8 +188,8 @@ public class DriveBackupServiceTests : TestsBase
     
         Dictionary<string, List<string>> hashesToFilePath =
             await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(Consts.DataFilePath, CancellationToken.None);
-        Assert.Equal(Path.Combine("\\Games", "file in games directory.txt"), hashesToFilePath["5B0CCEF73B8DCF768B3EBCFBB902269389C0224202F120C1AA25137AC2C27551"][0]);
-        Assert.Equal(Path.Combine("\\Games", "prince of persia", "file in prince of persia directory.txt"),
+        Assert.Equal(Path.Combine("/Games/file in games directory.txt"), hashesToFilePath["5B0CCEF73B8DCF768B3EBCFBB902269389C0224202F120C1AA25137AC2C27551"][0]);
+        Assert.Equal(Path.Combine("/Games/prince of persia/file in prince of persia directory.txt"),
             hashesToFilePath["674833D4A3B3A2E67001316DE33E5024963B0C429AF2455FF55083BE16592D55"][0]);
         
         // Make sure source files were copied and not moved or deleted.
@@ -209,7 +209,7 @@ public class DriveBackupServiceTests : TestsBase
         return gamesDirectory;
     }
 
-    private async Task<DateTime> ExtractLastBackupTime()
+    private static async Task<DateTime> ExtractLastBackupTime()
     {
         string lastBackupLog = (await File.ReadAllLinesAsync(Consts.BackupTimeDiaryFilePath).ConfigureAwait(false))[^1];
         int lastIndexOfTime = lastBackupLog.IndexOf("---", StringComparison.Ordinal);

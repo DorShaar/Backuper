@@ -44,13 +44,13 @@ public class MediaDeviceBackupService : BackupServiceBase
         return mediaDirectoryInfo.EnumerateFiles().Select(mediaFileInfo => mediaFileInfo.FullName);
     }
 
-    protected override (string? fileHash, bool isAlreadyBackuped) GetFileHashData(string filePath, SearchMethod searchMethod)
+    protected override (string? fileHash, bool isAlreadyBackuped) GetFileHashData(string filePath, string relativeFilePath, SearchMethod searchMethod)
     {
-        bool isAlreadyBackuped = mFilesHashesHandler.IsFilePathExist(filePath);
+        bool isAlreadyBackedUp = mFilesHashesHandler.IsFilePathExist(relativeFilePath);
 
-        if (isAlreadyBackuped)
+        if (isAlreadyBackedUp)
         {
-            // Since found as already backuped, calculating hash again is not required. 
+            // Since found as already backed up, calculating hash again is not required. 
             return (null, true);
         }
         

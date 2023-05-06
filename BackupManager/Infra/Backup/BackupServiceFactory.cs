@@ -10,14 +10,14 @@ namespace BackupManager.Infra.Backup;
 
 public class BackupServiceFactory
 {
-    private readonly FilesHashesHandler mFilesHashesHandler;
+    private readonly IFilesHashesHandler mFilesHashesHandler;
     private readonly DriveBackupService mDriveBackupService;
     private readonly ILoggerFactory mLoggerFactory;
     
     private MediaDeviceBackupService? mMediaDeviceBackupService;
 
     public BackupServiceFactory(DriveBackupService driveBackupService,
-        FilesHashesHandler filesHashesHandler,
+        IFilesHashesHandler filesHashesHandler,
         ILoggerFactory loggerFactory)
     {
         mFilesHashesHandler = filesHashesHandler;

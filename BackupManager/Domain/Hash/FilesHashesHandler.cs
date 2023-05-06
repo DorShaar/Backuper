@@ -5,18 +5,21 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using BackupManager.Infra;
+using IOWrapper;
 using JsonSerialization;
 using Microsoft.Extensions.Logging;
 
 namespace BackupManager.Domain.Hash
 {
-    public class FilesHashesHandler : IFilesHashesHandler 
+    public class FilesHashesHandler : IFilesHashesHandler
     {
+        private readonly FileSystemPath mDataFilePath = new(Consts.DataFilePath);
         private readonly IJsonSerializer mSerializer;
         private readonly Lazy<ConcurrentDictionary<string, List<string>>> mHashToFilePathsMap;
         private readonly Lazy<ConcurrentDictionary<string, string>> mFilePathToFileHashMap;
         private readonly ILogger<FilesHashesHandler> mLogger;
         
+        // TODO DOR now fix bug copy although should be in dict and avoid copy.
         public FilesHashesHandler(IJsonSerializer serializer, ILogger<FilesHashesHandler> logger)
         {
             mSerializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
@@ -59,7 +62,7 @@ namespace BackupManager.Domain.Hash
         public async Task Save(CancellationToken cancellationToken)
         {
             mLogger.LogInformation($"Saving hash to file paths data to '{Consts.DataFilePath}'");
-            await mSerializer.SerializeAsync(mHashToFilePathsMap.Value, Consts.DataFilePath, cancellationToken).ConfigureAwait(false);
+            await mSerializer.SerializeAsync(mHashToFilePathsMap.Value, mDataFilePath.PathString, cancellationToken).ConfigureAwait(false);
         }
 
         // ReSharper disable once UnusedMember.Local

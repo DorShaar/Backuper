@@ -233,7 +233,7 @@ public class BackupSettingsDetector
     }
     
     private async Task<BackupSettings?> TryGetBackupSettingsFromFile(string backupSettingsFilePath,
-        string? rootDirectory,
+        string rootDirectory,
         SourceType sourceType,
         CancellationToken cancellationToken)
     {

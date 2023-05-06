@@ -26,13 +26,13 @@ public class DriveBackupService : BackupServiceBase
         return Directory.EnumerateFiles(directory);
     }
 
-    protected override (string fileHash, bool isAlreadyBackuped) GetFileHashData(string filePath, SearchMethod searchMethod)
+    protected override (string fileHash, bool isAlreadyBackuped) GetFileHashData(string filePath, string relativeFilePath, SearchMethod searchMethod)
     {
         string fileHash = mFilesHashesHandler.CalculateHash(filePath);
         return searchMethod switch
         {
             SearchMethod.Hash => (fileHash, mFilesHashesHandler.IsHashExists(fileHash)),
-            SearchMethod.FilePath => (fileHash, mFilesHashesHandler.IsFilePathExist(filePath)),
+            SearchMethod.FilePath => (fileHash, mFilesHashesHandler.IsFilePathExist(relativeFilePath)),
             _ => throw new NotSupportedException($"Search method {searchMethod} not supported at the moment")
         };
     }

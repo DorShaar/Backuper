@@ -34,7 +34,7 @@ public class BackupSettings
     /// <summary>
     /// The root directory to copy from.
     /// </summary>
-    public string? RootDirectory { get; init; }
+    public string RootDirectory { get; init; }
 
     public override string ToString()
     {
