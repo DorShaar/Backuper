@@ -19,7 +19,6 @@ namespace BackupManager.Domain.Hash
         private readonly Lazy<ConcurrentDictionary<string, string>> mFilePathToFileHashMap;
         private readonly ILogger<FilesHashesHandler> mLogger;
         
-        // TODO DOR now fix bug copy although should be in dict and avoid copy.
         public FilesHashesHandler(IJsonSerializer serializer, ILogger<FilesHashesHandler> logger)
         {
             mSerializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
