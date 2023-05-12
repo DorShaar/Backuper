@@ -45,7 +45,7 @@ public abstract class BackupServiceBase : IBackupService
     
     public async Task BackupFiles(BackupSettings backupSettings, CancellationToken cancellationToken)
     {
-        mLogger.LogInformation($"Start backup '{backupSettings.Description}'");
+        mLogger.LogInformation($"Start backup '{backupSettings.Description ?? backupSettings.ToString()}'");
         
         ushort numberOfParallelDirectoriesToCopy = backupSettings.AllowMultithreading ? (ushort)4 : (ushort)1;
 
@@ -91,7 +91,7 @@ public abstract class BackupServiceBase : IBackupService
         _ = await tasksRunner.WaitAll(cancellationToken).ConfigureAwait(false);
         UpdateLastBackupTime(backupSettings.Description);
         
-        mLogger.LogInformation($"Finished backup '{backupSettings.Description}'");
+        mLogger.LogInformation($"Finished backup '{backupSettings.Description ?? backupSettings.ToString()}'");
     }
     
     private static string BuildSourceDirectoryToBackup(BackupSettings backupSettings, string sourceRelativeDirectory)
