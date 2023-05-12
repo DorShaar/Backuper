@@ -21,6 +21,8 @@ public class BackupSettings
     public bool ShouldBackupToKnownDirectory => mBackupSerializedSettings.ShouldBackupToKnownDirectory;
 
     public bool AllowMultithreading => mBackupSerializedSettings.AllowMultithreading;
+
+    public ushort SaveInterval => mBackupSerializedSettings.SaveInterval; 
         
     public SearchMethod SearchMethod { get; set; } = SearchMethod.Hash;
 

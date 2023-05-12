@@ -82,8 +82,7 @@ public abstract class BackupServiceBase : IBackupService
             // LongRunning hints the task scheduler to create new thread.
             Task backupTask = Task.Factory.StartNew(async () =>
             {
-                BackupFilesInternal(backupSettings, filePathToFileHashMap, directoriesMap, cancellationToken);
-                await mFilesHashesHandler.Save(cancellationToken).ConfigureAwait(false);
+                await BackupFilesInternal(backupSettings, filePathToFileHashMap, directoriesMap, cancellationToken).ConfigureAwait(false);
             }, TaskCreationOptions.LongRunning);
             
             await tasksRunner.RunTask(backupTask, cancellationToken).ConfigureAwait(false);
@@ -178,7 +177,7 @@ public abstract class BackupServiceBase : IBackupService
         }
     }
 
-    private void BackupFilesInternal(BackupSettings backupSettings,
+    private async Task BackupFilesInternal(BackupSettings backupSettings,
         Dictionary<FileSystemPath, string> filePathToBackupToFileHashMap,
         DirectoriesMap directoriesMap,
         CancellationToken cancellationToken)
@@ -187,7 +186,8 @@ public abstract class BackupServiceBase : IBackupService
             $"Copying {filePathToBackupToFileHashMap.Count} files from '{directoriesMap.SourceRelativeDirectory}' to '{directoriesMap.DestRelativeDirectory}'");
 
         FileSystemPath destinationDirectoryPath = BuildDestinationDirectoryPath(backupSettings);
-        
+
+        ushort backupFilesIntervalCount = 0;
         foreach ((FileSystemPath fileToBackup, string fileHash) in filePathToBackupToFileHashMap)
         {
             if (cancellationToken.IsCancellationRequested)
@@ -209,12 +209,23 @@ public abstract class BackupServiceBase : IBackupService
                 mLogger.LogInformation($"Copied '{fileToBackup}' to '{destinationFilePath}'");
                 
                 mFilesHashesHandler.AddFileHash(fileHash, relativeFilePathToBackup.PathString);
+
+                backupFilesIntervalCount++;
+                if (backupFilesIntervalCount % backupSettings.SaveInterval == 0)
+                {
+                    mLogger.LogDebug($"Reached save interval {backupFilesIntervalCount}");
+                    await mFilesHashesHandler.Save(cancellationToken).ConfigureAwait(false);
+                    backupFilesIntervalCount = 0;
+                }
             }
             catch (IOException ex)
             {
                 mLogger.LogError(ex, $"Failed to copy '{fileToBackup}' to '{destinationFilePath}'");
             }
         }
+        
+        mLogger.LogInformation($"Done copy {filePathToBackupToFileHashMap.Count} files from '{directoriesMap.SourceRelativeDirectory}' to '{directoriesMap.DestRelativeDirectory}'");
+        await mFilesHashesHandler.Save(cancellationToken).ConfigureAwait(false);
     }
 
     private static FileSystemPath BuildDestinationDirectoryPath(BackupSettings backupSettings)

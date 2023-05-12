@@ -16,4 +16,9 @@ public class BackupSerializedSettings
     public bool ShouldBackupToKnownDirectory { get; init; } = true;
 
     public bool AllowMultithreading { get; init; } = true;
+
+    /// <summary>
+    /// Save files and hashes after <see cref="SaveInterval"/> files. 
+    /// </summary>
+    public ushort SaveInterval { get; init; } = 100;
 }
