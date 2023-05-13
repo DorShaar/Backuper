@@ -15,8 +15,6 @@ public class MongoBackupServiceDatabase : IBackedUpFilesDatabase
 	
 	public MongoBackupServiceDatabase(IOptions<MongoBackupServiceDatabaseSettings> mongoDatabaseSettings)
 	{
-		// TODO DOR now handle case where database is not configured, which may be ok since we have another database.
-		
 		MongoClient mongoClient = new(mongoDatabaseSettings.Value.ConnectionString);
 		IMongoDatabase? mongoDatabase = mongoClient.GetDatabase(mongoDatabaseSettings.Value.DatabaseName);
 		mBackupFilesCollection = mongoDatabase.GetCollection<BackedUpFile>(mongoDatabaseSettings.Value.BackupFilesCollectionName);

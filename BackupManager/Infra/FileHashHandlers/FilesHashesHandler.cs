@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using BackupManager.App.Database;
@@ -26,8 +28,8 @@ namespace BackupManager.Infra.FileHashHandlers
                 FileHash = hash
             };
             
-            // TODO DOR fix, check if also not empty?
-            return await mDatabase.Find(searchModel, cancellationToken) is not null;
+            IEnumerable<BackedUpFile>? backedUpFiles = await mDatabase.Find(searchModel, cancellationToken);
+            return backedUpFiles is not null && backedUpFiles.Any();
         }
 
         public async Task<bool> IsFilePathExist(string filePath, CancellationToken cancellationToken)
@@ -37,8 +39,8 @@ namespace BackupManager.Infra.FileHashHandlers
                 FilePath = filePath
             };
             
-            // TODO DOR fix, check if also not empty?
-            return await mDatabase.Find(searchModel, cancellationToken) is not null;
+            IEnumerable<BackedUpFile>? backedUpFiles = await mDatabase.Find(searchModel, cancellationToken);
+            return backedUpFiles is not null && backedUpFiles.Any();
         }
 
         public string CalculateHash(string filePath) => HashCalculator.CalculateHash(filePath);
