@@ -101,6 +101,13 @@ public sealed class WindowsBackgroundService : BackgroundService
                         {
                             mLogger.LogError(ex, $"Backup for '{backupSettings.Description}' stopped due to error. Settings: {backupSettings}");
                         }
+                        finally
+                        {
+                            if (backupService is IDisposable disposableService)
+                            {
+                                disposableService.Dispose();
+                            }
+                        }
                     }
                 }
                 finally
