@@ -25,6 +25,7 @@ public class MediaDeviceBackupService : BackupServiceBase
 
     public override void Dispose()
     {
+        mLogger.LogInformation($"Closing media device {mMediaDevice.Description}");
         GC.SuppressFinalize(this);
         mMediaDevice.Dispose();
     }
