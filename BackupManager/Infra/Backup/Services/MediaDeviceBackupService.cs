@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using BackupManager.App.Database;
 using BackupManager.Domain.Enums;
-using BackupManager.Domain.Hash;
 using MediaDevices;
 using Microsoft.Extensions.Logging;
 using Temporaries;
@@ -16,8 +18,8 @@ public class MediaDeviceBackupService : BackupServiceBase
     private readonly MediaDevice mMediaDevice;
     
     public MediaDeviceBackupService(string deviceName,
-        IFilesHashesHandler filesHashesHandler,
-        ILoggerFactory loggerFactory) : base(filesHashesHandler, loggerFactory)
+        IFilesHashesHandler database,
+        ILoggerFactory loggerFactory) : base(database, loggerFactory)
     {
         mMediaDevice = MediaDevice.GetDevices().First(device => device.FriendlyName == deviceName);
         mMediaDevice.Connect();
@@ -45,9 +47,9 @@ public class MediaDeviceBackupService : BackupServiceBase
         return mediaDirectoryInfo.EnumerateFiles().Select(mediaFileInfo => mediaFileInfo.FullName);
     }
 
-    protected override (string? fileHash, bool isAlreadyBackuped) GetFileHashData(string filePath, string relativeFilePath, SearchMethod searchMethod)
+    protected override async Task<(string? fileHash, bool isAlreadyBackuped)> GetFileHashData(string filePath, string relativeFilePath, SearchMethod searchMethod, CancellationToken cancellationToken)
     {
-        bool isAlreadyBackedUp = mFilesHashesHandler.IsFilePathExist(relativeFilePath);
+        bool isAlreadyBackedUp = await mFilesHashesHandler.IsFilePathExist(relativeFilePath, cancellationToken).ConfigureAwait(false);
 
         if (isAlreadyBackedUp)
         {

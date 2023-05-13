@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System;
-using BackupManager.Domain.Hash;
+using BackupManager.Infra.FileHashHandlers;
 
 namespace BackupManager.Infra.Serialization
 {

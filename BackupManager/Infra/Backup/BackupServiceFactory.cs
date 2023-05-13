@@ -1,7 +1,7 @@
 ﻿using System;
 using BackupManager.App.Backup.Services;
+using BackupManager.App.Database;
 using BackupManager.Domain.Enums;
-using BackupManager.Domain.Hash;
 using BackupManager.Domain.Settings;
 using BackupManager.Infra.Backup.Services;
 using Microsoft.Extensions.Logging;

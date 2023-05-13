@@ -1,10 +1,15 @@
-﻿using BackupManager.App;
+﻿using System;
+using BackupManager.App;
+using BackupManager.App.Database;
 using BackupManager.Domain.Configuration;
-using BackupManager.Domain.Hash;
 using BackupManager.Infra;
 using BackupManager.Infra.Backup;
 using BackupManager.Infra.Backup.Detectors;
 using BackupManager.Infra.Backup.Services;
+using BackupManager.Infra.DB.LocalJsonFileDatabase;
+using BackupManager.Infra.DB.Mongo;
+using BackupManager.Infra.DB.Mongo.Settings;
+using BackupManager.Infra.FileHashHandlers;
 using BackupManager.Infra.Service;
 using JsonSerialization;
 using Microsoft.Extensions.Configuration;
@@ -32,10 +37,33 @@ builder.Services.AddSingleton<IJsonSerializer, JsonSerializer>();
 builder.Services.AddSingleton<BackupServiceFactory>();
 builder.Services.AddSingleton<DriveBackupService>();
 builder.Services.AddSingleton<BackupSettingsDetector>();
-// TODO DOR use mongo
 builder.Services.AddSingleton<IFilesHashesHandler, FilesHashesHandler>();
 builder.Services.AddSingleton<IDuplicateChecker, DuplicateChecker>();
+
+// Databases.
+builder.Services.AddSingleton<MongoBackupServiceDatabase>();
+builder.Services.AddSingleton<LocalJsonDatabase>();
+builder.Services.AddSingleton<IBackedUpFilesDatabase>(serviceProvider =>
+{
+    string? databaseType = serviceProvider.GetService<IConfiguration>()?["DatabaseType"];
+
+    IBackedUpFilesDatabase? database = databaseType?.ToLower() switch
+    {
+        "mongo" => serviceProvider.GetService<MongoBackupServiceDatabase>(),
+        "local" => serviceProvider.GetService<LocalJsonDatabase>(),
+        _       => null
+    };
+
+    if (database is null)
+    {
+        throw new NullReferenceException($"{nameof(database)} is null. Please see DatabaseType section in appsettings.json file and verify it is one of: mongo, local");
+    }
+
+    return database;
+});
+
 builder.Services.Configure<BackupServiceConfiguration>(builder.Configuration);
+builder.Services.Configure<MongoBackupServiceDatabaseSettings>(builder.Configuration.GetSection("BackupMongoDatabase"));
 builder.Services.AddOptions();
 
 builder.Configuration.AddJsonFile(Consts.SettingsFilePath, optional: true, reloadOnChange: true);

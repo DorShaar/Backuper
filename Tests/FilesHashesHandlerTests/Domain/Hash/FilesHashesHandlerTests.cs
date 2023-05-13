@@ -2,10 +2,9 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using BackupManager.Domain.Hash;
 using BackupManager.Infra;
-using FakeItEasy;
-using JsonSerialization;
+using BackupManager.Infra.DB.LocalJsonFileDatabase;
+using BackupManager.Infra.FileHashHandlers;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
@@ -14,90 +13,90 @@ namespace BackupManagerTests.Domain.Hash
     public class FilesHashesHandlerTests : TestsBase
     {
         [Fact]
-        public void AddFileHash_FileHashNotExists_FileHashAdded()
+        public async Task AddFileHash_FileHashNotExists_FileHashAdded()
         {
-            FilesHashesHandler filesHashesHandler = new(A.Dummy<IJsonSerializer>(), NullLogger<FilesHashesHandler>.Instance);
+            LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
+            FilesHashesHandler filesHashesHandler = new(localJsonDatabase, NullLogger<FilesHashesHandler>.Instance);
 
-            Assert.Equal(0, filesHashesHandler.HashesCount);
-
-            filesHashesHandler.AddFileHash("ABC123", "FileName.ext");
-            filesHashesHandler.AddFileHash("ABC1234", "FileName.ext");
-            Assert.Equal(2, filesHashesHandler.HashesCount);
+            await filesHashesHandler.AddFileHash("ABC123", "FileName.ext", CancellationToken.None).ConfigureAwait(false);
+            await filesHashesHandler.AddFileHash("ABC1234", "FileName.ext", CancellationToken.None).ConfigureAwait(false);
+            
+            Assert.True(await filesHashesHandler.IsHashExists("ABC123", CancellationToken.None).ConfigureAwait(false));
+            Assert.True(await filesHashesHandler.IsHashExists("ABC1234", CancellationToken.None).ConfigureAwait(false));
+            Assert.True(await filesHashesHandler.IsFilePathExist("FileName.ext", CancellationToken.None).ConfigureAwait(false));
         }
 
         [Fact]
-        public void AddFileHash_FileHashAlreadyExists_PathIsAddedToTheSameHash()
+        public async Task AddFileHash_FileHashAlreadyExists_PathIsAddedToTheSameHash()
         {
-            FilesHashesHandler filesHashesHandler = new(A.Dummy<IJsonSerializer>(), NullLogger<FilesHashesHandler>.Instance);
-            
-            Assert.Equal(0, filesHashesHandler.HashesCount);
+            LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
+            FilesHashesHandler filesHashesHandler = new(localJsonDatabase, NullLogger<FilesHashesHandler>.Instance);
             
             const string firstFileName = "FileName.ext";
             const string secondFileName = "FileName2.ext";
             const string hash = "ABC123";
-            filesHashesHandler.AddFileHash(hash, firstFileName);
-            filesHashesHandler.AddFileHash(hash, secondFileName);
+            await filesHashesHandler.AddFileHash(hash, firstFileName, CancellationToken.None).ConfigureAwait(false);
+            await filesHashesHandler.AddFileHash(hash, secondFileName, CancellationToken.None).ConfigureAwait(false);
             
-            Assert.Equal(1, filesHashesHandler.HashesCount);
-
-            Assert.True(filesHashesHandler.IsFilePathExist(firstFileName));
-            Assert.True(filesHashesHandler.IsFilePathExist(secondFileName));
-            Assert.True(filesHashesHandler.IsHashExists(hash));
+            Assert.True(await filesHashesHandler.IsFilePathExist(firstFileName, CancellationToken.None).ConfigureAwait(false));
+            Assert.True(await filesHashesHandler.IsFilePathExist(secondFileName, CancellationToken.None).ConfigureAwait(false));
+            Assert.True(await filesHashesHandler.IsHashExists(hash, CancellationToken.None).ConfigureAwait(false));
         }
         
         [Fact]
         public async Task AddFileHash_FileHashAlreadyExists_PathIsNotAddedToTheSameHashIfAlreadyExistsInList()
         {
-            FilesHashesHandler filesHashesHandler = new(mJsonSerializer, NullLogger<FilesHashesHandler>.Instance);
-            
-            Assert.Equal(0, filesHashesHandler.HashesCount);
+            LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
+            FilesHashesHandler filesHashesHandler = new(localJsonDatabase, NullLogger<FilesHashesHandler>.Instance);
             
             const string firstFileName = "FileName.ext";
             const string secondFileName = "FileName2.ext";
             const string hash = "ABC123";
-            filesHashesHandler.AddFileHash(hash, firstFileName);
-            filesHashesHandler.AddFileHash(hash, secondFileName);
-            filesHashesHandler.AddFileHash(hash, firstFileName);
+            await filesHashesHandler.AddFileHash(hash, firstFileName, CancellationToken.None).ConfigureAwait(false);
+            await filesHashesHandler.AddFileHash(hash, secondFileName, CancellationToken.None).ConfigureAwait(false);
+            await filesHashesHandler.AddFileHash(hash, firstFileName, CancellationToken.None).ConfigureAwait(false);
             
-            Assert.Equal(1, filesHashesHandler.HashesCount);
-
-            Assert.True(filesHashesHandler.IsFilePathExist(firstFileName));
-            Assert.True(filesHashesHandler.IsFilePathExist(secondFileName));
-            Assert.True(filesHashesHandler.IsHashExists(hash));
+            Assert.True(await filesHashesHandler.IsFilePathExist(firstFileName, CancellationToken.None).ConfigureAwait(false));
+            Assert.True(await filesHashesHandler.IsFilePathExist(secondFileName, CancellationToken.None).ConfigureAwait(false));
+            Assert.True(await filesHashesHandler.IsHashExists(hash, CancellationToken.None).ConfigureAwait(false));
             
             await filesHashesHandler.Save(CancellationToken.None).ConfigureAwait(false);
+            
             Dictionary<string, List<string>> fileHashToFilePathMap =
                 await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(Consts.DataFilePath, CancellationToken.None).ConfigureAwait(false);
             Assert.Equal(2, fileHashToFilePathMap[hash].Count);
         }
 
         [Fact]
-        public void IsHashExists_HashAlreadyExists_True()
+        public async Task IsHashExists_HashAlreadyExists_True()
         {
-            FilesHashesHandler filesHashesHandler = new(A.Dummy<IJsonSerializer>(), NullLogger<FilesHashesHandler>.Instance);
+            LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
+            FilesHashesHandler filesHashesHandler = new(localJsonDatabase, NullLogger<FilesHashesHandler>.Instance);
 
             const string hash = "ABC123";
-            filesHashesHandler.AddFileHash(hash, "fileName");
+            await filesHashesHandler.AddFileHash(hash, "fileName", CancellationToken.None).ConfigureAwait(false);
 
-            Assert.True(filesHashesHandler.IsHashExists(hash));
+            Assert.True(await filesHashesHandler.IsHashExists(hash, CancellationToken.None).ConfigureAwait(false));
         }
 
         [Fact]
-        public void IsHashExists_HashNotExists_False()
+        public async Task IsHashExists_HashNotExists_False()
         {
-            FilesHashesHandler filesHashesHandler = new(A.Dummy<IJsonSerializer>(), NullLogger<FilesHashesHandler>.Instance);
+            LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
+            FilesHashesHandler filesHashesHandler = new(localJsonDatabase, NullLogger<FilesHashesHandler>.Instance);
 
-            filesHashesHandler.AddFileHash("ABC123", "fileName");
+            await filesHashesHandler.AddFileHash("ABC123", "fileName", CancellationToken.None).ConfigureAwait(false);
 
-            Assert.False(filesHashesHandler.IsHashExists("ABC1235"));
+            Assert.False(await filesHashesHandler.IsHashExists("ABC1235", CancellationToken.None).ConfigureAwait(false));
         }
 
         [Fact]
         public async Task Save_ToFilesWithSameHash_DataFileCreatedAsExpected()
         {
-            FilesHashesHandler filesHashesHandler = new(mJsonSerializer, NullLogger<FilesHashesHandler>.Instance);
-            filesHashesHandler.AddFileHash("expectedHash", "expectedFilePath1");
-            filesHashesHandler.AddFileHash("expectedHash", "expectedFilePath2");
+            LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
+            FilesHashesHandler filesHashesHandler = new(localJsonDatabase, NullLogger<FilesHashesHandler>.Instance);
+            await filesHashesHandler.AddFileHash("expectedHash", "expectedFilePath1", CancellationToken.None).ConfigureAwait(false);
+            await filesHashesHandler.AddFileHash("expectedHash", "expectedFilePath2", CancellationToken.None).ConfigureAwait(false);
             
             File.Delete(Consts.DataFilePath);
             

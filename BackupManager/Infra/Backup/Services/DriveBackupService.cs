@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+using BackupManager.App.Database;
 using BackupManager.Domain.Enums;
-using BackupManager.Domain.Hash;
 using Microsoft.Extensions.Logging;
 
 namespace BackupManager.Infra.Backup.Services;
@@ -26,14 +28,14 @@ public class DriveBackupService : BackupServiceBase
         return Directory.EnumerateFiles(directory);
     }
 
-    protected override (string fileHash, bool isAlreadyBackuped) GetFileHashData(string filePath, string relativeFilePath, SearchMethod searchMethod)
+    protected override async Task<(string? fileHash, bool isAlreadyBackuped)> GetFileHashData(string filePath, string relativeFilePath, SearchMethod searchMethod, CancellationToken cancellationToken)
     {
         string fileHash = mFilesHashesHandler.CalculateHash(filePath);
         return searchMethod switch
         {
-            SearchMethod.Hash => (fileHash, mFilesHashesHandler.IsHashExists(fileHash)),
-            SearchMethod.FilePath => (fileHash, mFilesHashesHandler.IsFilePathExist(relativeFilePath)),
-            _ => throw new NotSupportedException($"Search method {searchMethod} not supported at the moment")
+            SearchMethod.Hash     => (fileHash, await mFilesHashesHandler.IsHashExists(fileHash, cancellationToken).ConfigureAwait(false)),
+            SearchMethod.FilePath => (fileHash, await mFilesHashesHandler.IsFilePathExist(relativeFilePath, cancellationToken).ConfigureAwait(false)),
+            _                     => throw new NotSupportedException($"Search method {searchMethod} not supported at the moment")
         };
     }
 

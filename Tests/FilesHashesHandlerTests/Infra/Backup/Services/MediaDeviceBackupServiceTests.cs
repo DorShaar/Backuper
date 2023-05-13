@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using BackupManager.Domain.Hash;
 using BackupManager.Domain.Mapping;
 using BackupManager.Domain.Settings;
 using BackupManager.Infra;
 using BackupManager.Infra.Backup.Services;
+using BackupManager.Infra.DB.LocalJsonFileDatabase;
+using BackupManager.Infra.FileHashHandlers;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
@@ -36,7 +37,8 @@ public class MediaDeviceBackupServiceTests : TestsBase
             RootDirectory = "Internal shared storage"
         };
         
-        FilesHashesHandler filesHashesHandler = new(mJsonSerializer, NullLogger<FilesHashesHandler>.Instance);
+        LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
+        FilesHashesHandler filesHashesHandler = new(localJsonDatabase, NullLogger<FilesHashesHandler>.Instance);
 
         MediaDeviceBackupService backupService = new("Redmi Note 8 Pro", filesHashesHandler, NullLoggerFactory.Instance);
 
@@ -75,7 +77,8 @@ public class MediaDeviceBackupServiceTests : TestsBase
             RootDirectory = "Internal shared storage"
         };
         
-        FilesHashesHandler filesHashesHandler = new(mJsonSerializer, NullLogger<FilesHashesHandler>.Instance);
+        LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
+        FilesHashesHandler filesHashesHandler = new(localJsonDatabase, NullLogger<FilesHashesHandler>.Instance);
 
         MediaDeviceBackupService backupService = new("Redmi Note 8 Pro", filesHashesHandler, NullLoggerFactory.Instance);
 
@@ -114,7 +117,8 @@ public class MediaDeviceBackupServiceTests : TestsBase
             RootDirectory = "Internal shared storage"
         };
         
-        FilesHashesHandler filesHashesHandler = new(mJsonSerializer, NullLogger<FilesHashesHandler>.Instance);
+        LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
+        FilesHashesHandler filesHashesHandler = new(localJsonDatabase, NullLogger<FilesHashesHandler>.Instance);
 
         MediaDeviceBackupService backupService = new("Redmi Note 8 Pro", filesHashesHandler, NullLoggerFactory.Instance);
 
