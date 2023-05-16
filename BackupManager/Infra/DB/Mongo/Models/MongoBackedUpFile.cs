@@ -1,15 +1,21 @@
-﻿using BackupManager.Infra.DB.Models;
-using MongoDB.Bson;
+﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace BackupManager.Infra.DB.Mongo.Models;
 
-public class MongoBackedUpFile : BackedUpFile
+public class MongoBackedUpFile
 {
 	[BsonId]
 	[BsonRepresentation(BsonType.ObjectId)]
-	public new string? Id { get; set; }
+	[BsonIgnoreIfDefault]
+	public ObjectId? Id { get; set; }
+	
+	[BsonElement("FilePath")]
+	public required string FilePath { get; init; }
+	
+	[BsonElement("FileHash")]
+	public required string FileHash { get; init; }
 
 	[BsonElement("BackupTime")]
-	public string? BackupTime { get; set; }
+	public string? BackupTime { get; init; }
 }

@@ -7,4 +7,6 @@ public class BackedUpFile
 	public required string FilePath { get; init; }
 	
 	public required string FileHash { get; init; }
+	
+	public string? BackupTime { get; init; }
 }

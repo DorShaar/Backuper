@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using BackupManager.Infra.DB.LocalJsonFileDatabase;
 using BackupManager.Infra.DB.Models;
 using BackupManager.Infra.DB.Mongo;
-using BackupManager.Infra.DB.Mongo.Extensions;
 using Microsoft.Extensions.Logging;
 
 namespace BackupManager.Infra.DB.Sync;
@@ -27,8 +26,7 @@ public class DatabasesSynchronizer
 	
 	public async Task SyncDatabases(CancellationToken cancellationToken)
 	{
-		// TODO DOR now
-		// await SyncLocalJsonDatabaseFromMongoDatabase(mLocalJsonDatabase, mMongoBackupServiceDatabase, cancellationToken).ConfigureAwait(false);
+		await SyncLocalJsonDatabaseFromMongoDatabase(mLocalJsonDatabase, mMongoBackupServiceDatabase, cancellationToken).ConfigureAwait(false);
 		await SyncMongoDatabaseFromLocalJsonDatabase(mMongoBackupServiceDatabase, mLocalJsonDatabase, cancellationToken).ConfigureAwait(false);
 	}
 
@@ -54,7 +52,7 @@ public class DatabasesSynchronizer
 		IEnumerable<BackedUpFile> allBackedUpFiles = await localJsonDatabase.GetAll(cancellationToken).ConfigureAwait(false);
 		foreach (BackedUpFile backedUpFile in allBackedUpFiles)
 		{
-			await mongoBackupServiceDatabase.Insert(backedUpFile.ToMongoBackedUpFile(), cancellationToken).ConfigureAwait(false);
+			await mongoBackupServiceDatabase.Insert(backedUpFile, cancellationToken).ConfigureAwait(false);
 		}
 	}
 }
