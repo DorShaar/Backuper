@@ -3,6 +3,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using BackupManager.App.Database;
 using BackupManager.Infra.DB.Models;
+using BackupManager.Infra.DB.Mongo.Extensions;
+using BackupManager.Infra.DB.Mongo.Models;
 using BackupManager.Infra.DB.Mongo.Settings;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
@@ -11,18 +13,38 @@ namespace BackupManager.Infra.DB.Mongo;
 
 public class MongoBackupServiceDatabase : IBackedUpFilesDatabase
 {
-	private readonly IMongoCollection<BackedUpFile> mBackupFilesCollection;
+	private readonly IMongoCollection<MongoBackedUpFile> mBackupFilesCollection;
 	
 	public MongoBackupServiceDatabase(IOptions<MongoBackupServiceDatabaseSettings> mongoDatabaseSettings)
 	{
 		MongoClient mongoClient = new(mongoDatabaseSettings.Value.ConnectionString);
 		IMongoDatabase? mongoDatabase = mongoClient.GetDatabase(mongoDatabaseSettings.Value.DatabaseName);
-		mBackupFilesCollection = mongoDatabase.GetCollection<BackedUpFile>(mongoDatabaseSettings.Value.BackupFilesCollectionName);
+		
+		// TODO DOR now
+		mBackupFilesCollection = mongoDatabase.GetCollection<MongoBackedUpFile>(mongoDatabaseSettings.Value.BackupFilesCollectionName);
 	}
-	
+
+	public async Task<IEnumerable<BackedUpFile>> GetAll(CancellationToken cancellationToken)
+	{
+		IAsyncCursor<MongoBackedUpFile> findResult = await mBackupFilesCollection.FindAsync(_ => true, cancellationToken: cancellationToken).ConfigureAwait(false);
+		return await findResult.ToListAsync(cancellationToken).ConfigureAwait(false);
+	}
+
 	public async Task Insert(BackedUpFile itemToInsert, CancellationToken cancellationToken)
 	{
-		await mBackupFilesCollection.InsertOneAsync(itemToInsert, cancellationToken: cancellationToken).ConfigureAwait(false);	
+		ReplaceOptions replaceOptions = new()
+		{
+			IsUpsert = true
+		};
+
+		FilterDefinition<MongoBackedUpFile> hashFilter = Builders<MongoBackedUpFile>.Filter.Eq(file => file.FileHash, itemToInsert.FileHash);
+		FilterDefinition<MongoBackedUpFile> pathFilter = Builders<MongoBackedUpFile>.Filter.Eq(file => file.FilePath, itemToInsert.FilePath);
+		FilterDefinition<MongoBackedUpFile> hashAndPathFilter = Builders<MongoBackedUpFile>.Filter.And(hashFilter, pathFilter);
+
+		await mBackupFilesCollection.ReplaceOneAsync(hashAndPathFilter,
+													 itemToInsert.ToMongoBackedUpFile(),
+													 replaceOptions,
+													 cancellationToken: cancellationToken).ConfigureAwait(false);	
 	}
 
 	public Task Save(CancellationToken cancellationToken)
@@ -33,27 +55,27 @@ public class MongoBackupServiceDatabase : IBackedUpFilesDatabase
 
 	public async Task<IEnumerable<BackedUpFile>?> Find(BackedUpFileSearchModel searchParameter, CancellationToken cancellationToken)
 	{
+		IAsyncCursor<MongoBackedUpFile>? findResult = null;
 		if (!string.IsNullOrWhiteSpace(searchParameter.Id))
 		{
-			return await mBackupFilesCollection.Find(backedUpFile => backedUpFile.Id == searchParameter.Id)
-											   .ToListAsync(cancellationToken)
-											   .ConfigureAwait(false);
+			findResult = await mBackupFilesCollection.FindAsync(backedUpFile => backedUpFile.Id == searchParameter.Id, cancellationToken: cancellationToken).ConfigureAwait(false); 
 		}
 		
 		if (!string.IsNullOrWhiteSpace(searchParameter.FileHash))
 		{
-			return await mBackupFilesCollection.Find(backedUpFile => backedUpFile.FileHash == searchParameter.FileHash)
-											   .ToListAsync(cancellationToken)
-											   .ConfigureAwait(false);
+			findResult = await mBackupFilesCollection.FindAsync(backedUpFile => backedUpFile.FileHash == searchParameter.FileHash, cancellationToken: cancellationToken).ConfigureAwait(false);
 		}
 		
 		if (!string.IsNullOrWhiteSpace(searchParameter.FilePath))
 		{
-			return await mBackupFilesCollection.Find(backedUpFile => backedUpFile.FilePath == searchParameter.FilePath)
-											   .ToListAsync(cancellationToken)
-											   .ConfigureAwait(false);
+			findResult = await mBackupFilesCollection.FindAsync(backedUpFile => backedUpFile.FilePath == searchParameter.FilePath, cancellationToken: cancellationToken).ConfigureAwait(false);
 		}
 
-		return null;
+		if (findResult is null)
+		{
+			return null;
+		}
+		
+		return await findResult.ToListAsync(cancellationToken).ConfigureAwait(false);
 	}
 }

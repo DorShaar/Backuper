@@ -9,6 +9,7 @@ using BackupManager.Infra.Backup.Services;
 using BackupManager.Infra.DB.LocalJsonFileDatabase;
 using BackupManager.Infra.DB.Mongo;
 using BackupManager.Infra.DB.Mongo.Settings;
+using BackupManager.Infra.DB.Sync;
 using BackupManager.Infra.FileHashHandlers;
 using BackupManager.Infra.Service;
 using JsonSerialization;
@@ -43,6 +44,7 @@ builder.Services.AddSingleton<IDuplicateChecker, DuplicateChecker>();
 // Databases.
 builder.Services.AddSingleton<MongoBackupServiceDatabase>();
 builder.Services.AddSingleton<LocalJsonDatabase>();
+builder.Services.AddSingleton<DatabasesSynchronizer>();
 builder.Services.AddSingleton<IBackedUpFilesDatabase>(serviceProvider =>
 {
     string? databaseType = serviceProvider.GetService<IConfiguration>()?["DatabaseType"];

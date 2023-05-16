@@ -11,5 +11,5 @@ public class MongoBackedUpFile : BackedUpFile
 	public new string? Id { get; set; }
 
 	[BsonElement("BackupTime")]
-	public new string? BackupTime { get; set; }
+	public string? BackupTime { get; set; }
 }

@@ -6,6 +6,8 @@ namespace BackupManager.App.Database;
 
 public interface IDatabase<TItem, in TSearchModelType>
 {
+	Task<IEnumerable<TItem>> GetAll(CancellationToken cancellationToken);
+	
 	Task Insert(TItem itemToInsert, CancellationToken cancellationToken);
 
 	Task Save(CancellationToken cancellationToken);

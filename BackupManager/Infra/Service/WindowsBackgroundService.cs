@@ -9,6 +9,7 @@ using BackupManager.Domain.Configuration;
 using BackupManager.Domain.Settings;
 using BackupManager.Infra.Backup;
 using BackupManager.Infra.Backup.Detectors;
+using BackupManager.Infra.DB.Sync;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -22,16 +23,19 @@ public sealed class WindowsBackgroundService : BackgroundService
     
     private readonly BackupServiceFactory mBackupServiceFactory;
     private readonly BackupSettingsDetector mBackupSettingsDetector;
+    private readonly DatabasesSynchronizer mDatabasesSynchronizer;
     private readonly IOptionsMonitor<BackupServiceConfiguration> mConfiguration;
     private readonly ILogger<WindowsBackgroundService> mLogger;
 
     public WindowsBackgroundService(BackupServiceFactory backupServiceFactory,
         BackupSettingsDetector backupSettingsDetector,
+        DatabasesSynchronizer databasesSynchronizer,
         IOptionsMonitor<BackupServiceConfiguration> configuration,
         ILogger<WindowsBackgroundService> logger)
     {
         mBackupServiceFactory = backupServiceFactory;
         mBackupSettingsDetector = backupSettingsDetector;
+        mDatabasesSynchronizer = databasesSynchronizer;
         mConfiguration = configuration;
         mLogger = logger;
 
@@ -72,6 +76,8 @@ public sealed class WindowsBackgroundService : BackgroundService
     {
         try
         {
+            await mDatabasesSynchronizer.SyncDatabases(cancellationToken).ConfigureAwait(false);
+            
             while (!cancellationToken.IsCancellationRequested)
             {
                 List<BackupSettings>? backupOptionsList = await mBackupSettingsDetector.DetectBackupSettings(cancellationToken).ConfigureAwait(false);

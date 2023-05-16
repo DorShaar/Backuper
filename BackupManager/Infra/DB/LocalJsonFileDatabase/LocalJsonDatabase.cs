@@ -30,7 +30,29 @@ public class LocalJsonDatabase : IBackedUpFilesDatabase
 
 		mFilePathToFileHashMap = new Lazy<ConcurrentDictionary<string, string>>(() => DeduceFilePathToFileHashMap(mHashToFilePathsMap.Value));
 	}
-	
+
+	public Task<IEnumerable<BackedUpFile>> GetAll(CancellationToken cancellationToken)
+	{
+		List<BackedUpFile> backedUpFiles = new();
+		foreach ((string filePath, string fileHash) in mFilePathToFileHashMap.Value)
+		{
+			if (cancellationToken.IsCancellationRequested)
+			{
+				mLogger.LogInformation($"Cancel requested");
+				break;
+			}
+			
+			BackedUpFile backedUpFile = new()
+			{
+				FilePath = filePath,
+				FileHash = fileHash 
+			};
+			backedUpFiles.Add(backedUpFile);
+		}
+
+		return Task.FromResult(backedUpFiles.AsEnumerable());
+	}
+
 	public Task Insert(BackedUpFile itemToInsert, CancellationToken cancellationToken)
 	{
 		if (mHashToFilePathsMap.Value.TryGetValue(itemToInsert.FileHash, out List<string>? paths))

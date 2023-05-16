@@ -2,6 +2,6 @@
 
 namespace BackupManager.App.Database;
 
-public interface IBackedUpFilesDatabase : IDatabase<BackedUpFile, BackedUpFileSearchModel>
+public interface IBackedUpFilesDatabase: IDatabase<BackedUpFile, BackedUpFileSearchModel>
 {
 }
