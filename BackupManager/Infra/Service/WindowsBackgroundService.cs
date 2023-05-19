@@ -82,6 +82,10 @@ public sealed class WindowsBackgroundService : BackgroundService
             {
                 List<BackupSettings>? backupOptionsList = await mBackupSettingsDetector.DetectBackupSettings(cancellationToken).ConfigureAwait(false);
 
+                // TODO DOR
+                // In case we are backuping to not known directory, we need to verify first with Id that it is
+                // a recognized drive we copy files into (have list of allowed token).
+                
                 try
                 {
                     if (backupOptionsList is null || backupOptionsList.Count == 0)
