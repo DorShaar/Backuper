@@ -16,6 +16,7 @@ namespace BackupManagerTests.Domain.Hash
         public async Task AddFileHash_FileHashNotExists_FileHashAdded()
         {
             LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
+            localJsonDatabase.Load(Consts.BackupFilesCollectionName);
             FilesHashesHandler filesHashesHandler = new(localJsonDatabase, NullLogger<FilesHashesHandler>.Instance);
 
             await filesHashesHandler.AddFileHash("ABC123", "FileName.ext", CancellationToken.None).ConfigureAwait(false);
@@ -30,6 +31,7 @@ namespace BackupManagerTests.Domain.Hash
         public async Task AddFileHash_FileHashAlreadyExists_PathIsAddedToTheSameHash()
         {
             LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
+            localJsonDatabase.Load(Consts.BackupFilesCollectionName);
             FilesHashesHandler filesHashesHandler = new(localJsonDatabase, NullLogger<FilesHashesHandler>.Instance);
             
             const string firstFileName = "FileName.ext";
@@ -47,6 +49,7 @@ namespace BackupManagerTests.Domain.Hash
         public async Task AddFileHash_FileHashAlreadyExists_PathIsNotAddedToTheSameHashIfAlreadyExistsInList()
         {
             LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
+            localJsonDatabase.Load(Consts.BackupFilesCollectionName);
             FilesHashesHandler filesHashesHandler = new(localJsonDatabase, NullLogger<FilesHashesHandler>.Instance);
             
             const string firstFileName = "FileName.ext";
@@ -63,7 +66,7 @@ namespace BackupManagerTests.Domain.Hash
             await filesHashesHandler.Save(CancellationToken.None).ConfigureAwait(false);
             
             Dictionary<string, List<string>> fileHashToFilePathMap =
-                await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(Consts.DataFilePath, CancellationToken.None).ConfigureAwait(false);
+                await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(GetBackedUpFilesLocalFilePath(), CancellationToken.None).ConfigureAwait(false);
             Assert.Equal(2, fileHashToFilePathMap[hash].Count);
         }
 
@@ -71,6 +74,7 @@ namespace BackupManagerTests.Domain.Hash
         public async Task IsHashExists_HashAlreadyExists_True()
         {
             LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
+            localJsonDatabase.Load(Consts.BackupFilesCollectionName);
             FilesHashesHandler filesHashesHandler = new(localJsonDatabase, NullLogger<FilesHashesHandler>.Instance);
 
             const string hash = "ABC123";
@@ -83,6 +87,7 @@ namespace BackupManagerTests.Domain.Hash
         public async Task IsHashExists_HashNotExists_False()
         {
             LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
+            localJsonDatabase.Load(Consts.BackupFilesCollectionName);
             FilesHashesHandler filesHashesHandler = new(localJsonDatabase, NullLogger<FilesHashesHandler>.Instance);
 
             await filesHashesHandler.AddFileHash("ABC123", "fileName", CancellationToken.None).ConfigureAwait(false);
@@ -94,16 +99,17 @@ namespace BackupManagerTests.Domain.Hash
         public async Task Save_ToFilesWithSameHash_DataFileCreatedAsExpected()
         {
             LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
+            localJsonDatabase.Load(Consts.BackupFilesCollectionName);
             FilesHashesHandler filesHashesHandler = new(localJsonDatabase, NullLogger<FilesHashesHandler>.Instance);
             await filesHashesHandler.AddFileHash("expectedHash", "expectedFilePath1", CancellationToken.None).ConfigureAwait(false);
             await filesHashesHandler.AddFileHash("expectedHash", "expectedFilePath2", CancellationToken.None).ConfigureAwait(false);
             
-            File.Delete(Consts.DataFilePath);
+            File.Delete(GetBackedUpFilesLocalFilePath());
             
             await filesHashesHandler.Save(CancellationToken.None).ConfigureAwait(false);
-            File.Exists(Consts.DataFilePath);
+            File.Exists(GetBackedUpFilesLocalFilePath());
             Dictionary<string, List<string>> fileHashToFilePathMap =
-                await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(Consts.DataFilePath, CancellationToken.None).ConfigureAwait(false);
+                await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(GetBackedUpFilesLocalFilePath(), CancellationToken.None).ConfigureAwait(false);
 
             List<string> files = fileHashToFilePathMap["expectedHash"];
             Assert.Contains("expectedFilePath1", files);

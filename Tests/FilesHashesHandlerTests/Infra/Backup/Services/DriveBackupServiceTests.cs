@@ -63,7 +63,7 @@ public class DriveBackupServiceTests : TestsBase
         Assert.Equal(DateTime.Now.Date, lastBackupTime.Date);
 
         Dictionary<string, List<string>> hashesToFilePath =
-            await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(Consts.DataFilePath, CancellationToken.None);
+            await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(GetBackedUpFilesLocalFilePath(), CancellationToken.None);
         Assert.Equal(Path.Combine("/Games/file in games directory.txt"), hashesToFilePath["5B0CCEF73B8DCF768B3EBCFBB902269389C0224202F120C1AA25137AC2C27551"][0]);
         Assert.Equal(Path.Combine("/Games/prince of persia/file in prince of persia directory.txt"),
             hashesToFilePath["674833D4A3B3A2E67001316DE33E5024963B0C429AF2455FF55083BE16592D55"][0]);
@@ -112,7 +112,7 @@ public class DriveBackupServiceTests : TestsBase
         Assert.Equal(DateTime.Now.Date, lastBackupTime.Date);
 
         Dictionary<string, List<string>> hashesToFilePath =
-            await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(Consts.DataFilePath, CancellationToken.None).ConfigureAwait(false);
+            await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(GetBackedUpFilesLocalFilePath(), CancellationToken.None).ConfigureAwait(false);
         Assert.Equal(Path.Combine("/Games/file in games directory.txt"), hashesToFilePath["5B0CCEF73B8DCF768B3EBCFBB902269389C0224202F120C1AA25137AC2C27551"][0]);
         Assert.Equal(Path.Combine("/Games/prince of persia/file in prince of persia directory.txt"),
             hashesToFilePath["674833D4A3B3A2E67001316DE33E5024963B0C429AF2455FF55083BE16592D55"][0]);
@@ -128,6 +128,7 @@ public class DriveBackupServiceTests : TestsBase
         BackupSerializedSettings backupSerializedSettings = new()
         {
             ShouldBackupToKnownDirectory = false,
+            Token = "some-token",
             DirectoriesSourcesToDirectoriesDestinationMap = new List<DirectoriesMap>
             {
                 new()
@@ -157,6 +158,7 @@ public class DriveBackupServiceTests : TestsBase
         BackupSerializedSettings backupSerializedSettings = new()
         {
             ShouldBackupToKnownDirectory = false,
+            Token = "some_token",
             DirectoriesSourcesToDirectoriesDestinationMap = new List<DirectoriesMap>
             {
                 new()
@@ -190,9 +192,10 @@ public class DriveBackupServiceTests : TestsBase
     
         DateTime lastBackupTime = await ExtractLastBackupTime().ConfigureAwait(false);
         Assert.Equal(DateTime.Now.Date, lastBackupTime.Date);
-    
+
+        string databaseName = string.Format(Consts.BackupFilesForKnownDriveCollectionTemplate, backupSerializedSettings.Token); 
         Dictionary<string, List<string>> hashesToFilePath =
-            await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(Consts.DataFilePath, CancellationToken.None);
+            await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(GetBackedUpFilesLocalFilePath(databaseName), CancellationToken.None);
         Assert.Equal(Path.Combine("/Games/file in games directory.txt"), hashesToFilePath["5B0CCEF73B8DCF768B3EBCFBB902269389C0224202F120C1AA25137AC2C27551"][0]);
         Assert.Equal(Path.Combine("/Games/prince of persia/file in prince of persia directory.txt"),
             hashesToFilePath["674833D4A3B3A2E67001316DE33E5024963B0C429AF2455FF55083BE16592D55"][0]);

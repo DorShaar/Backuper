@@ -52,7 +52,7 @@ public class MediaDeviceBackupServiceTests : TestsBase
         Assert.Equal(DateTime.Now.Date, lastBackupTime.Date);
 
         Dictionary<string, List<string>> hashesToFilePath =
-            await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(Consts.DataFilePath, CancellationToken.None).ConfigureAwait(false);
+            await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(GetBackedUpFilesLocalFilePath(), CancellationToken.None).ConfigureAwait(false);
         Assert.Equal(Path.Combine("\\DCIM", "Screenshots_tests", "Screenshot_2020-03-12-20-42-59-175_com.facebook.katana.jpg"), hashesToFilePath["2C913FF054E9A626ED7D49A6B26CC9CE912AC39DA0E1EFD5A3077988955B97C6"][0]);
     }
     
@@ -92,7 +92,7 @@ public class MediaDeviceBackupServiceTests : TestsBase
         Assert.Equal(DateTime.Now.Date, lastBackupTime.Date);
 
         Dictionary<string, List<string>> hashesToFilePath =
-            await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(Consts.DataFilePath, CancellationToken.None).ConfigureAwait(false);
+            await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(GetBackedUpFilesLocalFilePath(), CancellationToken.None).ConfigureAwait(false);
         Assert.Equal(Path.Combine("\\DCIM","Screenshots_tests", "Screenshot_2020-03-12-20-42-59-175_com.facebook.katana.jpg"), hashesToFilePath["2C913FF054E9A626ED7D49A6B26CC9CE912AC39DA0E1EFD5A3077988955B97C6"][0]);
     }
     
@@ -131,7 +131,7 @@ public class MediaDeviceBackupServiceTests : TestsBase
         Assert.Equal(DateTime.Now.Date, lastBackupTime.Date);
 
         Dictionary<string, List<string>> hashesToFilePath =
-            await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(Consts.DataFilePath, CancellationToken.None).ConfigureAwait(false);
+            await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(GetBackedUpFilesLocalFilePath(), CancellationToken.None).ConfigureAwait(false);
         Assert.Equal(Path.Combine("\\TestDir","deviceId.txt"), hashesToFilePath["726B219710AB5B7155C93F8E1854849BF48EAD801A97CB546B69E5BC2E7DC12F"][0]);
     }
 }

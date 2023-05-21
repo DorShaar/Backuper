@@ -22,7 +22,9 @@ public class BackupSettings
 
     public bool AllowMultithreading => mBackupSerializedSettings.AllowMultithreading;
 
-    public ushort SaveInterval => mBackupSerializedSettings.SaveInterval; 
+    public ushort SaveInterval => mBackupSerializedSettings.SaveInterval;
+
+    public string? Token => mBackupSerializedSettings.Token;
         
     public SearchMethod SearchMethod { get; set; } = SearchMethod.Hash;
 
@@ -36,7 +38,7 @@ public class BackupSettings
     /// <summary>
     /// The root directory to copy from.
     /// </summary>
-    public string RootDirectory { get; init; }
+    public string RootDirectory { get; init; } = string.Empty;
 
     public override string ToString()
     {

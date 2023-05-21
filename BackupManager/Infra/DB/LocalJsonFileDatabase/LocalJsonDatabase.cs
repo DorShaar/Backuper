@@ -15,26 +15,34 @@ namespace BackupManager.Infra.DB.LocalJsonFileDatabase;
 
 public class LocalJsonDatabase : IBackedUpFilesDatabase
 {
-	private readonly FileSystemPath mDataFilePath = new(Consts.DataFilePath);
 	private readonly IJsonSerializer mSerializer;
-	private readonly Lazy<ConcurrentDictionary<string, List<string>>> mHashToFilePathsMap;
-	private readonly Lazy<ConcurrentDictionary<string, string>> mFilePathToFileHashMap;
 	private readonly ILogger<LocalJsonDatabase> mLogger;
-	
+	private ConcurrentDictionary<string, List<string>>? mHashToFilePathsMap;
+	private ConcurrentDictionary<string, string>? mFilePathToFileHashMap;
+	private FileSystemPath? mDatabaseFilePath;
+
 	public LocalJsonDatabase(IJsonSerializer serializer, ILogger<LocalJsonDatabase> logger)
 	{
 		mSerializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
 		mLogger = logger ?? throw new ArgumentNullException(nameof(logger));
-
-		mHashToFilePathsMap = new Lazy<ConcurrentDictionary<string, List<string>>>(TryReadHashToFilePathsMap);
-
-		mFilePathToFileHashMap = new Lazy<ConcurrentDictionary<string, string>>(() => DeduceFilePathToFileHashMap(mHashToFilePathsMap.Value));
+	}
+	
+	public void Load(string databaseName)
+	{
+		mDatabaseFilePath = new FileSystemPath(Path.Combine(Consts.DataDirectoryPath, $"{databaseName}.{Consts.LocalDatabaseExtension}"));
+		mHashToFilePathsMap = TryReadHashToFilePathsMap(databaseName);
+		mFilePathToFileHashMap = DeduceFilePathToFileHashMap(mHashToFilePathsMap);
 	}
 
 	public Task<IEnumerable<BackedUpFile>> GetAll(CancellationToken cancellationToken)
 	{
+		if (mFilePathToFileHashMap is null)
+		{
+			throw new InvalidOperationException($"Please call method {nameof(Load)} first");
+		}
+		
 		List<BackedUpFile> backedUpFiles = new();
-		foreach ((string filePath, string fileHash) in mFilePathToFileHashMap.Value)
+		foreach ((string filePath, string fileHash) in mFilePathToFileHashMap)
 		{
 			if (cancellationToken.IsCancellationRequested)
 			{
@@ -55,7 +63,12 @@ public class LocalJsonDatabase : IBackedUpFilesDatabase
 
 	public Task Insert(BackedUpFile itemToInsert, CancellationToken cancellationToken)
 	{
-		if (mHashToFilePathsMap.Value.TryGetValue(itemToInsert.FileHash, out List<string>? paths))
+		if (mFilePathToFileHashMap is null || mHashToFilePathsMap is null)
+		{
+			throw new InvalidOperationException($"Please call method {nameof(Load)} first");
+		}
+		
+		if (mHashToFilePathsMap.TryGetValue(itemToInsert.FileHash, out List<string>? paths))
 		{
 			if (paths.Contains(itemToInsert.FilePath))
 			{
@@ -68,37 +81,47 @@ public class LocalJsonDatabase : IBackedUpFilesDatabase
 		}
 		else
 		{
-			mHashToFilePathsMap.Value.TryAdd(itemToInsert.FileHash, new List<string> { itemToInsert.FilePath });
+			mHashToFilePathsMap.TryAdd(itemToInsert.FileHash, new List<string> { itemToInsert.FilePath });
 		}
             
-		_ = mFilePathToFileHashMap.Value.TryAdd(itemToInsert.FilePath, itemToInsert.FileHash);
+		_ = mFilePathToFileHashMap.TryAdd(itemToInsert.FilePath, itemToInsert.FileHash);
 		return Task.CompletedTask;
 	}
 
 	public async Task Save(CancellationToken cancellationToken)
 	{
-		mLogger.LogInformation($"Saving hash to file paths data to '{Consts.DataFilePath}'");
-		await mSerializer.SerializeAsync(mHashToFilePathsMap.Value, mDataFilePath.PathString, cancellationToken).ConfigureAwait(false);
+		if (mDatabaseFilePath is null)
+		{
+			throw new InvalidOperationException($"Please call method {nameof(Load)} first");
+		}
+		
+		mLogger.LogInformation($"Saving hash to file paths data to '{mDatabaseFilePath}'");
+		await mSerializer.SerializeAsync(mHashToFilePathsMap, mDatabaseFilePath.PathString, cancellationToken).ConfigureAwait(false);
 	}
 
 	public Task<IEnumerable<BackedUpFile>?> Find(BackedUpFileSearchModel searchParameter, CancellationToken cancellationToken)
 	{
+		if (mFilePathToFileHashMap is null || mHashToFilePathsMap is null)
+		{
+			throw new InvalidOperationException($"Please call method {nameof(Load)} first");
+		}
+		
 		if (!string.IsNullOrWhiteSpace(searchParameter.FileHash))
 		{
-			return Task.FromResult(FindByHash(searchParameter.FileHash));
+			return Task.FromResult(FindByHash(searchParameter.FileHash, mHashToFilePathsMap));
 		}
 
 		if (!string.IsNullOrWhiteSpace(searchParameter.FilePath))
 		{
-			return Task.FromResult(FindByPath(searchParameter.FilePath));
+			return Task.FromResult(FindByPath(searchParameter.FilePath, mFilePathToFileHashMap));
 		}
 
 		return Task.FromResult<IEnumerable<BackedUpFile>?>(null);
 	}
 
-	private IEnumerable<BackedUpFile>? FindByHash(string fileHash)
+	private IEnumerable<BackedUpFile>? FindByHash(string fileHash, ConcurrentDictionary<string, List<string>> hashToFilePathsMap)
 	{
-		if (!mHashToFilePathsMap.Value.TryGetValue(fileHash, out List<string>? filePaths))
+		if (!hashToFilePathsMap.TryGetValue(fileHash, out List<string>? filePaths))
 		{
 			return null;
 		}
@@ -115,9 +138,9 @@ public class LocalJsonDatabase : IBackedUpFilesDatabase
 		});
 	}
 
-	private IEnumerable<BackedUpFile>? FindByPath(string filePath)
+	private IEnumerable<BackedUpFile>? FindByPath(string filePath, ConcurrentDictionary<string, string> filePathToFileHashMap)
 	{
-		if (!mFilePathToFileHashMap.Value.TryGetValue(filePath, out string? fileHash))
+		if (!filePathToFileHashMap.TryGetValue(filePath, out string? fileHash))
 		{
 			return null;
 		}
@@ -129,17 +152,17 @@ public class LocalJsonDatabase : IBackedUpFilesDatabase
 		}};
 	}
 
-	private ConcurrentDictionary<string, List<string>> TryReadHashToFilePathsMap()
+	private ConcurrentDictionary<string, List<string>> TryReadHashToFilePathsMap(string databaseFilePath)
 	{
 		try
 		{
-			return File.Exists(Consts.DataFilePath) 
-					   ? mSerializer.DeserializeAsync<ConcurrentDictionary<string, List<string>>>(Consts.DataFilePath, CancellationToken.None).Result
+			return File.Exists(databaseFilePath) 
+					   ? mSerializer.DeserializeAsync<ConcurrentDictionary<string, List<string>>>(databaseFilePath, CancellationToken.None).Result
 					   : new ConcurrentDictionary<string, List<string>>();
 		}
 		catch (Exception ex)
 		{
-			mLogger.LogError(ex, $"Failed to deserialize '{Consts.DataFilePath}', initializing new hash map to file path dictionary");
+			mLogger.LogError(ex, $"Failed to deserialize '{databaseFilePath}', initializing new hash map to file path dictionary");
 			return new ConcurrentDictionary<string, List<string>>();
 		}
 	}
@@ -162,13 +185,18 @@ public class LocalJsonDatabase : IBackedUpFilesDatabase
 	// ReSharper disable once UnusedMember.Local
 	private async Task WriteOnlyDuplicatesFiles(string savedFilePath, CancellationToken cancellationToken)
 	{
+		if (mHashToFilePathsMap is null)
+		{
+			throw new InvalidOperationException($"Please call method {nameof(Load)} first");
+		}
+		
 		string savedFileDirectory = Path.GetDirectoryName(savedFilePath)
 									?? throw new NullReferenceException($"Directory of '{savedFilePath}' is empty"); 
             
 		string savedOnlyDuplicatesFilePath = Path.Combine(savedFileDirectory, "dup_only" + Path.GetExtension(savedFilePath));
 
 		Dictionary<string, List<string>> duplicatesOnly = new();
-		foreach ((string fileHash, List<string> filesPaths) in mHashToFilePathsMap.Value)
+		foreach ((string fileHash, List<string> filesPaths) in mHashToFilePathsMap)
 		{
 			if (filesPaths.Count > 1)
 			{

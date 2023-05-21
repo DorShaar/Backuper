@@ -21,4 +21,6 @@ public class BackupSerializedSettings
     /// Save files and hashes after <see cref="SaveInterval"/> files. 
     /// </summary>
     public ushort SaveInterval { get; init; } = 100;
+    
+    public string? Token { get; init; }
 }

@@ -13,18 +13,20 @@ public static class Consts
     
     // TODO DOR now
     private static string mBackupServiceDirectoryPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-        // mBackupServiceTestsDirectoryName); // For Tests.
-        BackupServiceDirectoryName); // For Production.
+        mBackupServiceTestsDirectoryName); // For Tests.
+        // BackupServiceDirectoryName); // For Production.
     #endregion Top Directory
 
     #region Settings
     private const string mSettingsDirectoryName = "Settings";
     public const string SettingsFileName = "BackupSetting.json";
     private const string mSettingsExampleFilePath = "SettingsExample.json";
+    private const string mKnownTokensFileName = "KnownTokens";
     
     private static string mSettingsDirectoryPath => Path.Combine(mBackupServiceDirectoryPath, mSettingsDirectoryName);
     public static string SettingsFilePath => Path.Combine(mSettingsDirectoryPath, SettingsFileName);
     public static string SettingsExampleFilePath => Path.Combine(mSettingsDirectoryPath, mSettingsExampleFilePath);
+    public static string KnownTokensFilePath => Path.Combine(mSettingsDirectoryPath, mKnownTokensFileName);
     #endregion Settings
 
     #region Logs
@@ -38,14 +40,22 @@ public static class Consts
     #region Data
     private const string mDataDirectoryName = "Data";
     private const string mBackupsDirectoryName = "Backups";
-    private const string mDataFileName = "Data.json";
     private const string mBackupTimeDiaryFileName = "BackupTimeDiary";
+    public const string LocalDatabaseExtension = "json";
 
     public static string DataDirectoryPath => Path.Combine(mBackupServiceDirectoryPath, mDataDirectoryName);
-    public static string DataFilePath => Path.Combine(DataDirectoryPath, mDataFileName);
     public static string BackupTimeDiaryFilePath => Path.Combine(DataDirectoryPath, mBackupTimeDiaryFileName);
     public static string BackupsDirectoryPath => Path.Combine(DataDirectoryPath, mBackupsDirectoryName);
     #endregion Data
+    
+    #region Database
+    public const string BackupFilesCollectionName = "FilesBackup";
+    
+    /// <summary>
+    /// {0} - known-id.
+    /// </summary>
+    public static string BackupFilesForKnownDriveCollectionTemplate => "Data-{0}";
+    #endregion Database
 
     #region Temp
 

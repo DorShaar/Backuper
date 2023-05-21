@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using BackupManager.App.Database;
@@ -14,18 +15,27 @@ namespace BackupManager.Infra.DB.Mongo;
 
 public class MongoBackupServiceDatabase : IBackedUpFilesDatabase
 {
-	private readonly IMongoCollection<MongoBackedUpFile> mBackupFilesCollection;
+	private readonly IMongoDatabase mMongoDatabase;
+	private IMongoCollection<MongoBackedUpFile>? mBackupFilesCollection;
 	
 	public MongoBackupServiceDatabase(IOptions<MongoBackupServiceDatabaseSettings> mongoDatabaseSettings)
 	{
 		MongoClient mongoClient = new(mongoDatabaseSettings.Value.ConnectionString);
-		IMongoDatabase? mongoDatabase = mongoClient.GetDatabase(mongoDatabaseSettings.Value.DatabaseName);
-		
-		mBackupFilesCollection = mongoDatabase.GetCollection<MongoBackedUpFile>(mongoDatabaseSettings.Value.BackupFilesCollectionName);
+		mMongoDatabase = mongoClient.GetDatabase(mongoDatabaseSettings.Value.DatabaseName);
+	}
+
+	public void Load(string databaseName)
+	{
+		mBackupFilesCollection = mMongoDatabase.GetCollection<MongoBackedUpFile>(databaseName);
 	}
 
 	public async Task<IEnumerable<BackedUpFile>> GetAll(CancellationToken cancellationToken)
 	{
+		if (mBackupFilesCollection is null)
+		{
+			throw new InvalidOperationException($"Please call method {nameof(Load)} first");
+		}
+		
 		IAsyncCursor<MongoBackedUpFile> findResult = await mBackupFilesCollection.FindAsync(_ => true, cancellationToken: cancellationToken).ConfigureAwait(false);
 		List<MongoBackedUpFile> mongoBackedUpFiles = await findResult.ToListAsync(cancellationToken).ConfigureAwait(false);
 
@@ -34,6 +44,11 @@ public class MongoBackupServiceDatabase : IBackedUpFilesDatabase
 
 	public async Task Insert(BackedUpFile itemToInsert, CancellationToken cancellationToken)
 	{
+		if (mBackupFilesCollection is null)
+		{
+			throw new InvalidOperationException($"Please call method {nameof(Load)} first");
+		}
+		
 		ReplaceOptions replaceOptions = new()
 		{
 			IsUpsert = true,
@@ -57,6 +72,11 @@ public class MongoBackupServiceDatabase : IBackedUpFilesDatabase
 
 	public async Task<IEnumerable<BackedUpFile>?> Find(BackedUpFileSearchModel searchParameter, CancellationToken cancellationToken)
 	{
+		if (mBackupFilesCollection is null)
+		{
+			throw new InvalidOperationException($"Please call method {nameof(Load)} first");
+		}
+		
 		IAsyncCursor<MongoBackedUpFile>? findResult = null;
 		if (!string.IsNullOrWhiteSpace(searchParameter.Id))
 		{
@@ -82,7 +102,7 @@ public class MongoBackupServiceDatabase : IBackedUpFilesDatabase
 		return convertMongoBackedUpFilesToBackedUpFiles(mongoBackedUpFiles);
 	}
 
-	private List<BackedUpFile> convertMongoBackedUpFilesToBackedUpFiles(List<MongoBackedUpFile> mongoBackedUpFiles)
+	private IEnumerable<BackedUpFile> convertMongoBackedUpFilesToBackedUpFiles(List<MongoBackedUpFile> mongoBackedUpFiles)
 	{
 		List<BackedUpFile> backedUpFiles = new();
 		foreach (MongoBackedUpFile mongoBackedUpFile in mongoBackedUpFiles)

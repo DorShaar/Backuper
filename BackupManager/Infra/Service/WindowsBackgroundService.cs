@@ -28,10 +28,10 @@ public sealed class WindowsBackgroundService : BackgroundService
     private readonly ILogger<WindowsBackgroundService> mLogger;
 
     public WindowsBackgroundService(BackupServiceFactory backupServiceFactory,
-        BackupSettingsDetector backupSettingsDetector,
-        DatabasesSynchronizer databasesSynchronizer,
-        IOptionsMonitor<BackupServiceConfiguration> configuration,
-        ILogger<WindowsBackgroundService> logger)
+                                    BackupSettingsDetector backupSettingsDetector,
+                                    DatabasesSynchronizer databasesSynchronizer,
+                                    IOptionsMonitor<BackupServiceConfiguration> configuration,
+                                    ILogger<WindowsBackgroundService> logger)
     {
         mBackupServiceFactory = backupServiceFactory;
         mBackupSettingsDetector = backupSettingsDetector;
@@ -82,10 +82,12 @@ public sealed class WindowsBackgroundService : BackgroundService
             {
                 List<BackupSettings>? backupOptionsList = await mBackupSettingsDetector.DetectBackupSettings(cancellationToken).ConfigureAwait(false);
 
-                // TODO DOR
+                // TODO DOR - test.
                 // In case we are backuping to not known directory, we need to verify first with Id that it is
                 // a recognized drive we copy files into (have list of allowed token).
                 
+                // TOdO DOR add test - scenario of upading a file with hash x, while hash y exists in drive. hash should be updated from y to x and files should be updated too.
+
                 try
                 {
                     if (backupOptionsList is null || backupOptionsList.Count == 0)
@@ -101,7 +103,14 @@ public sealed class WindowsBackgroundService : BackgroundService
                             mLogger.LogInformation($"Cancel requested");
                             break;
                         }
-                        
+
+                        bool isVerified = await VerifyBackupSettings(backupSettings, cancellationToken).ConfigureAwait(false);
+
+                        if (!isVerified)
+                        {
+                            continue;
+                        }
+
                         IBackupService backupService = mBackupServiceFactory.Create(backupSettings);
                         try
                         {
@@ -151,14 +160,50 @@ public sealed class WindowsBackgroundService : BackgroundService
         string errorMessage = $"Configuration file {Consts.SettingsFilePath} does not exist, " +
                               $"Please copy example from {Consts.SettingsExampleFilePath} and place it in {Consts.SettingsFilePath}.";
         mLogger.LogCritical(errorMessage);
-        createSettingsFileTemplate();
+        CreateSettingsFileTemplate();
         throw new FileNotFoundException(errorMessage, Consts.SettingsFilePath);
     }
 
-    private void createSettingsFileTemplate()
+    private void CreateSettingsFileTemplate()
     {
         string executionDirectoryPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? throw new NullReferenceException("No parent directory for execution assembly");
         string exampleConfigurationFle = Path.Combine(executionDirectoryPath, "Domain", "Configuration", "BackupConfig.json");
         File.Copy(exampleConfigurationFle, Consts.SettingsExampleFilePath);
+    }
+
+    private async Task<bool> VerifyBackupSettings(BackupSettings backupSettings, CancellationToken cancellationToken)
+    {
+        if (backupSettings.ShouldBackupToKnownDirectory)
+        {
+            return true;
+        }
+
+        HashSet<string> knownTokens = await GetKnownTokens(cancellationToken).ConfigureAwait(false);
+
+        if (string.IsNullOrWhiteSpace(backupSettings.Token))
+        {
+            mLogger.LogError($"Token must exist for {backupSettings.Description ?? backupSettings.SourceType.ToString()}");
+            return false;
+        }
+
+        if (!knownTokens.Contains(backupSettings.Token))
+        {
+            mLogger.LogError($"Invalid token for {backupSettings.Description ?? backupSettings.SourceType.ToString()}");
+            return false;
+        }
+
+        mLogger.LogDebug($"Token verified for {backupSettings.Description ?? backupSettings.SourceType.ToString()}");
+        return true;
+    }
+
+    private static async Task<HashSet<string>> GetKnownTokens(CancellationToken cancellationToken)
+    {
+        HashSet<string> knownTokens = new();
+        await foreach (string token in File.ReadLinesAsync(Consts.KnownTokensFilePath, cancellationToken).ConfigureAwait(false))
+        {
+            knownTokens.Add(token);
+        }
+
+        return knownTokens;
     }
 }

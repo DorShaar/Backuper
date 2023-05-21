@@ -5,6 +5,8 @@ namespace BackupManager.App.Database;
 
 public interface IFilesHashesHandler
 {
+    void LoadDatabase(string databaseName);
+    
     Task<bool> IsHashExists(string hash, CancellationToken cancellationToken);
 
     Task<bool> IsFilePathExist(string filePath, CancellationToken cancellationToken);

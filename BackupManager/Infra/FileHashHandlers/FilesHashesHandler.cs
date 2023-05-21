@@ -21,6 +21,11 @@ namespace BackupManager.Infra.FileHashHandlers
             mLogger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
+        public void LoadDatabase(string databaseName)
+        {
+            mDatabase.Load(databaseName);
+        }
+
         public async Task<bool> IsHashExists(string hash, CancellationToken cancellationToken)
         {
             BackedUpFileSearchModel searchModel = new()

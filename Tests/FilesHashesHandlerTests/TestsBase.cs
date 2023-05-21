@@ -34,4 +34,9 @@ public class TestsBase : IDisposable
             Directory.Delete(backupServiceDirectoryPath, recursive: true);
         }
     }
+
+    protected string GetBackedUpFilesLocalFilePath(string databaseName = Consts.BackupFilesCollectionName)
+    {
+        return Path.Combine(Consts.DataDirectoryPath, $"{databaseName}.{Consts.LocalDatabaseExtension}");
+    }
 }
