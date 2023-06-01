@@ -1,4 +1,5 @@
 ﻿using System;
+using BackupManager.App.Backup;
 using BackupManager.App.Backup.Services;
 using BackupManager.App.Database;
 using BackupManager.Domain.Enums;
@@ -8,7 +9,7 @@ using Microsoft.Extensions.Logging;
 
 namespace BackupManager.Infra.Backup;
 
-public class BackupServiceFactory
+public class BackupServiceFactory : IBackupServiceFactory
 {
     private readonly IFilesHashesHandler mFilesHashesHandler;
     private readonly DriveBackupService mDriveBackupService;

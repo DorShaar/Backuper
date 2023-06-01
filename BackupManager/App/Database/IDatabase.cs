@@ -6,7 +6,7 @@ namespace BackupManager.App.Database;
 
 public interface IDatabase<TItem, in TSearchModelType>
 {
-	void Load(string databaseName);
+	Task Load(string databaseName, CancellationToken cancellationToken);
 	
 	Task<IEnumerable<TItem>> GetAll(CancellationToken cancellationToken);
 	

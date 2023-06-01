@@ -24,9 +24,10 @@ public class MongoBackupServiceDatabase : IBackedUpFilesDatabase
 		mMongoDatabase = mongoClient.GetDatabase(mongoDatabaseSettings.Value.DatabaseName);
 	}
 
-	public void Load(string databaseName)
+	public Task Load(string databaseName, CancellationToken cancellationToken)
 	{
 		mBackupFilesCollection = mMongoDatabase.GetCollection<MongoBackedUpFile>(databaseName);
+		return Task.CompletedTask;
 	}
 
 	public async Task<IEnumerable<BackedUpFile>> GetAll(CancellationToken cancellationToken)

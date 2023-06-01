@@ -17,6 +17,7 @@ using Xunit;
 
 namespace BackupManagerTests.Infra.Backup.Services;
 
+[Collection("BackupServiceTests Usage")]
 public class DriveBackupServiceTests : TestsBase
 {
     [Fact]
@@ -200,12 +201,11 @@ public class DriveBackupServiceTests : TestsBase
         Assert.Equal(Path.Combine("/Games/prince of persia/file in prince of persia directory.txt"),
             hashesToFilePath["674833D4A3B3A2E67001316DE33E5024963B0C429AF2455FF55083BE16592D55"][0]);
         
-        // Make sure source files were copied and not moved or deleted.
+        // Makes sure source files were copied and not moved or deleted.
         Assert.True(File.Exists(Path.Combine(gamesTempDirectory.Path, "file in games directory.txt")));
         Assert.True(File.Exists(Path.Combine(gamesTempDirectory.Path, "prince of persia", "file in prince of persia directory.txt")));
     }
 
-    // TODO DOR now validate is working.
     [Fact]
     public async Task BackupFiles_NotAllFilesInDestinationAreMapped_ShouldBackupToKnownDirectoryIsFalse_MapNewFilesWithHashes()
     {
@@ -218,7 +218,7 @@ public class DriveBackupServiceTests : TestsBase
                 // Should be empty to make sure no real backup is performed but we do map the destination directory first.
             }
         };
-
+    
         using TempDirectory tempBackupDirectory = new();
         BackupSettings backupSettings = new(backupSerializedSettings)
         {
@@ -227,19 +227,20 @@ public class DriveBackupServiceTests : TestsBase
         
         LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
         FilesHashesHandler filesHashesHandler = new(localJsonDatabase, NullLogger<FilesHashesHandler>.Instance);
-
+        await filesHashesHandler.LoadDatabase("Data-some_token", CancellationToken.None).ConfigureAwait(false);
+    
         DriveBackupService backupService = new(filesHashesHandler, NullLoggerFactory.Instance);
-
+    
         using TempDirectory gamesTempDirectory = CreateFilesToBackup(Consts.BackupsDirectoryPath);
-        string alreadyExistingFilePath = Path.Combine(tempBackupDirectory.Path, "Games", "file in games directory.txt"); 
+        string alreadyExistingFilePath = Path.Combine(tempBackupDirectory.Path, "Games", "file in games directory.txt");
+        _ = Directory.CreateDirectory(Path.GetDirectoryName(alreadyExistingFilePath) ?? throw new NullReferenceException());
         await File.WriteAllTextAsync(alreadyExistingFilePath, "just a file").ConfigureAwait(false);
-        await filesHashesHandler.AddFileHash("5B0CCEF73B8DCF768B3EBCFBB902269389C0224202F120C1AA25137AC2C27551", alreadyExistingFilePath, CancellationToken.None).ConfigureAwait(false);
-
-        Assert.False(await filesHashesHandler.IsHashExists("674833D4A3B3A2E67001316DE33E5024963B0C429AF2455FF55083BE16592D55", CancellationToken.None).ConfigureAwait(false));
+        
+        Assert.False(await filesHashesHandler.IsHashExists("5B0CCEF73B8DCF768B3EBCFBB902269389C0224202F120C1AA25137AC2C27551", CancellationToken.None).ConfigureAwait(false));
         
         await backupService.BackupFiles(backupSettings, CancellationToken.None).ConfigureAwait(false);
         
-        Assert.True(await filesHashesHandler.IsHashExists("674833D4A3B3A2E67001316DE33E5024963B0C429AF2455FF55083BE16592D55", CancellationToken.None).ConfigureAwait(false));
+        Assert.True(await filesHashesHandler.IsHashExists("5B0CCEF73B8DCF768B3EBCFBB902269389C0224202F120C1AA25137AC2C27551", CancellationToken.None).ConfigureAwait(false));
     }
 
     private static TempDirectory CreateFilesToBackup(string? directory = null)

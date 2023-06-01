@@ -4,12 +4,12 @@ using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using BackupManager.App.Backup;
+using BackupManager.App.Backup.Detectors;
 using BackupManager.App.Backup.Services;
+using BackupManager.App.Database.Sync;
 using BackupManager.Domain.Configuration;
 using BackupManager.Domain.Settings;
-using BackupManager.Infra.Backup;
-using BackupManager.Infra.Backup.Detectors;
-using BackupManager.Infra.DB.Sync;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -21,23 +21,23 @@ public sealed class WindowsBackgroundService : BackgroundService
 {
     private static readonly TimeSpan mDefaultCheckForBackupSettingsInterval = TimeSpan.FromMinutes(5);
     
-    private readonly BackupServiceFactory mBackupServiceFactory;
-    private readonly BackupSettingsDetector mBackupSettingsDetector;
-    private readonly DatabasesSynchronizer mDatabasesSynchronizer;
+    private readonly IBackupServiceFactory mBackupServiceFactory;
+    private readonly IBackupSettingsDetector mBackupSettingsDetector;
+    private readonly IDatabasesSynchronizer mDatabasesSynchronizer;
     private readonly IOptionsMonitor<BackupServiceConfiguration> mConfiguration;
     private readonly ILogger<WindowsBackgroundService> mLogger;
 
-    public WindowsBackgroundService(BackupServiceFactory backupServiceFactory,
-                                    BackupSettingsDetector backupSettingsDetector,
-                                    DatabasesSynchronizer databasesSynchronizer,
+    public WindowsBackgroundService(IBackupServiceFactory backupServiceFactory,
+                                    IBackupSettingsDetector backupSettingsDetector,
+                                    IDatabasesSynchronizer databasesSynchronizer,
                                     IOptionsMonitor<BackupServiceConfiguration> configuration,
                                     ILogger<WindowsBackgroundService> logger)
     {
-        mBackupServiceFactory = backupServiceFactory;
-        mBackupSettingsDetector = backupSettingsDetector;
-        mDatabasesSynchronizer = databasesSynchronizer;
-        mConfiguration = configuration;
-        mLogger = logger;
+        mBackupServiceFactory = backupServiceFactory ?? throw new ArgumentException($"{nameof(backupServiceFactory)} is null");
+        mBackupSettingsDetector = backupSettingsDetector ?? throw new ArgumentException($"{nameof(backupSettingsDetector)} is null");
+        mDatabasesSynchronizer = databasesSynchronizer ?? throw new ArgumentException($"{nameof(databasesSynchronizer)} is null");
+        mConfiguration = configuration ?? throw new ArgumentException($"{nameof(configuration)} is null");
+        mLogger = logger ?? throw new ArgumentException($"{nameof(logger)} is null");
 
         if (mConfiguration.CurrentValue.CheckForBackupSettingsInterval == TimeSpan.Zero)
         {
@@ -52,7 +52,7 @@ public sealed class WindowsBackgroundService : BackgroundService
 
         if (!Admin.IsRunningAsAdministrator())
         {
-            string errorMessage = $"Backup Service must run under Administrator privileges";
+            string errorMessage = "Backup Service must run under Administrator privileges";
             mLogger.LogCritical(errorMessage);
             throw new ApplicationException(errorMessage);
         }
@@ -76,17 +76,13 @@ public sealed class WindowsBackgroundService : BackgroundService
     {
         try
         {
-            await mDatabasesSynchronizer.SyncDatabases(cancellationToken).ConfigureAwait(false);
+            HashSet<string> knownTokens = await GetKnownTokens(cancellationToken).ConfigureAwait(false);
+            
+            await mDatabasesSynchronizer.SyncDatabases(knownTokens, cancellationToken).ConfigureAwait(false);
             
             while (!cancellationToken.IsCancellationRequested)
             {
                 List<BackupSettings>? backupOptionsList = await mBackupSettingsDetector.DetectBackupSettings(cancellationToken).ConfigureAwait(false);
-
-                // TODO DOR - test.
-                // In case we are backuping to not known directory, we need to verify first with Id that it is
-                // a recognized drive we copy files into (have list of allowed token).
-                
-                // TOdO DOR add test - scenario of upading a file with hash x, while hash y exists in drive. hash should be updated from y to x and files should be updated too.
 
                 try
                 {
@@ -104,7 +100,7 @@ public sealed class WindowsBackgroundService : BackgroundService
                             break;
                         }
 
-                        bool isVerified = await VerifyBackupSettings(backupSettings, cancellationToken).ConfigureAwait(false);
+                        bool isVerified = VerifyBackupSettings(backupSettings, knownTokens);
 
                         if (!isVerified)
                         {
@@ -164,21 +160,19 @@ public sealed class WindowsBackgroundService : BackgroundService
         throw new FileNotFoundException(errorMessage, Consts.SettingsFilePath);
     }
 
-    private void CreateSettingsFileTemplate()
+    private static void CreateSettingsFileTemplate()
     {
         string executionDirectoryPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? throw new NullReferenceException("No parent directory for execution assembly");
         string exampleConfigurationFle = Path.Combine(executionDirectoryPath, "Domain", "Configuration", "BackupConfig.json");
         File.Copy(exampleConfigurationFle, Consts.SettingsExampleFilePath);
     }
 
-    private async Task<bool> VerifyBackupSettings(BackupSettings backupSettings, CancellationToken cancellationToken)
+    private bool VerifyBackupSettings(BackupSettings backupSettings, IReadOnlySet<string> knownTokens)
     {
         if (backupSettings.ShouldBackupToKnownDirectory)
         {
             return true;
         }
-
-        HashSet<string> knownTokens = await GetKnownTokens(cancellationToken).ConfigureAwait(false);
 
         if (string.IsNullOrWhiteSpace(backupSettings.Token))
         {
@@ -199,6 +193,12 @@ public sealed class WindowsBackgroundService : BackgroundService
     private static async Task<HashSet<string>> GetKnownTokens(CancellationToken cancellationToken)
     {
         HashSet<string> knownTokens = new();
+        
+        if (!File.Exists(Consts.KnownTokensFilePath))
+        {
+            return knownTokens;
+        }
+        
         await foreach (string token in File.ReadLinesAsync(Consts.KnownTokensFilePath, cancellationToken).ConfigureAwait(false))
         {
             knownTokens.Add(token);

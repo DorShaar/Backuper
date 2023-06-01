@@ -36,7 +36,8 @@ public class BackupSettings
     public string? MediaDeviceName { get; set; }
 
     /// <summary>
-    /// The root directory to copy from.
+    /// if <see cref="ShouldBackupToKnownDirectory"/>is true, this is the root directory to copy from.
+    /// if <see cref="ShouldBackupToKnownDirectory"/>is false, this is the directory to copy to.
     /// </summary>
     public string RootDirectory { get; init; } = string.Empty;
 

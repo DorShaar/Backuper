@@ -8,6 +8,7 @@ using Xunit;
 
 namespace BackupManagerTests.Domain.Settings;
 
+[Collection("BackupServiceTests Usage")]
 public class BackupSettingsTest : TestsBase
 {
     [Fact]

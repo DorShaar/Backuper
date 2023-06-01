@@ -47,7 +47,7 @@ public abstract class BackupServiceBase : IBackupService
     {
         mLogger.LogInformation($"Start backup '{backupSettings.Description ?? backupSettings.ToString()}'");
 
-        LoadDatabase(backupSettings);
+        await LoadDatabase(backupSettings, cancellationToken).ConfigureAwait(false);
 
         if (!backupSettings.ShouldBackupToKnownDirectory)
         {
@@ -82,8 +82,9 @@ public abstract class BackupServiceBase : IBackupService
                 mLogger.LogInformation($"Handling backup from '{directoriesMap.SourceRelativeDirectory}' to '{directoriesMap.DestRelativeDirectory}'. Iteration number: {iteration}");
 
                 string sourceDirectoryToBackup = BuildSourceDirectoryToBackup(backupSettings, directoriesMap.SourceRelativeDirectory);
+                string relativeDirectory = backupSettings.ShouldBackupToKnownDirectory ? backupSettings.RootDirectory : Consts.BackupsDirectoryPath;
                 (Dictionary<FileSystemPath, string> filePathToFileHashMap, isGetAllFilesCompleted) =
-                    await GetFilesToBackup(sourceDirectoryToBackup, backupSettings, iteration, cancellationToken).ConfigureAwait(false);
+                    await GetFilesToBackup(sourceDirectoryToBackup, relativeDirectory, backupSettings, iteration, cancellationToken).ConfigureAwait(false);
 
                 if (filePathToFileHashMap.Count == 0)
                 {
@@ -107,21 +108,19 @@ public abstract class BackupServiceBase : IBackupService
         mLogger.LogInformation($"Finished backup '{backupSettings.Description ?? backupSettings.ToString()}'");
     }
 
-    private void LoadDatabase(BackupSettings backupSettings)
+    private async Task LoadDatabase(BackupSettings backupSettings, CancellationToken cancellationToken)
     {
+        string databaseName = Consts.BackupFilesCollectionName;
         if (!backupSettings.ShouldBackupToKnownDirectory)
         {
-            mFilesHashesHandler.LoadDatabase(string.Format(Consts.BackupFilesForKnownDriveCollectionTemplate, backupSettings.Token));
-            return;
+            databaseName = string.Format(Consts.BackupFilesForKnownDriveCollectionTemplate, backupSettings.Token);
         }
         
-        mFilesHashesHandler.LoadDatabase(Consts.BackupFilesCollectionName);
+        await mFilesHashesHandler.LoadDatabase(databaseName, cancellationToken).ConfigureAwait(false);
     }
-
-    // TODO DOR now - test
+    
     private async Task MapAllFilesWithHash(BackupSettings backupSettings, CancellationToken cancellationToken)
     {
-        // TODO DOR now validate backupSettings.RootDirectory is not empty.
         mLogger.LogInformation($"Before backup we should verify all files in {backupSettings.RootDirectory} are mapped");
 
         ushort iteration = 0;
@@ -138,7 +137,11 @@ public abstract class BackupServiceBase : IBackupService
             mLogger.LogInformation($"Mapping all files with hash from directory '{backupSettings.RootDirectory}'. Iteration number: {iteration}");
 
             (Dictionary<FileSystemPath, string> filePathToFileHashMap, isGetAllFilesCompleted) =
-                await GetFilesToBackup(backupSettings.RootDirectory, backupSettings, iteration, cancellationToken).ConfigureAwait(false);
+                await GetFilesToBackup(backupSettings.RootDirectory,
+                                       relativeDirectory: backupSettings.RootDirectory,
+                                       backupSettings,
+                                       iteration,
+                                       cancellationToken).ConfigureAwait(false);
 
             if (filePathToFileHashMap.Count == 0)
             {
@@ -163,9 +166,10 @@ public abstract class BackupServiceBase : IBackupService
     }
 
     private async Task<(Dictionary<FileSystemPath, string>, bool)> GetFilesToBackup(string directoryToBackup,
-                                                                        BackupSettings backupSettings,
-                                                                        ushort iteration,
-                                                                        CancellationToken cancellationToken)
+                                                                                    string relativeDirectory,
+                                                                                    BackupSettings backupSettings,
+                                                                                    ushort iteration,
+                                                                                    CancellationToken cancellationToken)
     {
         bool isGetAllFilesCompleted = false;
         Dictionary<FileSystemPath, string> filePathToFileHashMap = new();
@@ -197,6 +201,7 @@ public abstract class BackupServiceBase : IBackupService
             AddDirectoriesToSearchQueue(directoriesToSearch, currentSearchDirectory);
             isGetAllFilesCompleted = await AddFilesToBackupOnlyIfFileNotBackedUpAlready(filePathToFileHashMap,
                                                                                         currentSearchDirectory,
+                                                                                        relativeDirectory,
                                                                                         backupSettings,
                                                                                         cancellationToken).ConfigureAwait(false);
             if (!isGetAllFilesCompleted)
@@ -218,6 +223,7 @@ public abstract class BackupServiceBase : IBackupService
 
     private async Task<bool> AddFilesToBackupOnlyIfFileNotBackedUpAlready(IDictionary<FileSystemPath, string> filePathToFileHashMap,
         string directory,
+        string relativeDirectory,
         BackupSettings backupSettings,
         CancellationToken cancellationToken)
     {
@@ -225,8 +231,7 @@ public abstract class BackupServiceBase : IBackupService
         foreach (string filePath in EnumerateFiles(directory))
         {
             FileSystemPath fileSystemPath = new(filePath);
-            string relativeTo = backupSettings.ShouldBackupToKnownDirectory ? backupSettings.RootDirectory : Consts.BackupsDirectoryPath;
-            FileSystemPath relativeFilePath = fileSystemPath.GetRelativePath(relativeTo);                
+            FileSystemPath relativeFilePath = fileSystemPath.GetRelativePath(relativeDirectory);
             
             if (cancellationToken.IsCancellationRequested)
             {

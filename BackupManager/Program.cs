@@ -1,6 +1,9 @@
 ﻿using System;
 using BackupManager.App;
+using BackupManager.App.Backup;
+using BackupManager.App.Backup.Detectors;
 using BackupManager.App.Database;
+using BackupManager.App.Database.Sync;
 using BackupManager.Domain.Configuration;
 using BackupManager.Infra;
 using BackupManager.Infra.Backup;
@@ -35,16 +38,16 @@ LoggerProviderOptions.RegisterProviderOptions<EventLogSettings, EventLogLoggerPr
 
 builder.Services.AddHostedService<WindowsBackgroundService>();
 builder.Services.AddSingleton<IJsonSerializer, JsonSerializer>();
-builder.Services.AddSingleton<BackupServiceFactory>();
+builder.Services.AddSingleton<IBackupServiceFactory, BackupServiceFactory>();
 builder.Services.AddSingleton<DriveBackupService>();
-builder.Services.AddSingleton<BackupSettingsDetector>();
+builder.Services.AddSingleton<IBackupSettingsDetector, BackupSettingsDetector>();
 builder.Services.AddSingleton<IFilesHashesHandler, FilesHashesHandler>();
 builder.Services.AddSingleton<IDuplicateChecker, DuplicateChecker>();
 
 // Databases.
 builder.Services.AddSingleton<MongoBackupServiceDatabase>();
 builder.Services.AddSingleton<LocalJsonDatabase>();
-builder.Services.AddSingleton<DatabasesSynchronizer>();
+builder.Services.AddSingleton<IDatabasesSynchronizer, DatabasesSynchronizer>();
 builder.Services.AddSingleton<IBackedUpFilesDatabase>(serviceProvider =>
 {
     string? databaseType = serviceProvider.GetService<IConfiguration>()?["DatabaseType"];

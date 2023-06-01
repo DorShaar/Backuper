@@ -21,9 +21,9 @@ namespace BackupManager.Infra.FileHashHandlers
             mLogger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public void LoadDatabase(string databaseName)
+        public async Task LoadDatabase(string databaseName, CancellationToken cancellationToken)
         {
-            mDatabase.Load(databaseName);
+            await mDatabase.Load(databaseName, cancellationToken).ConfigureAwait(false);
         }
 
         public async Task<bool> IsHashExists(string hash, CancellationToken cancellationToken)

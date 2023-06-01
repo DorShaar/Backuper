@@ -27,10 +27,16 @@ public class LocalJsonDatabase : IBackedUpFilesDatabase
 		mLogger = logger ?? throw new ArgumentNullException(nameof(logger));
 	}
 	
-	public void Load(string databaseName)
+	public async Task Load(string databaseName, CancellationToken cancellationToken)
 	{
+		if (mHashToFilePathsMap is not null && mHashToFilePathsMap.Any() && !string.IsNullOrWhiteSpace(mDatabaseFilePath?.PathString))
+		{
+			mLogger.LogInformation($"Before loading database {databaseName}, saving current database into '{mDatabaseFilePath?.PathString}'");
+			await Save(cancellationToken).ConfigureAwait(false);
+		}
+		
 		mDatabaseFilePath = new FileSystemPath(Path.Combine(Consts.DataDirectoryPath, $"{databaseName}.{Consts.LocalDatabaseExtension}"));
-		mHashToFilePathsMap = TryReadHashToFilePathsMap(databaseName);
+		mHashToFilePathsMap = TryReadHashToFilePathsMap(mDatabaseFilePath.PathString);
 		mFilePathToFileHashMap = DeduceFilePathToFileHashMap(mHashToFilePathsMap);
 	}
 

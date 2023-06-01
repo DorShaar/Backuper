@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using BackupManager.App.Backup.Detectors;
 using BackupManager.Domain.Configuration;
 using BackupManager.Domain.Enums;
 using BackupManager.Domain.Settings;
@@ -15,7 +16,7 @@ using Temporaries;
 
 namespace BackupManager.Infra.Backup.Detectors;
 
-public class BackupSettingsDetector
+public class BackupSettingsDetector : IBackupSettingsDetector
 {
     private readonly IEnumerable<string>? mSubscribedDirectories;
     private readonly IJsonSerializer mJsonSerializer;
