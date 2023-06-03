@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using BackupManager.App.Database;
 using BackupManager.Domain.Mapping;
 using BackupManager.Domain.Settings;
 using BackupManager.Infra;
@@ -38,14 +39,14 @@ public class MediaDeviceBackupServiceTests : TestsBase
         };
         
         LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
-        FilesHashesHandler filesHashesHandler = new(localJsonDatabase, NullLogger<FilesHashesHandler>.Instance);
+        FilesHashesHandler filesHashesHandler = new(new List<IBackedUpFilesDatabase> {localJsonDatabase});
 
         MediaDeviceBackupService backupService = new("Redmi Note 8 Pro", filesHashesHandler, NullLoggerFactory.Instance);
 
         await backupService.BackupFiles(backupSettings, CancellationToken.None).ConfigureAwait(false);
 
-        Assert.True(File.Exists(Path.Combine(Consts.BackupsDirectoryPath, "Screenshots", "Screenshot_2020-03-12-20-42-59-175_com.facebook.katana.jpg")));
-        Assert.True(File.Exists(Path.Combine(Consts.BackupsDirectoryPath, "Screenshots", "another dir", "Screenshot_same_copy.jpg")));
+        Assert.True(File.Exists(Path.Combine(Consts.WaitingApprovalDirectoryPath, "Screenshots", "Screenshot_2020-03-12-20-42-59-175_com.facebook.katana.jpg")));
+        Assert.True(File.Exists(Path.Combine(Consts.WaitingApprovalDirectoryPath, "Screenshots", "another dir", "Screenshot_same_copy.jpg")));
 
         string lastBackupTimeStr = (await File.ReadAllLinesAsync(Consts.BackupTimeDiaryFilePath).ConfigureAwait(false))[^1];
         DateTime lastBackupTime = DateTime.Parse(lastBackupTimeStr);
@@ -78,14 +79,14 @@ public class MediaDeviceBackupServiceTests : TestsBase
         };
         
         LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
-        FilesHashesHandler filesHashesHandler = new(localJsonDatabase, NullLogger<FilesHashesHandler>.Instance);
+        FilesHashesHandler filesHashesHandler = new(new List<IBackedUpFilesDatabase> {localJsonDatabase});
 
         MediaDeviceBackupService backupService = new("Redmi Note 8 Pro", filesHashesHandler, NullLoggerFactory.Instance);
 
         await backupService.BackupFiles(backupSettings, CancellationToken.None).ConfigureAwait(false);
 
-        Assert.True(File.Exists(Path.Combine(Consts.BackupsDirectoryPath, "DCIM", "Screenshots_tests", "Screenshot_2020-03-12-20-42-59-175_com.facebook.katana.jpg")));
-        Assert.True(File.Exists(Path.Combine(Consts.BackupsDirectoryPath, "DCIM", "Screenshots_tests", "another dir", "Screenshot_same_copy.jpg")));
+        Assert.True(File.Exists(Path.Combine(Consts.WaitingApprovalDirectoryPath, "DCIM", "Screenshots_tests", "Screenshot_2020-03-12-20-42-59-175_com.facebook.katana.jpg")));
+        Assert.True(File.Exists(Path.Combine(Consts.WaitingApprovalDirectoryPath, "DCIM", "Screenshots_tests", "another dir", "Screenshot_same_copy.jpg")));
 
         string lastBackupTimeStr = (await File.ReadAllLinesAsync(Consts.BackupTimeDiaryFilePath).ConfigureAwait(false))[^1];
         DateTime lastBackupTime = DateTime.Parse(lastBackupTimeStr);
@@ -118,13 +119,13 @@ public class MediaDeviceBackupServiceTests : TestsBase
         };
         
         LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
-        FilesHashesHandler filesHashesHandler = new(localJsonDatabase, NullLogger<FilesHashesHandler>.Instance);
+        FilesHashesHandler filesHashesHandler = new(new List<IBackedUpFilesDatabase> {localJsonDatabase});
 
         MediaDeviceBackupService backupService = new("Redmi Note 8 Pro", filesHashesHandler, NullLoggerFactory.Instance);
 
         await backupService.BackupFiles(backupSettings, CancellationToken.None).ConfigureAwait(false);
 
-        Assert.True(File.Exists(Path.Combine(Consts.BackupsDirectoryPath, "TestDir", "deviceId.txt")));
+        Assert.True(File.Exists(Path.Combine(Consts.WaitingApprovalDirectoryPath, "TestDir", "deviceId.txt")));
 
         string lastBackupTimeStr = (await File.ReadAllLinesAsync(Consts.BackupTimeDiaryFilePath).ConfigureAwait(false))[^1];
         DateTime lastBackupTime = DateTime.Parse(lastBackupTimeStr);

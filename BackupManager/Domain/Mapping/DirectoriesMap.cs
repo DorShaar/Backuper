@@ -2,7 +2,7 @@
 {
     public class DirectoriesMap
     {
-        public required string SourceRelativeDirectory { get; init; }
+        public required string SourceRelativeDirectory { get; set; }
         
         public required string? DestRelativeDirectory { get; init; }
     }

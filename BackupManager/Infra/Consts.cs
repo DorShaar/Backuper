@@ -5,6 +5,16 @@ namespace BackupManager.Infra;
 
 public static class Consts
 {
+    #region Application Configuration
+    public const string DatabasesTypesSection = "DatabasesTypes";
+
+    public static string[] AllowedDatabasesTypes =
+    {
+        "mongo",
+        "local"
+    };
+    #endregion Application Configuration
+    
     #region Top Directory
     public const string BackupServiceDirectoryName = "BackupService";
     
@@ -40,12 +50,19 @@ public static class Consts
     #region Data
     private const string mDataDirectoryName = "Data";
     private const string mBackupsDirectoryName = "Backups";
+    private const string mWaitingApprovalDirectoryName = "WaitingApproval";
+    private const string mReadyToBackupDirectoryName = "ReadyToBackup";
+    private const string mBackedUpDirectoryName = "BackedUp";
     private const string mBackupTimeDiaryFileName = "BackupTimeDiary";
     public const string LocalDatabaseExtension = "json";
 
     public static string DataDirectoryPath => Path.Combine(mBackupServiceDirectoryPath, mDataDirectoryName);
     public static string BackupTimeDiaryFilePath => Path.Combine(DataDirectoryPath, mBackupTimeDiaryFileName);
-    public static string BackupsDirectoryPath => Path.Combine(DataDirectoryPath, mBackupsDirectoryName);
+    private static string mBackupsDirectoryPath => Path.Combine(DataDirectoryPath, mBackupsDirectoryName);
+    public static string WaitingApprovalDirectoryPath => Path.Combine(mBackupsDirectoryPath, mWaitingApprovalDirectoryName);
+    public static string ReadyToBackupDirectoryPath => Path.Combine(mBackupsDirectoryPath, mReadyToBackupDirectoryName);
+    // TODO DOR now use all dirs.
+    public static string BackedUpDirectoryPath => Path.Combine(mBackupsDirectoryPath, mBackedUpDirectoryName);
     #endregion Data
     
     #region Database

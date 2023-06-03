@@ -47,7 +47,7 @@ public class DriveBackupServiceTests : TestsBase
         };
         
         LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
-        FilesHashesHandler filesHashesHandler = new(localJsonDatabase, NullLogger<FilesHashesHandler>.Instance);
+        FilesHashesHandler filesHashesHandler = new(new List<IBackedUpFilesDatabase> {localJsonDatabase});
 
         using TempDirectory gamesTempDirectory = CreateFilesToBackup();
         
@@ -56,9 +56,9 @@ public class DriveBackupServiceTests : TestsBase
         await backupService.BackupFiles(backupSettings, CancellationToken.None).ConfigureAwait(false);
 
         Assert.Equal("just a file",
-            await File.ReadAllTextAsync(Path.Combine(Consts.BackupsDirectoryPath, "GamesBackup" ,"file in games directory.txt")).ConfigureAwait(false));
+            await File.ReadAllTextAsync(Path.Combine(Consts.WaitingApprovalDirectoryPath, "GamesBackup" ,"file in games directory.txt")).ConfigureAwait(false));
         Assert.Equal("save the princess!",
-            await File.ReadAllTextAsync(Path.Combine(Consts.BackupsDirectoryPath, "GamesBackup", "prince of persia" ,"file in prince of persia directory.txt")).ConfigureAwait(false));
+            await File.ReadAllTextAsync(Path.Combine(Consts.WaitingApprovalDirectoryPath, "GamesBackup", "prince of persia" ,"file in prince of persia directory.txt")).ConfigureAwait(false));
         
         DateTime lastBackupTime = await ExtractLastBackupTime().ConfigureAwait(false);
         Assert.Equal(DateTime.Now.Date, lastBackupTime.Date);
@@ -96,7 +96,7 @@ public class DriveBackupServiceTests : TestsBase
         };
         
         LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
-        FilesHashesHandler filesHashesHandler = new(localJsonDatabase, NullLogger<FilesHashesHandler>.Instance);
+        FilesHashesHandler filesHashesHandler = new(new List<IBackedUpFilesDatabase> {localJsonDatabase});
 
         using TempDirectory gamesTempDirectory = CreateFilesToBackup();
         
@@ -105,9 +105,9 @@ public class DriveBackupServiceTests : TestsBase
         await backupService.BackupFiles(backupSettings, CancellationToken.None).ConfigureAwait(false);
 
         Assert.Equal("just a file",
-            await File.ReadAllTextAsync(Path.Combine(Consts.BackupsDirectoryPath, "Games" ,"file in games directory.txt")).ConfigureAwait(false));
+            await File.ReadAllTextAsync(Path.Combine(Consts.WaitingApprovalDirectoryPath, "Games" ,"file in games directory.txt")).ConfigureAwait(false));
         Assert.Equal("save the princess!",
-            await File.ReadAllTextAsync(Path.Combine(Consts.BackupsDirectoryPath, "Games", "prince of persia" ,"file in prince of persia directory.txt")).ConfigureAwait(false));
+            await File.ReadAllTextAsync(Path.Combine(Consts.WaitingApprovalDirectoryPath, "Games", "prince of persia" ,"file in prince of persia directory.txt")).ConfigureAwait(false));
 
         DateTime lastBackupTime = await ExtractLastBackupTime().ConfigureAwait(false);
         Assert.Equal(DateTime.Now.Date, lastBackupTime.Date);
@@ -144,7 +144,7 @@ public class DriveBackupServiceTests : TestsBase
 
         IFilesHashesHandler filesHashesHandler = A.Fake<IFilesHashesHandler>();
         
-        using TempDirectory gamesTempDirectory = CreateFilesToBackup(Consts.BackupsDirectoryPath);
+        using TempDirectory gamesTempDirectory = CreateFilesToBackup(Consts.ReadyToBackupDirectoryPath);
         
         DriveBackupService backupService = new(filesHashesHandler, NullLoggerFactory.Instance);
 
@@ -178,9 +178,9 @@ public class DriveBackupServiceTests : TestsBase
         };
         
         LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
-        FilesHashesHandler filesHashesHandler = new(localJsonDatabase, NullLogger<FilesHashesHandler>.Instance);
+        FilesHashesHandler filesHashesHandler = new(new List<IBackedUpFilesDatabase> {localJsonDatabase});
     
-        using TempDirectory gamesTempDirectory = CreateFilesToBackup(Consts.BackupsDirectoryPath);
+        using TempDirectory gamesTempDirectory = CreateFilesToBackup(Consts.ReadyToBackupDirectoryPath);
         
         DriveBackupService backupService = new(filesHashesHandler, NullLoggerFactory.Instance);
     
@@ -226,12 +226,12 @@ public class DriveBackupServiceTests : TestsBase
         };
         
         LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
-        FilesHashesHandler filesHashesHandler = new(localJsonDatabase, NullLogger<FilesHashesHandler>.Instance);
+        FilesHashesHandler filesHashesHandler = new(new List<IBackedUpFilesDatabase> {localJsonDatabase});
         await filesHashesHandler.LoadDatabase("Data-some_token", CancellationToken.None).ConfigureAwait(false);
     
         DriveBackupService backupService = new(filesHashesHandler, NullLoggerFactory.Instance);
     
-        using TempDirectory gamesTempDirectory = CreateFilesToBackup(Consts.BackupsDirectoryPath);
+        using TempDirectory gamesTempDirectory = CreateFilesToBackup(Consts.ReadyToBackupDirectoryPath);
         string alreadyExistingFilePath = Path.Combine(tempBackupDirectory.Path, "Games", "file in games directory.txt");
         _ = Directory.CreateDirectory(Path.GetDirectoryName(alreadyExistingFilePath) ?? throw new NullReferenceException());
         await File.WriteAllTextAsync(alreadyExistingFilePath, "just a file").ConfigureAwait(false);

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using BackupManager.App;
 using BackupManager.App.Backup;
 using BackupManager.App.Backup.Detectors;
@@ -48,23 +49,43 @@ builder.Services.AddSingleton<IDuplicateChecker, DuplicateChecker>();
 builder.Services.AddSingleton<MongoBackupServiceDatabase>();
 builder.Services.AddSingleton<LocalJsonDatabase>();
 builder.Services.AddSingleton<IDatabasesSynchronizer, DatabasesSynchronizer>();
-builder.Services.AddSingleton<IBackedUpFilesDatabase>(serviceProvider =>
+builder.Services.AddSingleton<List<IBackedUpFilesDatabase>>(serviceProvider =>
 {
-    string? databaseType = serviceProvider.GetService<IConfiguration>()?["DatabaseType"];
+    string? databasesTypesRaw = serviceProvider.GetService<IConfiguration>()?[Consts.DatabasesTypesSection];
 
-    IBackedUpFilesDatabase? database = databaseType?.ToLower() switch
+    if (string.IsNullOrWhiteSpace(databasesTypesRaw))
     {
-        "mongo" => serviceProvider.GetService<MongoBackupServiceDatabase>(),
-        "local" => serviceProvider.GetService<LocalJsonDatabase>(),
-        _       => null
-    };
-
-    if (database is null)
-    {
-        throw new NullReferenceException($"{nameof(database)} is null. Please see DatabaseType section in appsettings.json file and verify it is one of: mongo, local");
+        throw new NullReferenceException($"{Consts.DatabasesTypesSection} is null. Please see DatabaseType section in appsettings.json file and verify it is one of: {string.Join(',', Consts.AllowedDatabasesTypes)}");
     }
 
-    return database;
+    string[] databasesTypes = databasesTypesRaw.Split(',');
+
+    List<IBackedUpFilesDatabase>? databases = null;
+    
+    foreach (string databaseType in databasesTypes)
+    {
+        IBackedUpFilesDatabase? database = databaseType.Trim().ToLower() switch
+        {
+            "mongo" => serviceProvider.GetService<MongoBackupServiceDatabase>(),
+            "local" => serviceProvider.GetService<LocalJsonDatabase>(),
+            _       => null
+        };
+
+        if (database is null)
+        {
+            continue;
+        }
+
+        databases ??= new List<IBackedUpFilesDatabase>();
+        databases.Add(database);
+    }
+
+    if (databases is null)
+    {
+        throw new NullReferenceException($"No valid databases found. Please see DatabaseType section in appsettings.json file and verify it is one of: {string.Join(',', Consts.AllowedDatabasesTypes)}");
+    }
+
+    return databases;
 });
 
 builder.Services.Configure<BackupServiceConfiguration>(builder.Configuration);
@@ -74,7 +95,6 @@ builder.Services.AddOptions();
 builder.Configuration.AddJsonFile(Consts.SettingsFilePath, optional: true, reloadOnChange: true);
 builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
-// TODO DOR add kibana
 // See: https://github.com/dotnet/runtime/issues/47303
 builder.Logging.AddConfiguration(
     builder.Configuration.GetSection("Logging"));

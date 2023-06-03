@@ -2,6 +2,7 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using BackupManager.App.Database;
 using BackupManager.Infra;
 using BackupManager.Infra.DB.LocalJsonFileDatabase;
 using BackupManager.Infra.FileHashHandlers;
@@ -18,7 +19,7 @@ namespace BackupManagerTests.Domain.Hash
         {
             LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
             await localJsonDatabase.Load(Consts.BackupFilesCollectionName, CancellationToken.None).ConfigureAwait(false);
-            FilesHashesHandler filesHashesHandler = new(localJsonDatabase, NullLogger<FilesHashesHandler>.Instance);
+            FilesHashesHandler filesHashesHandler = new(new List<IBackedUpFilesDatabase> {localJsonDatabase});
 
             await filesHashesHandler.AddFileHash("ABC123", "FileName.ext", CancellationToken.None).ConfigureAwait(false);
             await filesHashesHandler.AddFileHash("ABC1234", "FileName.ext", CancellationToken.None).ConfigureAwait(false);
@@ -33,7 +34,7 @@ namespace BackupManagerTests.Domain.Hash
         {
             LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
             await localJsonDatabase.Load(Consts.BackupFilesCollectionName, CancellationToken.None).ConfigureAwait(false);
-            FilesHashesHandler filesHashesHandler = new(localJsonDatabase, NullLogger<FilesHashesHandler>.Instance);
+            FilesHashesHandler filesHashesHandler = new(new List<IBackedUpFilesDatabase> {localJsonDatabase});
             
             const string firstFileName = "FileName.ext";
             const string secondFileName = "FileName2.ext";
@@ -51,7 +52,7 @@ namespace BackupManagerTests.Domain.Hash
         {
             LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
             await localJsonDatabase.Load(Consts.BackupFilesCollectionName, CancellationToken.None).ConfigureAwait(false);
-            FilesHashesHandler filesHashesHandler = new(localJsonDatabase, NullLogger<FilesHashesHandler>.Instance);
+            FilesHashesHandler filesHashesHandler = new(new List<IBackedUpFilesDatabase> {localJsonDatabase});
             
             const string firstFileName = "FileName.ext";
             const string secondFileName = "FileName2.ext";
@@ -76,7 +77,7 @@ namespace BackupManagerTests.Domain.Hash
         {
             LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
             await localJsonDatabase.Load(Consts.BackupFilesCollectionName, CancellationToken.None).ConfigureAwait(false);
-            FilesHashesHandler filesHashesHandler = new(localJsonDatabase, NullLogger<FilesHashesHandler>.Instance);
+            FilesHashesHandler filesHashesHandler = new(new List<IBackedUpFilesDatabase> {localJsonDatabase});
 
             const string hash = "ABC123";
             await filesHashesHandler.AddFileHash(hash, "fileName", CancellationToken.None).ConfigureAwait(false);
@@ -89,7 +90,7 @@ namespace BackupManagerTests.Domain.Hash
         {
             LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
             await localJsonDatabase.Load(Consts.BackupFilesCollectionName, CancellationToken.None).ConfigureAwait(false);
-            FilesHashesHandler filesHashesHandler = new(localJsonDatabase, NullLogger<FilesHashesHandler>.Instance);
+            FilesHashesHandler filesHashesHandler = new(new List<IBackedUpFilesDatabase> {localJsonDatabase});
 
             await filesHashesHandler.AddFileHash("ABC123", "fileName", CancellationToken.None).ConfigureAwait(false);
 
@@ -101,7 +102,7 @@ namespace BackupManagerTests.Domain.Hash
         {
             LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
             await localJsonDatabase.Load(Consts.BackupFilesCollectionName, CancellationToken.None).ConfigureAwait(false);
-            FilesHashesHandler filesHashesHandler = new(localJsonDatabase, NullLogger<FilesHashesHandler>.Instance);
+            FilesHashesHandler filesHashesHandler = new(new List<IBackedUpFilesDatabase> {localJsonDatabase});
             await filesHashesHandler.AddFileHash("expectedHash", "expectedFilePath1", CancellationToken.None).ConfigureAwait(false);
             await filesHashesHandler.AddFileHash("expectedHash", "expectedFilePath2", CancellationToken.None).ConfigureAwait(false);
             

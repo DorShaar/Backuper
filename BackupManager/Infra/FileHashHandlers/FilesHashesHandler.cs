@@ -6,24 +6,29 @@ using System.Threading.Tasks;
 using BackupManager.App.Database;
 using BackupManager.Domain.Hash;
 using BackupManager.Infra.DB.Models;
-using Microsoft.Extensions.Logging;
 
 namespace BackupManager.Infra.FileHashHandlers
 {
     public class FilesHashesHandler : IFilesHashesHandler
     {
-        private readonly IBackedUpFilesDatabase mDatabase;
-        private readonly ILogger<FilesHashesHandler> mLogger;
+        private readonly List<IBackedUpFilesDatabase> mDatabases;
         
-        public FilesHashesHandler(IBackedUpFilesDatabase database, ILogger<FilesHashesHandler> logger)
+        public FilesHashesHandler(List<IBackedUpFilesDatabase> databases)
         {
-            mDatabase = database ?? throw new ArgumentNullException(nameof(database));
-            mLogger = logger ?? throw new ArgumentNullException(nameof(logger));
+            if (databases is null || databases.Count == 0)
+            {
+                throw new ArgumentNullException(nameof(databases));
+            }
+
+            mDatabases = databases;
         }
 
         public async Task LoadDatabase(string databaseName, CancellationToken cancellationToken)
         {
-            await mDatabase.Load(databaseName, cancellationToken).ConfigureAwait(false);
+            foreach (IBackedUpFilesDatabase database in mDatabases)
+            {
+                await database.Load(databaseName, cancellationToken).ConfigureAwait(false);    
+            }
         }
 
         public async Task<bool> IsHashExists(string hash, CancellationToken cancellationToken)
@@ -33,7 +38,7 @@ namespace BackupManager.Infra.FileHashHandlers
                 FileHash = hash
             };
             
-            IEnumerable<BackedUpFile>? backedUpFiles = await mDatabase.Find(searchModel, cancellationToken);
+            IEnumerable<BackedUpFile>? backedUpFiles = await mDatabases[0].Find(searchModel, cancellationToken);
             return backedUpFiles is not null && backedUpFiles.Any();
         }
 
@@ -44,7 +49,7 @@ namespace BackupManager.Infra.FileHashHandlers
                 FilePath = filePath
             };
             
-            IEnumerable<BackedUpFile>? backedUpFiles = await mDatabase.Find(searchModel, cancellationToken);
+            IEnumerable<BackedUpFile>? backedUpFiles = await mDatabases[0].Find(searchModel, cancellationToken);
             return backedUpFiles is not null && backedUpFiles.Any();
         }
 
@@ -58,12 +63,18 @@ namespace BackupManager.Infra.FileHashHandlers
                 FilePath = filePath
             };
 
-            await mDatabase.Insert(backedUpFile, cancellationToken).ConfigureAwait(false);
+            foreach (IBackedUpFilesDatabase database in mDatabases)
+            {
+                await database.Insert(backedUpFile, cancellationToken).ConfigureAwait(false);
+            }
         }
 
         public async Task Save(CancellationToken cancellationToken)
         {
-            await mDatabase.Save(cancellationToken).ConfigureAwait(false);
+            foreach (IBackedUpFilesDatabase database in mDatabases)
+            {
+                await database.Save(cancellationToken).ConfigureAwait(false);
+            }
         }
     }
 }

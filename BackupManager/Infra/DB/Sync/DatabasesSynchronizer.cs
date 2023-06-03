@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using BackupManager.App.Database;
 using BackupManager.App.Database.Sync;
 using BackupManager.Infra.DB.LocalJsonFileDatabase;
 using BackupManager.Infra.DB.Models;
@@ -11,20 +12,32 @@ using Microsoft.Extensions.Logging;
 
 namespace BackupManager.Infra.DB.Sync;
 
-public class DatabasesSynchronizer : IDatabasesSynchronizer 
+public class DatabasesSynchronizer : IDatabasesSynchronizer
 {
-	private readonly LocalJsonDatabase mLocalJsonDatabase;
-	private readonly MongoBackupServiceDatabase mMongoBackupServiceDatabase;
+	private readonly LocalJsonDatabase? mLocalJsonDatabase;
+	private readonly MongoBackupServiceDatabase? mMongoBackupServiceDatabase;
 	private readonly ILogger<DatabasesSynchronizer> mLogger;
 
-	public DatabasesSynchronizer(LocalJsonDatabase localJsonDatabase,
-								 MongoBackupServiceDatabase mongoBackupServiceDatabase,
-								 ILogger<DatabasesSynchronizer> logger)
+	public DatabasesSynchronizer(List<IBackedUpFilesDatabase> databases, ILogger<DatabasesSynchronizer> logger)
 	{
-		mLocalJsonDatabase = localJsonDatabase ?? throw new ArgumentNullException(nameof(localJsonDatabase));
-		mMongoBackupServiceDatabase = mongoBackupServiceDatabase ?? throw new ArgumentNullException(nameof(mongoBackupServiceDatabase));
-		
 		mLogger = logger ?? throw new ArgumentNullException(nameof(logger));
+		
+		foreach (IBackedUpFilesDatabase database in databases)
+		{
+			if (database is LocalJsonDatabase localJsonDatabase)
+			{
+				mLocalJsonDatabase = localJsonDatabase;
+				continue;
+			}
+			
+			if (database is MongoBackupServiceDatabase mongoBackupServiceDatabase)
+			{
+				mMongoBackupServiceDatabase = mongoBackupServiceDatabase;
+				continue;
+			}
+			
+			mLogger.LogError($"Found not supported to synchronization database type {database.GetType()}");
+		}
 	}
 	
 	public async Task SyncDatabases(IEnumerable<string> knownTokens, CancellationToken cancellationToken)
@@ -32,6 +45,13 @@ public class DatabasesSynchronizer : IDatabasesSynchronizer
 		string[] collections = knownTokens.Select(token => string.Format(Consts.BackupFilesForKnownDriveCollectionTemplate, token))
 										   .Append(Consts.BackupFilesCollectionName)
 										   .ToArray();
+
+		if (mLocalJsonDatabase is null || mMongoBackupServiceDatabase is null)
+		{
+			mLogger.LogError("Only one database is registered, synchronization is not required");
+			return;
+		}
+		
 		await SyncLocalJsonDatabaseFromMongoDatabase(mLocalJsonDatabase, mMongoBackupServiceDatabase, collections,  cancellationToken).ConfigureAwait(false);
 		await SyncMongoDatabaseFromLocalJsonDatabase(mMongoBackupServiceDatabase, mLocalJsonDatabase, collections, cancellationToken).ConfigureAwait(false);
 	}
