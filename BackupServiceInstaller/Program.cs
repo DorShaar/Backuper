@@ -1,19 +1,27 @@
-﻿using System.ServiceProcess;
-
-namespace BackupServiceInstaller;
+﻿namespace BackupServiceInstaller;
 
 public class Program
 {
-	// TODO DOR add installer to create service.
-	// http://www.tutorialspanel.com/how-to-start-stop-and-restart-windows-services-using-csharp/index.htm
-	// https://learn.microsoft.com/en-us/dotnet/api/system.serviceprocess.servicecontroller?view=dotnet-plat-ext-7.0
+	private const string ServiceName = "Dor Backuper Service";
+	private static readonly string mServicePath = @"C:\Users\DorShaar\Dor\Personal\Projects\Backuper\BackupManager\bin\Debug\net7.0\win-x64\publish\BackupManager.exe"; // TODO DOR now
 	
-	// https://learn.microsoft.com/en-us/dotnet/core/extensions/windows-service-with-installer
 	public static void Main()
 	{
-		ServiceController serviceController = new ServiceController("");
-		serviceController.WaitForStatus(ServiceControllerStatus.Paused);
+		WindowsServiceManager windowsServiceManager = new();
+		(bool isServiceExists, WindowsServiceHandle? serviceHandler) = windowsServiceManager.IsServiceExists(ServiceName); 
+		if (isServiceExists && serviceHandler is not null)
+		{
+			_ = WindowsServiceManager.StartService(serviceHandler);
+			serviceHandler.Dispose();
+			return;
+		}
 		
-		serviceController.
+		using WindowsServiceHandle? serviceHandle = windowsServiceManager.TryCreateService(ServiceName, mServicePath);
+		if (serviceHandle is null)
+		{
+			return;
+		}
+		
+		_ = WindowsServiceManager.StartService(serviceHandle);
 	}
 }
