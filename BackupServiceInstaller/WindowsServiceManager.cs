@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Runtime.InteropServices;
 using BackupServiceInstaller.Enums;
+using Microsoft.Extensions.Logging;
 
 namespace BackupServiceInstaller;
 
@@ -32,6 +33,13 @@ public class WindowsServiceManager
 	private static extern IntPtr OpenService(IntPtr hSCManager, string lpServiceName, int dwDesiredAccess);
 	#endregion Dll Imports
 
+	private readonly ILogger<WindowsServiceManager> mLogger;
+
+	public WindowsServiceManager(ILogger<WindowsServiceManager> logger)
+	{
+		mLogger = logger ?? throw new ArgumentNullException($"{nameof(logger)} is null");
+	}
+	
 	public (bool, WindowsServiceHandle?) IsServiceExists(string serviceName)
 	{
 		const int serviceDoesNotExistsWin32ErrorCode = 1060;
@@ -44,21 +52,24 @@ public class WindowsServiceManager
 			using WindowsServiceHandle serviceControlManagerHandle = OpenServiceControlManager(WindowsServiceManagerAccessRights.Connect | WindowsServiceManagerAccessRights.CreateService);
 			serviceHandle = openService(serviceControlManagerHandle, serviceName, WindowsServiceAccessRights.QueryStatus | WindowsServiceAccessRights.Start);
 			isServiceExists = true;
+			mLogger.LogInformation($"Service {serviceName} already exists");
 		}
 		catch (Win32Exception ex)
 		{
 			if (ex.NativeErrorCode != serviceDoesNotExistsWin32ErrorCode)
 			{
+				mLogger.LogInformation(ex, $"Failed to check if service {serviceName} exists. Error code: {ex.NativeErrorCode}");
 				throw;
 			}
 
+			mLogger.LogInformation($"Service {serviceName} does not exist");
 			isServiceExists = false;
 		}
 
 		return (isServiceExists, serviceHandle);
 	}
 
-	public static bool StartService(WindowsServiceHandle serviceHandle)
+	public bool StartService(WindowsServiceHandle serviceHandle, string serviceName)
 	{
 		const int serviceAlreadyRunningError = 1056;
 		int startResult = StartService(serviceHandle.Handle,0,null);
@@ -67,18 +78,15 @@ public class WindowsServiceManager
 			int errorCode = Marshal.GetLastWin32Error();
 			if (errorCode == serviceAlreadyRunningError)
 			{
-				// TOdO DOR add logs
-				// mLogger.LogInformation($"While trying to start, service {serviceName} already running");
+				mLogger.LogInformation($"While trying to start, service {serviceName} already running");
 				return true;
 			}
 			
-			// TOdO DOR add logs
-			// mLogger.LogError($"Failed to start service {serviceName}. Error code: {errorCode}");
+			mLogger.LogError($"Failed to start service {serviceName}. Error code: {errorCode}");
 			return false;
 		}
 
-		// TOdO DOR add logs
-		// mLogger.LogInformation($"Service {serviceName} started");
+		mLogger.LogInformation($"Service {serviceName} started");
 		return true;
 	}
 
@@ -103,14 +111,12 @@ public class WindowsServiceManager
 											  null,
 											  null);
 			WindowsServiceHandle serviceHandle = new(servicePtr);
-			// TOdO DOR add logs
-			// mLogger.LogInformation($"Service {serviceName} created from path '{serviceExePath}'");
+			mLogger.LogInformation($"Service {serviceName} created from path '{serviceExePath}'");
 			return serviceHandle;
 		}
 		catch (Exception ex)
 		{
-			// TOdO DOR add logs
-			// mLogger.LogError(ex, $"Could not create service {serviceName} from path '{serviceExePath}'");
+			mLogger.LogError(ex, $"Could not create service {serviceName} from path '{serviceExePath}'");
 			return null;
 		}
 	}
