@@ -89,7 +89,7 @@ public sealed class WindowsBackgroundService : BackgroundService
                 {
                     if (backupOptionsList is null || backupOptionsList.Count == 0)
                     {
-                        mLogger.LogInformation($"No backup files settings found");
+                        mLogger.LogDebug($"No backup files settings found");
                         continue;
                     }
                 

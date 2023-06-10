@@ -33,7 +33,7 @@ public class BackupSettingsDetector : IBackupSettingsDetector
     
     public async Task<List<BackupSettings>?> DetectBackupSettings(CancellationToken cancellationToken)
     {
-        mLogger.LogInformation($"Detecting backup settings...");
+        mLogger.LogDebug($"Detecting backup settings...");
 
         List<BackupSettings>? settingsList = null;
         IEnumerable<BackupSettings>? settingsFilesFromDrives = await TryGetSettingsFromDrives(cancellationToken).ConfigureAwait(false);
