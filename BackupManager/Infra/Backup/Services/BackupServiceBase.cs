@@ -212,7 +212,7 @@ public abstract class BackupServiceBase : IBackupService
 
         mLogger.LogInformation(isGetAllFilesCompleted 
                                    ? $"Finished iterative search for finding files from '{directoryToBackup}'" 
-                                   : $"Paused iterative search in '{directoriesToSearch}'");
+                                   : $"Paused iterative search in '{directoryToBackup}'");
         return (filePathToFileHashMap, isGetAllFilesCompleted);
     }
 
