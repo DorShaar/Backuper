@@ -308,7 +308,7 @@ public abstract class BackupServiceBase : IBackupService
 
                 if (!backupSettings.ShouldBackupToKnownDirectory)
                 {
-                    // TODO DOR move files from ReadyToBackup to Backuped.
+                    _ = tryMoveFileFromReadyToBackupDirectoryToBackedUpDirectory(fileToBackup);
                 }
             }
             catch (IOException ex)
@@ -337,9 +337,9 @@ public abstract class BackupServiceBase : IBackupService
         return new FileSystemPath(backupSettings.RootDirectory);
     }
     
-    private FileSystemPath BuildDestinationFilePath(FileSystemPath relativeSourceFilePath,
-        FileSystemPath destinationDirectoryPath,
-        DirectoriesMap directoriesMap)
+    private static FileSystemPath BuildDestinationFilePath(FileSystemPath relativeSourceFilePath,
+                                                           FileSystemPath destinationDirectoryPath,
+                                                           DirectoriesMap directoriesMap)
     {
         FileSystemPath relativeDestinationFilePath = BuildRelativeDestinationFilePath(relativeSourceFilePath, destinationDirectoryPath, directoriesMap);
         return destinationDirectoryPath.Combine(relativeDestinationFilePath);
@@ -377,5 +377,25 @@ public abstract class BackupServiceBase : IBackupService
         }
         
         return sourceFilePath.GetRelativePath(Consts.ReadyToBackupDirectoryPath);
+    }
+
+    private bool tryMoveFileFromReadyToBackupDirectoryToBackedUpDirectory(FileSystemPath readyToBackupFilePath)
+    {
+        try
+        {
+            FileSystemPath backedUpFilePath = readyToBackupFilePath.Replace(Consts.ReadyToBackupDirectoryPath,
+                                                                            Consts.BackedUpDirectoryPath);
+
+            string parentDirectory = Path.GetDirectoryName(backedUpFilePath.PathString)
+                ?? throw new NullReferenceException($"Directory of '{backedUpFilePath.PathString}' is empty");
+            _ = Directory.CreateDirectory(parentDirectory);
+            File.Move(readyToBackupFilePath.PathString, backedUpFilePath.PathString);
+            return true;
+        }
+        catch (Exception ex)
+        {
+           mLogger.LogError(ex, $"Failed to move {readyToBackupFilePath.PathString} to {Consts.BackedUpDirectoryPath}");
+           return false;
+        }
     }
 }

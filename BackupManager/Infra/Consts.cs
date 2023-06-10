@@ -23,8 +23,8 @@ public static class Consts
     
     // TODO DOR now
     private static string mBackupServiceDirectoryPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-        mBackupServiceTestsDirectoryName); // For Tests.
-        // BackupServiceDirectoryName); // For Production.
+        // mBackupServiceTestsDirectoryName); // For Tests.
+        BackupServiceDirectoryName); // For Production.
     #endregion Top Directory
 
     #region Settings
@@ -61,7 +61,6 @@ public static class Consts
     private static string mBackupsDirectoryPath => Path.Combine(DataDirectoryPath, mBackupsDirectoryName);
     public static string WaitingApprovalDirectoryPath => Path.Combine(mBackupsDirectoryPath, mWaitingApprovalDirectoryName);
     public static string ReadyToBackupDirectoryPath => Path.Combine(mBackupsDirectoryPath, mReadyToBackupDirectoryName);
-    // TODO DOR now use all dirs.
     public static string BackedUpDirectoryPath => Path.Combine(mBackupsDirectoryPath, mBackedUpDirectoryName);
     #endregion Data
     

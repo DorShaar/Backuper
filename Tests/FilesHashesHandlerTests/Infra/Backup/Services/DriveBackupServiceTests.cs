@@ -201,9 +201,11 @@ public class DriveBackupServiceTests : TestsBase
         Assert.Equal(Path.Combine("/Games/prince of persia/file in prince of persia directory.txt"),
             hashesToFilePath["674833D4A3B3A2E67001316DE33E5024963B0C429AF2455FF55083BE16592D55"][0]);
         
-        // Makes sure source files were copied and not moved or deleted.
-        Assert.True(File.Exists(Path.Combine(gamesTempDirectory.Path, "file in games directory.txt")));
-        Assert.True(File.Exists(Path.Combine(gamesTempDirectory.Path, "prince of persia", "file in prince of persia directory.txt")));
+        // Makes sure files in ReadyToBackup directory were moved to Backedup directory.
+        Assert.False(File.Exists(Path.Combine(gamesTempDirectory.Path, "file in games directory.txt")));
+        Assert.True(File.Exists(Path.Combine(Consts.BackedUpDirectoryPath, "Games", "file in games directory.txt")));
+        Assert.False(File.Exists(Path.Combine(gamesTempDirectory.Path, "prince of persia", "file in prince of persia directory.txt")));
+        Assert.True(File.Exists(Path.Combine(Consts.BackedUpDirectoryPath, "Games", "prince of persia", "file in prince of persia directory.txt")));
     }
 
     [Fact]
