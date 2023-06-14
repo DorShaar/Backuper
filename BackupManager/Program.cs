@@ -43,7 +43,6 @@ builder.Services.AddSingleton<IBackupServiceFactory, BackupServiceFactory>();
 builder.Services.AddSingleton<DriveBackupService>();
 builder.Services.AddSingleton<IBackupSettingsDetector, BackupSettingsDetector>();
 builder.Services.AddSingleton<IFilesHashesHandler, FilesHashesHandler>();
-builder.Services.AddSingleton<IDuplicateChecker, DuplicateChecker>();
 
 // Databases.
 builder.Services.AddSingleton<MongoBackupServiceDatabase>();

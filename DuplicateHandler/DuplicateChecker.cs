@@ -1,34 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using BackupManager.App;
-using BackupManager.Domain.Hash;
-
-namespace BackupManager.Infra
+﻿namespace DuplicatesHandler
 {
-    public class DuplicateChecker : IDuplicateChecker
+    // TODO DOR move to another project.
+    public class DuplicateChecker
     {
-        public void WriteDuplicateFiles(string rootDirectory, string duplicateFilesOutputFilePath)
-        {
-            string? directory = Path.GetDirectoryName(duplicateFilesOutputFilePath);
-            if (string.IsNullOrWhiteSpace(directory) || !Directory.Exists(directory))
-            {
-                Console.WriteLine($"{directory} does not exists");
-                return;
-            }
-
-            WriteDuplicateFiles(FindDuplicateFiles(rootDirectory), duplicateFilesOutputFilePath);
-        }
-
-        private void WriteDuplicateFiles(Dictionary<string, List<string>> duplicatedFiles, string outputPath)
+        public void WriteDuplicateFiles(Dictionary<string, List<string>> duplicatedFiles, string outputPath)
         {
             using StreamWriter writer = File.CreateText(outputPath);
-            foreach (KeyValuePair<string, List<string>> keyValuePair in duplicatedFiles)
+            foreach ((string fileHash, List<string> filePaths) in duplicatedFiles)
             {
-                if (keyValuePair.Value.Count > 1)
+                if (filePaths.Count > 1)
                 {
-                    writer.WriteLine($"Duplicate {keyValuePair.Key}");
-                    keyValuePair.Value.ForEach(file => writer.WriteLine(file));
+                    writer.WriteLine($"Duplicate hash {fileHash}");
+                    filePaths.ForEach(file => writer.WriteLine(file));
                     writer.WriteLine(string.Empty);
                 }
             }
@@ -45,13 +28,13 @@ namespace BackupManager.Infra
             return FindDuplicateFilesIterative(rootDirectory);
         }
 
-        private Dictionary<string, List<string>> FindDuplicateFilesIterative(string rootDirectory)
+        private static Dictionary<string, List<string>> FindDuplicateFilesIterative(string rootDirectory)
         {
-            Dictionary<string, List<string>> duplicatesFiles = new Dictionary<string, List<string>>();
+            Dictionary<string, List<string>> duplicatesFiles = new();
 
             Console.WriteLine($"Start iterative operation for finding duplicate files from {rootDirectory}");
 
-            Queue<string> directoriesToSearch = new Queue<string>();
+            Queue<string> directoriesToSearch = new();
             directoriesToSearch.Enqueue(rootDirectory);
 
             while (directoriesToSearch.Count > 0)
@@ -76,7 +59,7 @@ namespace BackupManager.Infra
             return duplicatesFiles;
         }
 
-        private void AddFileHashToGivenDict(Dictionary<string, List<string>> duplicatesFiles, string fileHash, string filePath)
+        private static void AddFileHashToGivenDict(IDictionary<string, List<string>> duplicatesFiles, string fileHash, string filePath)
         {
             if (duplicatesFiles.TryGetValue(fileHash, out List<string>? paths))
             {
@@ -85,7 +68,7 @@ namespace BackupManager.Infra
             }
             else
             {
-                duplicatesFiles.Add(fileHash, new List<string>() { filePath });
+                duplicatesFiles.Add(fileHash, new List<string> { filePath });
             }
         }
     }
