@@ -2,12 +2,24 @@
 
 public class FileDeleter
 {
-	public void DeleteFilesFrom(string filePath)
+	public static void DeleteFilesFrom(string filePath)
 	{
 		string[] filePathsToDelete = File.ReadAllLines(filePath);
 		foreach (string filePathToDelete in filePathsToDelete)
 		{
-			File.Delete(filePathToDelete);
+			string fixedFilePathToDelete = filePathToDelete.Trim();
+			if (string.IsNullOrWhiteSpace(fixedFilePathToDelete))
+			{
+				continue;
+			}
+
+			if (new FileInfo(fixedFilePathToDelete).Length == 0)
+			{
+				File.Delete(fixedFilePathToDelete);
+				continue;
+			}
+			
+			File.Delete(fixedFilePathToDelete);
 		}
 	}
 }

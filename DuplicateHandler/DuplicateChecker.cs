@@ -1,9 +1,8 @@
 ﻿namespace DuplicatesHandler
 {
-    // TODO DOR move to another project.
     public class DuplicateChecker
     {
-        public void WriteDuplicateFiles(Dictionary<string, List<string>> duplicatedFiles, string outputPath)
+        public static void WriteDuplicateFiles(Dictionary<string, List<string>> duplicatedFiles, string outputPath)
         {
             using StreamWriter writer = File.CreateText(outputPath);
             foreach ((string fileHash, List<string> filePaths) in duplicatedFiles)
@@ -17,7 +16,7 @@
             }
         }
 
-        public Dictionary<string, List<string>> FindDuplicateFiles(string rootDirectory)
+        public static Dictionary<string, List<string>> FindDuplicateFiles(string rootDirectory)
         {
             if (!Directory.Exists(rootDirectory))
             {

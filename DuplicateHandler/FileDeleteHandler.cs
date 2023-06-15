@@ -16,7 +16,6 @@ public static class FileDeleteHandler
 			return;
 		}
 		
-		FileDeleter fileDeleter = new();
-		fileDeleter.DeleteFilesFrom(filePath);
+		FileDeleter.DeleteFilesFrom(filePath);
 	}
 }

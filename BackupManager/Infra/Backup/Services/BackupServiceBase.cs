@@ -92,10 +92,19 @@ public abstract class BackupServiceBase : IBackupService
                     continue;
                 }
 
+                // TODO DOR fix bug here.
                 // LongRunning hints the task scheduler to create new thread.
+                
+                // Task backupTask = Task.Factory.StartNew(async () =>
+                // {
+                //     await BackupFilesInternal(backupSettings, filePathToFileHashMap, directoriesMap, cancellationToken).ConfigureAwait(false);
+                // }, TaskCreationOptions.LongRunning);
+                
                 Task backupTask = Task.Factory.StartNew(async () =>
                 {
                     await BackupFilesInternal(backupSettings, filePathToFileHashMap, directoriesMap, cancellationToken).ConfigureAwait(false);
+                    mLogger.LogTrace("Done backup files in thread");
+                    return Task.CompletedTask;
                 }, TaskCreationOptions.LongRunning);
             
                 await tasksRunner.RunTask(backupTask, cancellationToken).ConfigureAwait(false);
@@ -261,6 +270,7 @@ public abstract class BackupServiceBase : IBackupService
             }
         }
 
+        mLogger.LogInformation($"Collected {filePathToFileHashMap.Count} files");
         isGetAllFilesCompleted = true;
         return isGetAllFilesCompleted;
     }
