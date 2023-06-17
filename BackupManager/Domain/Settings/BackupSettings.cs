@@ -30,23 +30,7 @@ public class BackupSettings
         
         mBackupSerializedSettings = backupSerializedSettings;
         RootDirectory = calculateRootDirectory(rootDirectory);
-    }
-    
-    private string calculateRootDirectory(string detectedRootDirectory)
-    {
-        if (string.IsNullOrWhiteSpace(mBackupSerializedSettings.RootDirectory))
-        {
-            return detectedRootDirectory;
-        }
-        
-        FileSystemPath detectedRootDirectoryPath = new(detectedRootDirectory);
-        FileSystemPath rootDirectoryFromSettingsPath = new(mBackupSerializedSettings.RootDirectory);
-        if (rootDirectoryFromSettingsPath.PathString.Contains(detectedRootDirectoryPath.PathString))
-        {
-            return rootDirectoryFromSettingsPath.PathString;
-        }
-
-        return detectedRootDirectoryPath.Combine(rootDirectoryFromSettingsPath).PathString;
+        SearchMethod = mBackupSerializedSettings.ShouldFastMapFiles ? SearchMethod.FilePath : SearchMethod.Hash;
     }
 
     public string? Description => mBackupSerializedSettings.Description;
@@ -62,7 +46,7 @@ public class BackupSettings
 
     public string? Token => mBackupSerializedSettings.Token;
         
-    public SearchMethod SearchMethod { get; set; } = SearchMethod.Hash;
+    public SearchMethod SearchMethod { get; set; }
 
     public SourceType SourceType { get; init; }
 
@@ -87,5 +71,22 @@ public class BackupSettings
 {nameof(MediaDeviceName)}: {MediaDeviceName}
 {nameof(RootDirectory)}: {RootDirectory}
 {nameof(AllowMultithreading)}: {AllowMultithreading}";
+    }
+    
+    private string calculateRootDirectory(string detectedRootDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(mBackupSerializedSettings.RootDirectory))
+        {
+            return detectedRootDirectory;
+        }
+        
+        FileSystemPath detectedRootDirectoryPath = new(detectedRootDirectory);
+        FileSystemPath rootDirectoryFromSettingsPath = new(mBackupSerializedSettings.RootDirectory);
+        if (rootDirectoryFromSettingsPath.PathString.Contains(detectedRootDirectoryPath.PathString))
+        {
+            return rootDirectoryFromSettingsPath.PathString;
+        }
+
+        return detectedRootDirectoryPath.Combine(rootDirectoryFromSettingsPath).PathString;
     }
 }

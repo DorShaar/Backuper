@@ -25,4 +25,6 @@ public class BackupSerializedSettings
     public string? Token { get; init; }
     
     public string? RootDirectory { get; init; }
+    
+    public bool ShouldFastMapFiles { get; init; }
 }
