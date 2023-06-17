@@ -7,5 +7,7 @@ public class BackupServiceConfiguration
 {
     public List<string>? SubscribedDirectories { get; set; }
     
+    public HashSet<string>? SubscribedDrives { get; set; }
+
     public TimeSpan CheckForBackupSettingsInterval { get; set; }
 }

@@ -40,11 +40,8 @@ public class DriveBackupServiceTests : TestsBase
                 }
             }
         };
-        
-        BackupSettings backupSettings = new(backupSerializedSettings)
-        {
-            RootDirectory = Directory.GetCurrentDirectory()
-        };
+
+        BackupSettings backupSettings = new(backupSerializedSettings, Directory.GetCurrentDirectory());
         
         LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
         FilesHashesHandler filesHashesHandler = new(new List<IBackedUpFilesDatabase> {localJsonDatabase});
@@ -90,10 +87,7 @@ public class DriveBackupServiceTests : TestsBase
             }
         };
         
-        BackupSettings backupSettings = new(backupSerializedSettings)
-        {
-            RootDirectory = Directory.GetCurrentDirectory()
-        };
+        BackupSettings backupSettings = new(backupSerializedSettings, Directory.GetCurrentDirectory());
         
         LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
         FilesHashesHandler filesHashesHandler = new(new List<IBackedUpFilesDatabase> {localJsonDatabase});
@@ -140,7 +134,7 @@ public class DriveBackupServiceTests : TestsBase
             }
         };
 
-        BackupSettings backupSettings = new(backupSerializedSettings);
+        BackupSettings backupSettings = new(backupSerializedSettings, string.Empty);
 
         IFilesHashesHandler filesHashesHandler = A.Fake<IFilesHashesHandler>();
         
@@ -171,11 +165,8 @@ public class DriveBackupServiceTests : TestsBase
         };
         
         using TempDirectory tempBackupDirectory = new();
-    
-        BackupSettings backupSettings = new(backupSerializedSettings)
-        {
-            RootDirectory = tempBackupDirectory.Path
-        };
+
+        BackupSettings backupSettings = new(backupSerializedSettings, tempBackupDirectory.Path);
         
         LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
         FilesHashesHandler filesHashesHandler = new(new List<IBackedUpFilesDatabase> {localJsonDatabase});
@@ -222,10 +213,7 @@ public class DriveBackupServiceTests : TestsBase
         };
     
         using TempDirectory tempBackupDirectory = new();
-        BackupSettings backupSettings = new(backupSerializedSettings)
-        {
-            RootDirectory = tempBackupDirectory.Path
-        };
+        BackupSettings backupSettings = new(backupSerializedSettings, tempBackupDirectory.Path);
         
         LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
         FilesHashesHandler filesHashesHandler = new(new List<IBackedUpFilesDatabase> {localJsonDatabase});

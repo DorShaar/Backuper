@@ -9,8 +9,8 @@ namespace BackupManager.Domain.Settings;
 public class BackupSettings
 {
     private readonly BackupSerializedSettings mBackupSerializedSettings;
-    
-    public BackupSettings(BackupSerializedSettings backupSerializedSettings)
+
+    public BackupSettings(BackupSerializedSettings backupSerializedSettings, string rootDirectory)
     {
         foreach (DirectoriesMap directoriesMap in backupSerializedSettings.DirectoriesSourcesToDirectoriesDestinationMap)
         {
@@ -29,6 +29,7 @@ public class BackupSettings
         }
         
         mBackupSerializedSettings = backupSerializedSettings;
+        RootDirectory = string.IsNullOrWhiteSpace(mBackupSerializedSettings.RootDirectory) ? rootDirectory : mBackupSerializedSettings.RootDirectory;
     }
 
     public string? Description => mBackupSerializedSettings.Description;
@@ -54,10 +55,10 @@ public class BackupSettings
     public string? MediaDeviceName { get; set; }
 
     /// <summary>
-    /// if <see cref="ShouldBackupToKnownDirectory"/>is true, this is the root directory to copy from.
-    /// if <see cref="ShouldBackupToKnownDirectory"/>is false, this is the directory to copy to.
+    /// if <see cref="ShouldBackupToKnownDirectory"/> is true, this is the root directory to copy from.
+    /// if <see cref="ShouldBackupToKnownDirectory"/> is false, this is the directory to copy to.
     /// </summary>
-    public string RootDirectory { get; init; } = string.Empty;
+    public string RootDirectory { get; }
 
     public override string ToString()
     {

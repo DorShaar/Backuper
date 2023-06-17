@@ -33,10 +33,7 @@ public class MediaDeviceBackupServiceTests : TestsBase
             }
         };
 
-        BackupSettings backupSettings = new(backupSerializedSettings)
-        {
-            RootDirectory = "Internal shared storage"
-        };
+        BackupSettings backupSettings = new(backupSerializedSettings, "Internal shared storage");
         
         LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
         FilesHashesHandler filesHashesHandler = new(new List<IBackedUpFilesDatabase> {localJsonDatabase});
@@ -72,11 +69,8 @@ public class MediaDeviceBackupServiceTests : TestsBase
                 }
             }
         };
-        
-        BackupSettings backupSettings = new(backupSerializedSettings)
-        {
-            RootDirectory = "Internal shared storage"
-        };
+
+        BackupSettings backupSettings = new(backupSerializedSettings, "Internal shared storage");
         
         LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
         FilesHashesHandler filesHashesHandler = new(new List<IBackedUpFilesDatabase> {localJsonDatabase});
@@ -113,10 +107,7 @@ public class MediaDeviceBackupServiceTests : TestsBase
             }
         };
         
-        BackupSettings backupSettings = new(backupSerializedSettings)
-        {
-            RootDirectory = "Internal shared storage"
-        };
+        BackupSettings backupSettings = new(backupSerializedSettings, "Internal shared storage");
         
         LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
         FilesHashesHandler filesHashesHandler = new(new List<IBackedUpFilesDatabase> {localJsonDatabase});

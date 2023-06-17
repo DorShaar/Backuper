@@ -57,7 +57,7 @@ public class WindowsBackgroundServiceTests : TestsBase
 			ShouldBackupToKnownDirectory = false,
 			Token = Guid.NewGuid().ToString()
 		};
-		BackupSettings backupSettings = new(backupSerializedSettings);
+		BackupSettings backupSettings = new(backupSerializedSettings, string.Empty);
 		CancellationTokenSource cancellationTokenSource = new();
 		A.CallTo(() => backupSettingsDetector.DetectBackupSettings(A<CancellationToken>.Ignored))
 		 .Returns(new List<BackupSettings>
@@ -102,7 +102,7 @@ public class WindowsBackgroundServiceTests : TestsBase
 			ShouldBackupToKnownDirectory = false,
 			Token = Guid.NewGuid().ToString()
 		};
-		BackupSettings backupSettings = new(backupSerializedSettings);
+		BackupSettings backupSettings = new(backupSerializedSettings, string.Empty);
 		CancellationTokenSource cancellationTokenSource = new();
 		A.CallTo(() => backupSettingsDetector.DetectBackupSettings(A<CancellationToken>.Ignored))
 		 .Returns(new List<BackupSettings>

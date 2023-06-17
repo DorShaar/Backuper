@@ -23,4 +23,6 @@ public class BackupSerializedSettings
     public ushort SaveInterval { get; init; } = 100;
     
     public string? Token { get; init; }
+    
+    public string? RootDirectory { get; init; }
 }

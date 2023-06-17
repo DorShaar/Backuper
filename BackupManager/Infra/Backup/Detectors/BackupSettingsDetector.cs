@@ -19,6 +19,7 @@ namespace BackupManager.Infra.Backup.Detectors;
 public class BackupSettingsDetector : IBackupSettingsDetector
 {
     private readonly IEnumerable<string>? mSubscribedDirectories;
+    private readonly HashSet<string>? mSubscribedDrives;
     private readonly IJsonSerializer mJsonSerializer;
     private readonly ILogger<BackupSettingsDetector> mLogger;
 
@@ -27,6 +28,7 @@ public class BackupSettingsDetector : IBackupSettingsDetector
         ILogger<BackupSettingsDetector> logger)
     {
         mSubscribedDirectories = configuration.Value.SubscribedDirectories;
+        mSubscribedDrives = configuration.Value.SubscribedDrives;
         mJsonSerializer = objectSerializer ?? throw new ArgumentNullException(nameof(objectSerializer)); 
         mLogger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -61,19 +63,22 @@ public class BackupSettingsDetector : IBackupSettingsDetector
         return settingsList;
     }
 
-    // TODO DOR test real drive situation.
     private async Task<IEnumerable<BackupSettings>?> TryGetSettingsFromDrives(CancellationToken cancellationToken)
     {
         List<BackupSettings>? settingList = null;
+        if (mSubscribedDrives is null)
+        {
+            return settingList;
+        }
         
         foreach (DriveInfo drive in DriveInfo.GetDrives())
         {
-            if (drive.DriveType != DriveType.Removable)
+            if (!mSubscribedDrives.Contains(drive.VolumeLabel))
             {
                 continue;
             }
             
-            mLogger.LogInformation($"Detected drive {drive.Name}");
+            mLogger.LogInformation($"Detected drive {drive.Name} '{drive.VolumeLabel}'");
 
             BackupSettings? settings = await TryGetSettingsFileFromDirectory(drive.Name, cancellationToken).ConfigureAwait(false);
 
@@ -212,18 +217,19 @@ public class BackupSettingsDetector : IBackupSettingsDetector
             return null;
         }
 
-        string[] backupSettingsFiles = Directory.GetFiles(directory, $"*{Consts.SettingsFileName}", SearchOption.AllDirectories);
-        if (backupSettingsFiles.Length == 0)
+        List<string> backupSettingsFiles = GetSettingsFileFromDirectoryInternal(directory, $"*{Consts.SettingsFileName}", 2);
+        if (backupSettingsFiles.Count == 0)
         {
             mLogger.LogInformation($"Could not find settings file in directory '{directory}'");
             return null;
         }
         
-        if (backupSettingsFiles.Length > 1)
+        if (backupSettingsFiles.Count > 1)
         {
             mLogger.LogInformation($"Found more than one setting files in directory '{directory}', taking only the first");
         }
 
+        // TOdO DOR test - get root directory to backup from settings file.
         string backupSettingsFilePath = backupSettingsFiles[0];
         BackupSettings? settings = await TryGetBackupSettingsFromFile(backupSettingsFilePath,
             rootDirectory: directory,
@@ -231,6 +237,54 @@ public class BackupSettingsDetector : IBackupSettingsDetector
             cancellationToken).ConfigureAwait(false);
         
         return settings;
+    }
+
+    /// <summary>
+    /// <see cref="searchDepth"/> = 0 for TopDirectoryOnly.
+    /// </summary>
+    private List<string> GetSettingsFileFromDirectoryInternal(string directoryToSearch, string searchPattern, ushort searchDepth)
+    {
+        ushort currentSearchDepth = 0;
+        mLogger.LogTrace($"Searching for '{searchPattern}'. Search depth: {searchDepth}");
+        List<string> backupSettingsFiles = Directory.GetFiles(directoryToSearch, searchPattern, SearchOption.TopDirectoryOnly).ToList();
+
+        if (backupSettingsFiles.Count > 0)
+        {
+            return backupSettingsFiles;
+        }
+
+        Queue<string> directoriesQueuePerDepth = new();
+        Queue<string> pendingDirectoriesQueue = new();
+        pendingDirectoriesQueue.Enqueue(directoryToSearch);
+        
+        while (currentSearchDepth < searchDepth)
+        {
+            currentSearchDepth++;
+
+            while (pendingDirectoriesQueue.Count > 0)
+            {
+                directoriesQueuePerDepth.Enqueue(pendingDirectoriesQueue.Dequeue());
+            }
+            
+            while (directoriesQueuePerDepth.Count > 0)
+            {
+                List<string> directoriesToSearch = new();
+                string currentDirectoryToSearch = directoriesQueuePerDepth.Dequeue();
+                foreach (string subDirectory in Directory.GetDirectories(currentDirectoryToSearch, searchPattern: "*", SearchOption.TopDirectoryOnly))
+                {
+                    directoriesToSearch.Add(subDirectory);
+                    pendingDirectoriesQueue.Enqueue(subDirectory);
+                }
+
+                foreach (string directory in directoriesToSearch)
+                {
+                    string[] currentBackupSettingsFiles = Directory.GetFiles(directory, searchPattern, SearchOption.TopDirectoryOnly);
+                    backupSettingsFiles.AddRange(currentBackupSettingsFiles);
+                }    
+            }
+        }
+
+        return backupSettingsFiles;
     }
     
     private async Task<BackupSettings?> TryGetBackupSettingsFromFile(string backupSettingsFilePath,
@@ -243,9 +297,9 @@ public class BackupSettingsDetector : IBackupSettingsDetector
             BackupSerializedSettings backupSerializedSettings =
                 await mJsonSerializer.DeserializeAsync<BackupSerializedSettings>(backupSettingsFilePath, cancellationToken).ConfigureAwait(false);
             
-            return new BackupSettings(backupSerializedSettings)
+            // TODO DOR test root directory.
+            return new BackupSettings(backupSerializedSettings, rootDirectory)
             {
-                RootDirectory = rootDirectory,
                 SourceType = sourceType
             };
         }
