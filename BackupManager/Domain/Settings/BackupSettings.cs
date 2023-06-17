@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using BackupManager.Domain.Enums;
 using BackupManager.Domain.Mapping;
 using BackupManager.Infra;
+using IOWrapper;
 
 namespace BackupManager.Domain.Settings;
 
@@ -25,11 +26,27 @@ public class BackupSettings
 
                 directoriesMap.SourceRelativeDirectory = Consts.ReadyToBackupDirectoryPath;
             }
-            
         }
         
         mBackupSerializedSettings = backupSerializedSettings;
-        RootDirectory = string.IsNullOrWhiteSpace(mBackupSerializedSettings.RootDirectory) ? rootDirectory : mBackupSerializedSettings.RootDirectory;
+        RootDirectory = calculateRootDirectory(rootDirectory);
+    }
+    
+    private string calculateRootDirectory(string detectedRootDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(mBackupSerializedSettings.RootDirectory))
+        {
+            return detectedRootDirectory;
+        }
+        
+        FileSystemPath detectedRootDirectoryPath = new(detectedRootDirectory);
+        FileSystemPath rootDirectoryFromSettingsPath = new(mBackupSerializedSettings.RootDirectory);
+        if (rootDirectoryFromSettingsPath.PathString.Contains(detectedRootDirectoryPath.PathString))
+        {
+            return rootDirectoryFromSettingsPath.PathString;
+        }
+
+        return detectedRootDirectoryPath.Combine(rootDirectoryFromSettingsPath).PathString;
     }
 
     public string? Description => mBackupSerializedSettings.Description;

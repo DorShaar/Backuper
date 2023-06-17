@@ -16,6 +16,8 @@ namespace BackupManager.Infra.Backup.Services;
 
 public abstract class BackupServiceBase : IBackupService
 {
+    private const ushort MaximalAllowedParallelWorkers = 4; 
+        
     protected readonly IFilesHashesHandler mFilesHashesHandler;
     protected readonly ILogger<BackupServiceBase> mLogger;
     private readonly ILoggerFactory mLoggerFactory;
@@ -33,7 +35,7 @@ public abstract class BackupServiceBase : IBackupService
         mLogger = loggerFactory.CreateLogger<BackupServiceBase>();
     }
     
-    protected abstract void AddDirectoriesToSearchQueue(Queue<string> directoriesToSearch, string currentSearchDirectory);
+    protected abstract void AddSubDirectoriesToSearchQueue(Queue<string> directoriesToSearch, string currentSearchDirectory);
     
     protected abstract IEnumerable<string> EnumerateFiles(string directory);
 
@@ -54,7 +56,7 @@ public abstract class BackupServiceBase : IBackupService
             await MapAllFilesWithHash(backupSettings, cancellationToken).ConfigureAwait(false);
         }
         
-        ushort numberOfParallelDirectoriesToCopy = backupSettings.AllowMultithreading ? (ushort)4 : (ushort)1;
+        ushort numberOfParallelDirectoriesToCopy = backupSettings.AllowMultithreading ? MaximalAllowedParallelWorkers : (ushort)1;
 
         TasksRunnerConfigurations tasksRunnerConfigurations = new()
         {
@@ -70,11 +72,12 @@ public abstract class BackupServiceBase : IBackupService
         {
             bool isGetAllFilesCompleted = false;
             ushort iteration = 0;
+            HashSet<string> alreadyCompletedDirectories = new();
             while (!isGetAllFilesCompleted)
             {
                 if (cancellationToken.IsCancellationRequested)
                 {
-                    mLogger.LogInformation($"Cancel requested");
+                    mLogger.LogInformation("Cancel requested");
                     break;
                 }
 
@@ -84,7 +87,7 @@ public abstract class BackupServiceBase : IBackupService
                 string sourceDirectoryToBackup = BuildSourceDirectoryToBackup(backupSettings, directoriesMap.SourceRelativeDirectory);
                 string sourceRelativeDirectory = backupSettings.ShouldBackupToKnownDirectory ? backupSettings.RootDirectory : Consts.ReadyToBackupDirectoryPath; 
                 (Dictionary<FileSystemPath, string> filePathToFileHashMap, isGetAllFilesCompleted) =
-                    await GetFilesToBackup(sourceDirectoryToBackup, sourceRelativeDirectory, backupSettings, iteration, cancellationToken).ConfigureAwait(false);
+                    await GetFilesToBackup(sourceDirectoryToBackup, sourceRelativeDirectory, backupSettings, alreadyCompletedDirectories, iteration, cancellationToken).ConfigureAwait(false);
 
                 if (filePathToFileHashMap.Count == 0)
                 {
@@ -126,11 +129,12 @@ public abstract class BackupServiceBase : IBackupService
 
         ushort iteration = 0;
         bool isGetAllFilesCompleted = false;
+        HashSet<string> alreadyCompletedDirectories = new();
         while (!isGetAllFilesCompleted)
         {
             if (cancellationToken.IsCancellationRequested)
             {
-                mLogger.LogInformation($"Cancel requested");
+                mLogger.LogInformation("Cancel requested");
                 break;
             }
 
@@ -141,6 +145,7 @@ public abstract class BackupServiceBase : IBackupService
                 await GetFilesToBackup(backupSettings.RootDirectory,
                                        sourceRelativeDirectory: backupSettings.RootDirectory,
                                        backupSettings,
+                                       alreadyCompletedDirectories,
                                        iteration,
                                        cancellationToken).ConfigureAwait(false);
 
@@ -166,11 +171,12 @@ public abstract class BackupServiceBase : IBackupService
                    : Consts.ReadyToBackupDirectoryPath;
     }
 
-    private async Task<(Dictionary<FileSystemPath, string>, bool)> GetFilesToBackup(string directoryToBackup,
-                                                                                    string sourceRelativeDirectory,
-                                                                                    BackupSettings backupSettings,
-                                                                                    ushort iteration,
-                                                                                    CancellationToken cancellationToken)
+    private async Task<(Dictionary<FileSystemPath, string> filePathToFileHashMap, bool isGetAllFilesCompleted)> GetFilesToBackup(string directoryToBackup,
+                                                                                                                                 string sourceRelativeDirectory,
+                                                                                                                                 BackupSettings backupSettings,
+                                                                                                                                 ISet<string> alreadyCompletedDirectories,
+                                                                                                                                 ushort iteration,
+                                                                                                                                 CancellationToken cancellationToken)
     {
         bool isGetAllFilesCompleted = false;
         Dictionary<FileSystemPath, string> filePathToFileHashMap = new();
@@ -197,9 +203,14 @@ public abstract class BackupServiceBase : IBackupService
             }
 
             string currentSearchDirectory = directoriesToSearch.Dequeue();
-            mLogger.LogDebug($"Collecting files from directory '{currentSearchDirectory}'");
+            AddSubDirectoriesToSearchQueue(directoriesToSearch, currentSearchDirectory);
 
-            AddDirectoriesToSearchQueue(directoriesToSearch, currentSearchDirectory);
+            if (alreadyCompletedDirectories.Contains(currentSearchDirectory))
+            {
+                continue;
+            }
+            
+            mLogger.LogDebug($"Collecting files from directory '{currentSearchDirectory}'");
             isGetAllFilesCompleted = await AddFilesToBackupOnlyIfFileNotBackedUpAlready(filePathToFileHashMap,
                                                                                         currentSearchDirectory,
                                                                                         sourceRelativeDirectory,
@@ -209,6 +220,8 @@ public abstract class BackupServiceBase : IBackupService
             {
                 break;
             }
+
+            alreadyCompletedDirectories.Add(currentSearchDirectory);
         }
 
         mLogger.LogInformation(isGetAllFilesCompleted 
@@ -236,7 +249,7 @@ public abstract class BackupServiceBase : IBackupService
             
             if (cancellationToken.IsCancellationRequested)
             {
-                mLogger.LogInformation($"Cancel requested");
+                mLogger.LogInformation("Cancel requested");
                 break;
             }
             

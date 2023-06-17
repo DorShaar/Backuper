@@ -15,7 +15,7 @@ public class DriveBackupService : BackupServiceBase
     {
     }
 
-    protected override void AddDirectoriesToSearchQueue(Queue<string> directoriesToSearch, string currentSearchDirectory)
+    protected override void AddSubDirectoriesToSearchQueue(Queue<string> directoriesToSearch, string currentSearchDirectory)
     {
         foreach (string directory in Directory.EnumerateDirectories(currentSearchDirectory))
         {

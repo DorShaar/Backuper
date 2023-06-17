@@ -229,7 +229,6 @@ public class BackupSettingsDetector : IBackupSettingsDetector
             mLogger.LogInformation($"Found more than one setting files in directory '{directory}', taking only the first");
         }
 
-        // TOdO DOR test - get root directory to backup from settings file.
         string backupSettingsFilePath = backupSettingsFiles[0];
         BackupSettings? settings = await TryGetBackupSettingsFromFile(backupSettingsFilePath,
             rootDirectory: directory,
@@ -297,7 +296,6 @@ public class BackupSettingsDetector : IBackupSettingsDetector
             BackupSerializedSettings backupSerializedSettings =
                 await mJsonSerializer.DeserializeAsync<BackupSerializedSettings>(backupSettingsFilePath, cancellationToken).ConfigureAwait(false);
             
-            // TODO DOR test root directory.
             return new BackupSettings(backupSerializedSettings, rootDirectory)
             {
                 SourceType = sourceType

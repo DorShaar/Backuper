@@ -32,7 +32,7 @@ public class MediaDeviceBackupService : BackupServiceBase
         mMediaDevice.Dispose();
     }
 
-    protected override void AddDirectoriesToSearchQueue(Queue<string> directoriesToSearch, string currentSearchDirectory)
+    protected override void AddSubDirectoriesToSearchQueue(Queue<string> directoriesToSearch, string currentSearchDirectory)
     {
         MediaDirectoryInfo currentSearchMediaDirectory = mMediaDevice.GetDirectoryInfo(currentSearchDirectory);
         foreach (MediaDirectoryInfo subDirectory in currentSearchMediaDirectory.EnumerateDirectories())
