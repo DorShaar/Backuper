@@ -32,6 +32,8 @@ public class BackupSettings
 
     public bool ShouldBackupToKnownDirectory => mBackupSerializedSettings.ShouldBackupToKnownDirectory;
 
+    public bool ShouldMapFiles => mBackupSerializedSettings.ShouldMapFiles;
+
     public bool AllowMultithreading => mBackupSerializedSettings.AllowMultithreading;
 
     public ushort SaveInterval => mBackupSerializedSettings.SaveInterval;

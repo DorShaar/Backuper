@@ -27,4 +27,6 @@ public class BackupSerializedSettings
     public string? RootDirectory { get; init; }
     
     public bool ShouldFastMapFiles { get; init; }
+
+    public bool ShouldMapFiles { get; init; } = true;
 }
