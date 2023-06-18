@@ -23,8 +23,8 @@ public static class Consts
     
     // TODO DOR now
     private static string mBackupServiceDirectoryPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-        mBackupServiceTestsDirectoryName); // For Tests.
-        // BackupServiceDirectoryName); // For Production.
+        // mBackupServiceTestsDirectoryName); // For Tests.
+        BackupServiceDirectoryName); // For Production.
     #endregion Top Directory
 
     #region Settings
