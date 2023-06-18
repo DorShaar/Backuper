@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using BackupManager.Domain.Enums;
 using BackupManager.Domain.Mapping;
-using BackupManager.Infra;
 using IOWrapper;
 
 namespace BackupManager.Domain.Settings;
@@ -17,14 +16,7 @@ public class BackupSettings
         {
             if (string.IsNullOrWhiteSpace(directoriesMap.SourceRelativeDirectory))
             {
-                if (backupSerializedSettings.ShouldBackupToKnownDirectory)
-                {
-                    throw new ArgumentException(
-                                                $"{nameof(directoriesMap.SourceRelativeDirectory)} should not be empty while" +
-                                                $"{nameof(backupSerializedSettings.ShouldBackupToKnownDirectory)} is true");
-                }
-
-                directoriesMap.SourceRelativeDirectory = Consts.ReadyToBackupDirectoryPath;
+                throw new ArgumentException($"{nameof(directoriesMap.SourceRelativeDirectory)} should not be empty while");
             }
         }
         

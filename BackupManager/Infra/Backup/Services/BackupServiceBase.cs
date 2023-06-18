@@ -84,6 +84,7 @@ public abstract class BackupServiceBase : IBackupService
                 iteration++;
                 mLogger.LogInformation($"Handling backup from '{directoriesMap.SourceRelativeDirectory}' to '{directoriesMap.DestRelativeDirectory}'. Iteration number: {iteration}");
 
+                // TODO DOR make sure tests are passing.
                 string sourceDirectoryToBackup = BuildSourceDirectoryToBackup(backupSettings, directoriesMap.SourceRelativeDirectory);
                 string sourceRelativeDirectory = backupSettings.ShouldBackupToKnownDirectory ? backupSettings.RootDirectory : Consts.ReadyToBackupDirectoryPath; 
                 (Dictionary<FileSystemPath, string> filePathToFileHashMap, isGetAllFilesCompleted) =
@@ -157,7 +158,8 @@ public abstract class BackupServiceBase : IBackupService
 
             foreach ((FileSystemPath fileSystemPath, string fileHash) in filePathToFileHashMap)
             {
-                await mFilesHashesHandler.AddFileHash(fileHash, fileSystemPath.PathString, cancellationToken).ConfigureAwait(false);
+                FileSystemPath relativeDestinationPath = fileSystemPath.GetRelativePath(backupSettings.RootDirectory);
+                await mFilesHashesHandler.AddFileHash(fileHash, relativeDestinationPath.PathString, cancellationToken).ConfigureAwait(false);
             }
 
             await mFilesHashesHandler.Save(cancellationToken).ConfigureAwait(false);
@@ -168,7 +170,7 @@ public abstract class BackupServiceBase : IBackupService
     {
         return backupSettings.ShouldBackupToKnownDirectory 
                    ? Path.Combine(backupSettings.RootDirectory, sourceRelativeDirectory)
-                   : Consts.ReadyToBackupDirectoryPath;
+                   : Path.Combine(Consts.ReadyToBackupDirectoryPath, sourceRelativeDirectory);
     }
 
     private async Task<(Dictionary<FileSystemPath, string> filePathToFileHashMap, bool isGetAllFilesCompleted)> GetFilesToBackup(string directoryToBackup,
