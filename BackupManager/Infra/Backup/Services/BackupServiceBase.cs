@@ -84,7 +84,6 @@ public abstract class BackupServiceBase : IBackupService
                 iteration++;
                 mLogger.LogInformation($"Handling backup from '{directoriesMap.SourceRelativeDirectory}' to '{directoriesMap.DestRelativeDirectory}'. Iteration number: {iteration}");
 
-                // TODO DOR make sure tests are passing.
                 string sourceDirectoryToBackup = BuildSourceDirectoryToBackup(backupSettings, directoriesMap.SourceRelativeDirectory);
                 string sourceRelativeDirectory = backupSettings.ShouldBackupToKnownDirectory ? backupSettings.RootDirectory : Consts.ReadyToBackupDirectoryPath; 
                 (Dictionary<FileSystemPath, string> filePathToFileHashMap, isGetAllFilesCompleted) =
