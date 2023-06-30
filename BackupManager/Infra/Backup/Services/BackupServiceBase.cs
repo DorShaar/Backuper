@@ -283,7 +283,7 @@ public abstract class BackupServiceBase : IBackupService
             
             if (isAlreadyBackedUp)
             {
-                mLogger.LogInformation($"File '{fileSystemPath}' already backed up");
+                mLogger.LogTrace($"File '{fileSystemPath}' already backed up");
 
                 if (!string.IsNullOrWhiteSpace(fileHash))
                 {
