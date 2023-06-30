@@ -281,16 +281,21 @@ public abstract class BackupServiceBase : IBackupService
             
             (string? fileHash, bool isAlreadyBackedUp) = await GetFileHashData(filePath, sourceRelativeFilePath.PathString, backupSettings.SearchMethod, cancellationToken).ConfigureAwait(false);
             
-            if (string.IsNullOrWhiteSpace(fileHash))
-            {
-                mLogger.LogError($"Hash for '{filePath}' was not calculated");
-                continue;
-            }
-            
             if (isAlreadyBackedUp)
             {
                 mLogger.LogInformation($"File '{fileSystemPath}' already backed up");
-                alreadyBackedUpFilePathToFileHashMap.Add(fileSystemPath, fileHash);
+
+                if (!string.IsNullOrWhiteSpace(fileHash))
+                {
+                    alreadyBackedUpFilePathToFileHashMap.Add(fileSystemPath, fileHash);
+                }
+                
+                continue;
+            }
+            
+            if (string.IsNullOrWhiteSpace(fileHash))
+            {
+                mLogger.LogError($"Hash for '{filePath}' was not calculated");
                 continue;
             }
 
