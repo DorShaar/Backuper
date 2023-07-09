@@ -112,7 +112,12 @@ public class BackupSettingsDetector : IBackupSettingsDetector
             
                 mLogger.LogInformation($"Detected device {device.Description}");
 
-                const string deviceStorageRootPath = @"\Internal shared storage";
+                string deviceStorageRootPath = @"\Internal shared storage";
+                if (device.FriendlyName.Contains("Galaxy S23", StringComparison.OrdinalIgnoreCase))
+                {
+                    deviceStorageRootPath = "Internal storage";
+                }
+                
                 MediaDirectoryInfo? deviceRootDirectory = device.GetDirectoryInfo(deviceStorageRootPath);
 
                 if (deviceRootDirectory is null)

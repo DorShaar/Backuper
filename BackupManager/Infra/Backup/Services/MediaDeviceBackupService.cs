@@ -21,7 +21,7 @@ public class MediaDeviceBackupService : BackupServiceBase
         IFilesHashesHandler database,
         ILoggerFactory loggerFactory) : base(database, loggerFactory)
     {
-        mMediaDevice = MediaDevice.GetDevices().First(device => device.FriendlyName == deviceName);
+        mMediaDevice = MediaDevice.GetDevices().First(device => device.Description == deviceName);
         mMediaDevice.Connect();
     }
 
