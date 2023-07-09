@@ -47,14 +47,19 @@ public class MediaDeviceBackupService : BackupServiceBase
         return mediaDirectoryInfo.EnumerateFiles().Select(mediaFileInfo => mediaFileInfo.FullName);
     }
 
-    protected override async Task<(string? fileHash, bool isAlreadyBackuped)> GetFileHashData(string filePath, string relativeFilePath, SearchMethod searchMethod, CancellationToken cancellationToken)
+    protected override async Task<(string?, bool)> GetFileHashData(string filePath, string relativeFilePath, SearchMethod searchMethod, CancellationToken cancellationToken)
     {
-        bool isAlreadyBackedUp = await mFilesHashesHandler.IsFilePathExist(relativeFilePath, cancellationToken).ConfigureAwait(false);
-
-        if (isAlreadyBackedUp)
+        bool isAlreadyBackedUp;
+        
+        if (searchMethod == SearchMethod.FilePath)
         {
-            // Since found as already backed up, calculating hash again is not required. 
-            return (null, true);
+            isAlreadyBackedUp = await mFilesHashesHandler.IsFilePathExist(relativeFilePath, cancellationToken).ConfigureAwait(false);
+
+            if (isAlreadyBackedUp)
+            {
+                // Since found as already backed up, calculating hash again is not required. 
+                return (null, true);
+            }
         }
         
         _ = Directory.CreateDirectory(Consts.TempDirectoryPath);
@@ -64,7 +69,13 @@ public class MediaDeviceBackupService : BackupServiceBase
         CopyFile(filePath, tempFile.Path);
         string fileHash = mFilesHashesHandler.CalculateHash(tempFile.Path);
 
-        return (fileHash, false);
+        isAlreadyBackedUp = false;
+        if (searchMethod == SearchMethod.Hash)
+        {
+            isAlreadyBackedUp = await mFilesHashesHandler.IsHashExists(fileHash, cancellationToken).ConfigureAwait(false);
+        }
+        
+        return (fileHash, isAlreadyBackedUp);
     }
 
     protected override void CopyFile(string fileToBackup, string destinationFilePath)

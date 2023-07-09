@@ -28,7 +28,7 @@ public class DriveBackupService : BackupServiceBase
         return Directory.EnumerateFiles(directory);
     }
 
-    protected override async Task<(string? fileHash, bool isAlreadyBackuped)> GetFileHashData(string filePath, string relativeFilePath, SearchMethod searchMethod, CancellationToken cancellationToken)
+    protected override async Task<(string?, bool)> GetFileHashData(string filePath, string relativeFilePath, SearchMethod searchMethod, CancellationToken cancellationToken)
     {
         string fileHash = mFilesHashesHandler.CalculateHash(filePath);
         return searchMethod switch

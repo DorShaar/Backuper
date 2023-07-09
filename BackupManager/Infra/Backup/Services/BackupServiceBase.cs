@@ -39,7 +39,7 @@ public abstract class BackupServiceBase : IBackupService
     
     protected abstract IEnumerable<string> EnumerateFiles(string directory);
 
-    protected abstract Task<(string? fileHash, bool isAlreadyBackuped)> GetFileHashData(string filePath, string relativeFilePath, SearchMethod searchMethod, CancellationToken cancellationToken);
+    protected abstract Task<(string?, bool)> GetFileHashData(string filePath, string relativeFilePath, SearchMethod searchMethod, CancellationToken cancellationToken);
     
     protected abstract void CopyFile(string fileToBackup, string destinationFilePath);
     

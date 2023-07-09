@@ -206,7 +206,6 @@ public class BackupSettingsDetector : IBackupSettingsDetector
 
         if (settings is not null)
         {
-            settings.SearchMethod = SearchMethod.FilePath;
             settings.MediaDeviceName = mediaDeviceName;
         }
         
