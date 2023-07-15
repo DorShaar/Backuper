@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-using BackupManager.Infra;
+using BackupManagerCore;
 using JsonSerialization;
 using OSOperations;
 using Xunit;

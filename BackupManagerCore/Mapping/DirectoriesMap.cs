@@ -1,4 +1,4 @@
-﻿namespace BackupManager.Domain.Mapping
+﻿namespace BackupManagerCore.Mapping
 {
     public class DirectoriesMap
     {

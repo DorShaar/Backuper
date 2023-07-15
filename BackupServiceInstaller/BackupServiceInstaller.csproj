@@ -16,4 +16,18 @@
       <PackageReference Include="System.ServiceProcess.ServiceController" Version="7.0.0" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Reference Include="IOWrapper">
+        <HintPath>..\dlls\IOWrapper.dll</HintPath>
+      </Reference>
+      <Reference Include="WindowsServiceHandle">
+        <HintPath>..\dlls\WindowsServiceHandle.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\BackupManagerCLI\BackupManagerCLI.csproj" />
+      <ProjectReference Include="..\BackupManagerCore\BackupManagerCore.csproj" />
+    </ItemGroup>
+
 </Project>

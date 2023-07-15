@@ -47,4 +47,8 @@
     </Reference>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\BackupManagerCore\BackupManagerCore.csproj" />
+  </ItemGroup>
+
 </Project>

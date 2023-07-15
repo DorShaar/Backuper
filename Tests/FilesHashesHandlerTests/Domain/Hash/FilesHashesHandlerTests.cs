@@ -3,9 +3,9 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using BackupManager.App.Database;
-using BackupManager.Infra;
 using BackupManager.Infra.DB.LocalJsonFileDatabase;
 using BackupManager.Infra.FileHashHandlers;
+using BackupManagerCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 

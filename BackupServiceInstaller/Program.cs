@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using WindowsServiceHandle;
 
 namespace BackupServiceInstaller;
 
@@ -22,6 +23,6 @@ public class Program
 							   .Build();
 
 		ServiceInstaller serviceInstaller = host.Services.GetRequiredService<ServiceInstaller>();
-		serviceInstaller.Install();
+		serviceInstaller.Install(CancellationToken.None);
 	}
 }

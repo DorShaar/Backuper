@@ -10,6 +10,7 @@ using BackupManager.App.Backup.Services;
 using BackupManager.App.Database.Sync;
 using BackupManager.Domain.Configuration;
 using BackupManager.Domain.Settings;
+using BackupManagerCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -89,7 +90,7 @@ public sealed class WindowsBackgroundService : BackgroundService
                 {
                     if (backupOptionsList is null || backupOptionsList.Count == 0)
                     {
-                        mLogger.LogDebug($"No backup files settings found");
+                        mLogger.LogDebug("No backup files settings found");
                         continue;
                     }
                 
@@ -97,7 +98,7 @@ public sealed class WindowsBackgroundService : BackgroundService
                     {
                         if (cancellationToken.IsCancellationRequested)
                         {
-                            mLogger.LogInformation($"Cancel requested");
+                            mLogger.LogInformation("Cancel requested");
                             break;
                         }
 
@@ -134,7 +135,7 @@ public sealed class WindowsBackgroundService : BackgroundService
         }
         catch (TaskCanceledException)
         {
-            mLogger.LogInformation($"Stopping backup service execution");
+            mLogger.LogInformation("Stopping backup service execution");
         }
         catch (Exception ex)
         {

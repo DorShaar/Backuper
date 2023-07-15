@@ -8,6 +8,8 @@ using BackupManager.App.Backup.Detectors;
 using BackupManager.Domain.Configuration;
 using BackupManager.Domain.Enums;
 using BackupManager.Domain.Settings;
+using BackupManagerCore;
+using BackupManagerCore.Settings;
 using JsonSerialization;
 using MediaDevices;
 using Microsoft.Extensions.Logging;

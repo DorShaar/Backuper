@@ -1,6 +1,6 @@
-﻿namespace DuplicatesHandler;
+﻿namespace BackupManagerCli;
 
-public class FileDeleter
+public static class FileDeleter
 {
 	public static void DeleteFilesFrom(string filePath)
 	{
@@ -13,6 +13,11 @@ public class FileDeleter
 				continue;
 			}
 
+			if (!File.Exists(fixedFilePathToDelete))
+			{
+				continue;
+			}
+			
 			if (new FileInfo(fixedFilePathToDelete).Length == 0)
 			{
 				File.Delete(fixedFilePathToDelete);

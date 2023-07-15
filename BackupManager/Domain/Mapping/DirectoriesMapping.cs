@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using BackupManagerCore.Mapping;
 
 namespace BackupManager.Domain.Mapping
 {

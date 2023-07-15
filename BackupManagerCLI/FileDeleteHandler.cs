@@ -1,4 +1,4 @@
-﻿namespace DuplicatesHandler;
+﻿namespace BackupManagerCli;
 
 public static class FileDeleteHandler
 {

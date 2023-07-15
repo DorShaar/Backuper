@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using BackupManager.Domain.Enums;
-using BackupManager.Domain.Mapping;
+using BackupManagerCore.Mapping;
+using BackupManagerCore.Settings;
 using IOWrapper;
 
 namespace BackupManager.Domain.Settings;

@@ -11,7 +11,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BackupManagerTests", "Tests
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackupServiceInstaller", "BackupServiceInstaller\BackupServiceInstaller.csproj", "{0D159D8C-8DE1-4AA0-8E4A-E810CD4800CD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DuplicateHandler", "DuplicateHandler\DuplicateHandler.csproj", "{F9886287-CAD8-4B74-9070-733F9ECA5B0B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackupManagerCLI", "BackupManagerCLI\BackupManagerCLI.csproj", "{F9886287-CAD8-4B74-9070-733F9ECA5B0B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackupManagerCore", "BackupManagerCore\BackupManagerCore.csproj", "{2A7809D7-CA96-4DD1-A1BB-DD98F20BEC6B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,6 +37,10 @@ Global
 		{F9886287-CAD8-4B74-9070-733F9ECA5B0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F9886287-CAD8-4B74-9070-733F9ECA5B0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F9886287-CAD8-4B74-9070-733F9ECA5B0B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2A7809D7-CA96-4DD1-A1BB-DD98F20BEC6B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A7809D7-CA96-4DD1-A1BB-DD98F20BEC6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A7809D7-CA96-4DD1-A1BB-DD98F20BEC6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A7809D7-CA96-4DD1-A1BB-DD98F20BEC6B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

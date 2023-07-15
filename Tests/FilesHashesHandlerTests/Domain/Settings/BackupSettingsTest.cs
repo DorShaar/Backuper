@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using BackupManager.Domain.Mapping;
-using BackupManager.Domain.Settings;
+using BackupManagerCore.Mapping;
+using BackupManagerCore.Settings;
 using Temporaries;
 using Xunit;
 

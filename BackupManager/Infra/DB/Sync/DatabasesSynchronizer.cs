@@ -8,6 +8,7 @@ using BackupManager.App.Database.Sync;
 using BackupManager.Infra.DB.LocalJsonFileDatabase;
 using BackupManager.Infra.DB.Models;
 using BackupManager.Infra.DB.Mongo;
+using BackupManagerCore;
 using Microsoft.Extensions.Logging;
 
 namespace BackupManager.Infra.DB.Sync;

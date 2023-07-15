@@ -1,10 +1,10 @@
-﻿using System;
-using System.IO;
-
-namespace BackupManager.Infra;
+﻿namespace BackupManagerCore;
 
 public static class Consts
 {
+    public const string ServiceName = "Dor Backuper Service";
+    public const string ServicePath = @"C:/Program Files/BackupService/bin/BackupManager.exe";
+    
     #region Application Configuration
     public const string DatabasesTypesSection = "DatabasesTypes";
 
@@ -26,7 +26,7 @@ public static class Consts
         // mBackupServiceTestsDirectoryName); // For Tests.
         BackupServiceDirectoryName); // For Production.
     #endregion Top Directory
-
+    
     #region Settings
     private const string mSettingsDirectoryName = "Settings";
     public const string SettingsFileName = "BackupSetting.json";
@@ -43,8 +43,8 @@ public static class Consts
     private const string mLogsDirectoryName = "Logs";
     private const string mLogsFilesNameWithoutExtension = "backuper";
     
-    private static string mLogsDirectoryPath => Path.Combine(mBackupServiceDirectoryPath, mLogsDirectoryName);
-    public static string LogsFilePathWithoutExtension => Path.Combine(mLogsDirectoryPath, mLogsFilesNameWithoutExtension);
+    public static string LogsDirectoryPath => Path.Combine(mBackupServiceDirectoryPath, mLogsDirectoryName);
+    public static string LogsFilePathWithoutExtension => Path.Combine(LogsDirectoryPath, mLogsFilesNameWithoutExtension);
     #endregion Logs
     
     #region Data
@@ -72,6 +72,13 @@ public static class Consts
     /// </summary>
     public static string BackupFilesForKnownDriveCollectionTemplate => "Data-{0}";
     #endregion Database
+    
+    #region CLI
+    public const string BackupServiceCliName = "backup.exe";
+    private const string CliDirectoryName = "CLI";
+    public static string CliDirectoryPath => Path.Combine(mBackupServiceDirectoryPath, CliDirectoryName);
+    public static string CliFilePath => Path.Combine(CliDirectoryPath, BackupServiceCliName);
+    #endregion CLI
 
     #region Temp
 

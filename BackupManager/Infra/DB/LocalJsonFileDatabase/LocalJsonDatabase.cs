@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BackupManager.App.Database;
 using BackupManager.Infra.DB.Models;
+using BackupManagerCore;
 using IOWrapper;
 using JsonSerialization;
 using Microsoft.Extensions.Logging;

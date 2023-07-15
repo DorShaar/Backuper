@@ -1,6 +1,9 @@
-﻿namespace DuplicatesHandler
+﻿using BackupManagerCore.Hash;
+using Newtonsoft.Json;
+
+namespace BackupManagerCli
 {
-    public class DuplicateChecker
+    public static class DuplicateChecker
     {
         public static void WriteDuplicateFiles(Dictionary<string, List<string>> duplicatedFiles, string outputPath)
         {
@@ -29,7 +32,7 @@
 
         private static Dictionary<string, List<string>> FindDuplicateFilesIterative(string rootDirectory)
         {
-            Dictionary<string, List<string>> duplicatesFiles = new();
+            Dictionary<string, List<string>> hashToFilePaths = new();
 
             Console.WriteLine($"Start iterative operation for finding duplicate files from {rootDirectory}");
 
@@ -50,12 +53,36 @@
                 // Search files.
                 foreach (string filePath in Directory.EnumerateFiles(currentSearchDirectory))
                 {
-                    AddFileHashToGivenDict(duplicatesFiles, HashCalculator.CalculateHash(filePath), filePath);
+                    AddFileHashToGivenDict(hashToFilePaths, HashCalculator.CalculateHash(filePath), filePath);
                 }
             }
 
             Console.WriteLine($"Finished iterative operation for finding duplicate files from {rootDirectory}");
-            return duplicatesFiles;
+
+            checkWithDatabase(hashToFilePaths);
+
+            Dictionary<string, List<string>> duplicates = hashToFilePaths.Where(keyValue => keyValue.Value.Count > 1)
+                                                                         .ToDictionary(pair => pair.Key, pair => pair.Value);
+            
+            return duplicates;
+        }
+
+        private static void checkWithDatabase(Dictionary<string, List<string>> hashToFilePaths)
+        {
+            const string databaseFilePath = @"C:\Program Files\BackupService\Data\Data-7a160d7a-ceae-4df1-a0db-3a97cd2f1aec.json";
+            string rawJson = File.ReadAllText(databaseFilePath);
+            Dictionary<string, List<string>> alreadyBackedUp = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(rawJson)
+                                                               ?? throw new NullReferenceException($"Failed to load '{databaseFilePath}'");
+
+            foreach ((string hash, List<string> filePaths) in hashToFilePaths)
+            {
+                if (!alreadyBackedUp.TryGetValue(hash, out List<string>? backedUpFilePaths))
+                {
+                    continue;
+                }
+                
+                filePaths.AddRange(backedUpFilePaths);
+            }
         }
 
         private static void AddFileHashToGivenDict(IDictionary<string, List<string>> duplicatesFiles, string fileHash, string filePath)

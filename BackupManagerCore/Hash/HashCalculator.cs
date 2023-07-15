@@ -1,8 +1,8 @@
 ﻿using System.Security.Cryptography;
 
-namespace DuplicatesHandler;
+namespace BackupManagerCore.Hash;
 
-internal static class HashCalculator
+public static class HashCalculator
 {
 	public static string CalculateHash(string filePath)
 	{

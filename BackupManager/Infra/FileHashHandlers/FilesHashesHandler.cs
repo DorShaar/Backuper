@@ -4,8 +4,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using BackupManager.App.Database;
-using BackupManager.Domain.Hash;
 using BackupManager.Infra.DB.Models;
+using BackupManagerCore.Hash;
 
 namespace BackupManager.Infra.FileHashHandlers
 {

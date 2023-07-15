@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BackupManager.App.Database;
 using BackupManager.Domain.Enums;
+using BackupManagerCore;
 using MediaDevices;
 using Microsoft.Extensions.Logging;
 using Temporaries;
