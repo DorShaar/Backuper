@@ -9,7 +9,7 @@ public static class OpenLogsHandler
 	{
 		string lastLogFile = Directory.GetFiles(Consts.LogsDirectoryPath)
 									  .Select(file => new FileInfo(file))
-									  .OrderBy(fileInfo => fileInfo.LastWriteTime)
+									  .OrderByDescending(fileInfo => fileInfo.LastWriteTime)
 									  .First()
 									  .FullName;
 		

@@ -9,6 +9,7 @@ public static class Program
 	private const string FindDuplicatesCommand = "finddup";
 	private const string DeleteCommand = "delete";
 	private const string ShowLogsCommand = "logs";
+	private const string OpenDataDirectory = "data";
 	
 	private static readonly string[] mAllowedCommands =
 	{
@@ -18,7 +19,8 @@ public static class Program
 		CreateSettingsCommand,
 		FindDuplicatesCommand,
 		DeleteCommand,
-		ShowLogsCommand
+		ShowLogsCommand,
+		OpenDataDirectory
 	};
 
 	public static async Task Main(string[] args)
@@ -58,6 +60,10 @@ public static class Program
 
 			case ShowLogsCommand:
 				OpenLogsHandler.Handle();
+				break;
+			
+			case OpenDataDirectory:
+				OpenDataDirectoryHandler.Handle();
 				break;
 			
 			default:
