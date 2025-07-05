@@ -20,7 +20,6 @@ public static class CreateSettingsHandler
 			IsFromInstallation = false,
 			DirectoriesSourcesToDirectoriesDestinationMap = GetDirectoriesMapFromUser(),
 			Description = GetDeviceDescription(),
-			AllowMultithreading = GetAllowMultithreading(),
 			RootDirectory = GetRootDirectory(),
 			ShouldFastMapFiles = GetShouldFastMapFiles(),
 			ShouldBackupToKnownDirectory = GetShouldBackupToKnownDirectory(),
@@ -119,12 +118,6 @@ public static class CreateSettingsHandler
 		Console.WriteLine("Type the root directory of the device. May be empty");
 
 		return Console.ReadLine();
-	}
-
-	private static bool GetAllowMultithreading()
-	{
-		Console.WriteLine("Do you wish to allow backup service to work with multithreading (Might not work on all devices)?");
-		return GetValidBooleanInput();
 	}
 
 	private static bool GetShouldFastMapFiles()

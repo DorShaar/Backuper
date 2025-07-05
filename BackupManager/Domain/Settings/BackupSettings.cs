@@ -35,8 +35,6 @@ public class BackupSettings
 
     public bool ShouldMapFiles => mBackupSerializedSettings.ShouldMapFiles;
 
-    public bool AllowMultithreading => mBackupSerializedSettings.AllowMultithreading;
-
     public ushort SaveInterval => mBackupSerializedSettings.SaveInterval;
 
     public string? Token => mBackupSerializedSettings.Token;
@@ -64,8 +62,7 @@ public class BackupSettings
 {nameof(SearchMethod)}: {SearchMethod}
 {nameof(ShouldBackupToKnownDirectory)}: {ShouldBackupToKnownDirectory}
 {nameof(MediaDeviceName)}: {MediaDeviceName}
-{nameof(RootDirectory)}: {RootDirectory}
-{nameof(AllowMultithreading)}: {AllowMultithreading}";
+{nameof(RootDirectory)}: {RootDirectory}";
     }
     
     private string CalculateRootDirectory(string detectedRootDirectory)

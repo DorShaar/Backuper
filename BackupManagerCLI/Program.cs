@@ -10,9 +10,11 @@ public static class Program
 	private const string DeleteCommand = "delete";
 	private const string ShowLogsCommand = "logs";
 	private const string ShowLogsCommand2 = "log";
-	private const string OpenDataDirectory = "data";
-	private const string DatabaseMigration = "migration";
-	private const string GetFileSrtucture = "get-files-structure";
+	private const string OpenDataDirectoryCommand = "data";
+	private const string DatabaseMigrationCommand = "migration";
+	private const string GetFilesTreeCommand = "get-files-tree";
+	private const string CompareFilesTreeCommand = "compare-files-tree";
+	private const string FindNonBackupedFilesCommand = "fin-non-backuped";
 	
 	private static readonly string[] mAllowedCommands =
 	{
@@ -24,9 +26,11 @@ public static class Program
 		DeleteCommand,
 		ShowLogsCommand,
 		ShowLogsCommand2,
-		OpenDataDirectory,
-		DatabaseMigration,
-        GetFileSrtucture,
+		OpenDataDirectoryCommand,
+		DatabaseMigrationCommand,
+        GetFilesTreeCommand,
+        CompareFilesTreeCommand,
+        FindNonBackupedFilesCommand,
     };
 
 	public static async Task Main(string[] args)
@@ -57,7 +61,7 @@ public static class Program
 				break;
 				
 			case FindDuplicatesCommand:
-				DuplicateCheckerHandler.Handle(args[1..]);
+				await DuplicateCheckerHandler.FindDuplicatesInSingleDirectory(args[1..]).ConfigureAwait(false);
 				break;
 					
 			case DeleteCommand:
@@ -69,18 +73,25 @@ public static class Program
 				OpenLogsHandler.Handle();
 				break;
 			
-			case OpenDataDirectory:
+			case OpenDataDirectoryCommand:
 				OpenDataDirectoryHandler.Handle();
 				break;
 			
-			case DatabaseMigration:
+			case DatabaseMigrationCommand:
 				DatabaseMigrationHandler.Handle();
 				break;
 
-			case GetFileSrtucture:
-				await FileStuctureHandler.Handle(args[1..]);
+			case GetFilesTreeCommand:
+				await FilesTreeStuctureHandler.WriteToDisk(args[1..]);
 				break;
 
+			case CompareFilesTreeCommand:
+                await FilesTreeStuctureHandler.Compare(args[1..]);
+                break;
+
+			case FindNonBackupedFilesCommand:
+                await DuplicateCheckerHandler.FindNonBackupedFiles(args[1..]).ConfigureAwait(false);
+				break;
 
             default:
 				Console.WriteLine($"Command '{command}' is not valid");
