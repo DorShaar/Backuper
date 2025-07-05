@@ -1,8 +1,12 @@
-﻿namespace BackupManagerCli;
+﻿using JsonSerialization;
+
+namespace BackupManagerCli;
 
 public static class FileDeleteHandler
 {
-	public static void Handle(string[] args)
+    private static readonly IJsonSerializer _jsonSerializer = new JsonSerializer();
+
+    public static async Task Handle(string[] args)
 	{
 		if (args.Length < 1)
 		{
@@ -16,25 +20,23 @@ public static class FileDeleteHandler
 			return;
 		}
 		
-		DeleteFilesFrom(filePath);
+		await DeleteFilesFrom(filePath).ConfigureAwait(false);
 	}
 
-    private static void DeleteFilesFrom(string filePath)
+    private static async Task DeleteFilesFrom(string filePath)
     {
-        string[] filePathsToDelete = File.ReadAllLines(filePath);
-        foreach (string filePathToDelete in filePathsToDelete)
+        List<string> filesToDelete = await _jsonSerializer.DeserializeAsync<List<string>>(filePath, CancellationToken.None)
+            .ConfigureAwait(false);
+
+        foreach (string filePathToDelete in filesToDelete)
         {
             string fixedFilePathToDelete = filePathToDelete.Trim();
-            if (string.IsNullOrWhiteSpace(fixedFilePathToDelete))
-            {
-                continue;
-            }
-
             if (!File.Exists(fixedFilePathToDelete))
             {
                 continue;
             }
 
+            Console.WriteLine($"Deleting file '{fixedFilePathToDelete}'");
             File.Delete(fixedFilePathToDelete);
         }
     }

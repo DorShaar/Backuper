@@ -69,7 +69,7 @@ public static class Program
                 break;
 
             case DeleteCommand:
-				FileDeleteHandler.Handle(args[1..]);
+				await FileDeleteHandler.Handle(args[1..]).ConfigureAwait(false);
 				break;
 
 			case ShowLogsCommand:
