@@ -11,14 +11,11 @@ using BackupManagerCore;
 using BackupManagerCore.Mapping;
 using IOWrapper;
 using Microsoft.Extensions.Logging;
-using SmartTasks;
 
 namespace BackupManager.Infra.Backup.Services;
 
 public abstract class BackupServiceBase : IBackupService
 {
-    private const ushort MaximalAllowedParallelWorkers = 4; 
-        
     protected readonly IFilesHashesHandler mFilesHashesHandler;
     protected readonly ILogger<BackupServiceBase> mLogger;
     private readonly ILoggerFactory mLoggerFactory;
@@ -57,69 +54,11 @@ public abstract class BackupServiceBase : IBackupService
             await MapAllFilesWithHash(backupSettings, cancellationToken).ConfigureAwait(false);
         }
         
-        ushort numberOfParallelDirectoriesToCopy = backupSettings.AllowMultithreading ? MaximalAllowedParallelWorkers : (ushort)1;
-
-        TasksRunnerConfigurations tasksRunnerConfigurations = new()
-        {
-            AllowedParallelTasks = numberOfParallelDirectoriesToCopy,
-            IntervalForCheckingAvailableSlot = mIntervalForCheckingAvailableSlot,
-            NoAvailableSlotLogInterval = 10000,
-            Logger = mLoggerFactory.CreateLogger<TasksRunner>()
-        };
-
-        TasksRunner tasksRunner = new(tasksRunnerConfigurations);
-        
         foreach (DirectoriesMap directoriesMap in backupSettings.DirectoriesSourcesToDirectoriesDestinationMap)
         {
-            bool isGetAllFilesCompleted = false;
-            ushort iteration = 0;
-            HashSet<string> alreadyCompletedDirectories = new();
-            
-            Task backupTask = Task.Factory.StartNew(async () =>
-            {
-                while (!isGetAllFilesCompleted)
-                {
-                    if (cancellationToken.IsCancellationRequested)
-                    {
-                        mLogger.LogInformation("Cancel requested");
-                        break;
-                    }
-
-                    iteration++;
-                    mLogger.LogInformation($"Handling backup from '{directoriesMap.SourceRelativeDirectory}' to '{directoriesMap.DestRelativeDirectory}'. Iteration number: {iteration}");
-
-                    string sourceDirectoryToBackup = BuildSourceDirectoryToBackup(backupSettings, directoriesMap.SourceRelativeDirectory);
-                    string sourceRelativeDirectory = backupSettings.ShouldBackupToKnownDirectory ? backupSettings.RootDirectory : Consts.ReadyToBackupDirectoryPath;
-                    FilesBackupData filesBackupData = await GetFilesBackupData(sourceDirectoryToBackup,
-                                                                               sourceRelativeDirectory,
-                                                                               backupSettings,
-                                                                               alreadyCompletedDirectories,
-                                                                               iteration,
-                                                                               cancellationToken).ConfigureAwait(false);
-                    isGetAllFilesCompleted = filesBackupData.IsGetAllFilesCompleted;
-
-                    if (filesBackupData.NotBackedUpFilePathToFileHashMap is not null && filesBackupData.NotBackedUpFilePathToFileHashMap.Count > 0)
-                    {
-                        await BackupFilesInternal(backupSettings,
-                                                  filesBackupData.NotBackedUpFilePathToFileHashMap,
-                                                  directoriesMap,
-                                                  cancellationToken).ConfigureAwait(false);
-                    }
-
-                    if (filesBackupData.AlreadyBackedUpFilePathToFileHashMap is not null && filesBackupData.AlreadyBackedUpFilePathToFileHashMap.Count > 0)
-                    {
-                        MoveFilesToBackedUpDirectoryIfRequired(backupSettings, filesBackupData.AlreadyBackedUpFilePathToFileHashMap);
-                    }
-                }
-                
-                mLogger.LogTrace("Done backup files in thread");
-                return Task.CompletedTask;
-            }, TaskCreationOptions.LongRunning).Unwrap();
-            
-            await tasksRunner.RunTask(backupTask, cancellationToken).ConfigureAwait(false);
+            await BackupInternal(directoriesMap, backupSettings, cancellationToken).ConfigureAwait(false);
         }
 
-        _ = await tasksRunner.WaitAll(cancellationToken).ConfigureAwait(false);
         UpdateLastBackupTime(backupSettings.Description);
         
         mLogger.LogInformation($"Finished backup '{backupSettings.Description ?? backupSettings.ToString()}'");
@@ -175,6 +114,48 @@ public abstract class BackupServiceBase : IBackupService
             }
 
             await mFilesHashesHandler.Save(cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    private async Task BackupInternal(DirectoriesMap directoriesMap, BackupSettings backupSettings, CancellationToken cancellationToken)
+    {
+        bool isGetAllFilesCompleted = false;
+        ushort iteration = 0;
+        HashSet<string> alreadyCompletedDirectories = [];
+
+        while (!isGetAllFilesCompleted)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                mLogger.LogInformation("Cancel requested");
+                break;
+            }
+
+            iteration++;
+            mLogger.LogInformation($"Handling backup from '{directoriesMap.SourceRelativeDirectory}' to '{directoriesMap.DestRelativeDirectory}'. Iteration number: {iteration}");
+
+            string sourceDirectoryToBackup = BuildSourceDirectoryToBackup(backupSettings, directoriesMap.SourceRelativeDirectory);
+            string sourceRelativeDirectory = backupSettings.ShouldBackupToKnownDirectory ? backupSettings.RootDirectory : Consts.ReadyToBackupDirectoryPath;
+            FilesBackupData filesBackupData = await GetFilesBackupData(sourceDirectoryToBackup,
+                                                                       sourceRelativeDirectory,
+                                                                       backupSettings,
+                                                                       alreadyCompletedDirectories,
+                                                                       iteration,
+                                                                       cancellationToken).ConfigureAwait(false);
+            isGetAllFilesCompleted = filesBackupData.IsGetAllFilesCompleted;
+
+            if (filesBackupData.NotBackedUpFilePathToFileHashMap is not null && filesBackupData.NotBackedUpFilePathToFileHashMap.Count > 0)
+            {
+                await BackupFilesInternal(backupSettings,
+                                          filesBackupData.NotBackedUpFilePathToFileHashMap,
+                                          directoriesMap,
+                                          cancellationToken).ConfigureAwait(false);
+            }
+
+            if (filesBackupData.AlreadyBackedUpFilePathToFileHashMap is not null && filesBackupData.AlreadyBackedUpFilePathToFileHashMap.Count > 0)
+            {
+                MoveFilesToBackedUpDirectoryIfRequired(backupSettings, filesBackupData.AlreadyBackedUpFilePathToFileHashMap);
+            }
         }
     }
     

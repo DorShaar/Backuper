@@ -9,7 +9,7 @@ namespace BackupManagerCli;
 public static class CreateSettingsHandler
 {
 	private const string StopCommand = "done";
-	private static readonly IJsonSerializer mJsonSerializer = new JsonSerializer();
+	private static readonly IJsonSerializer _jsonSerializer = new JsonSerializer();
 	
 	public static async Task Handle(CancellationToken cancellationToken)
 	{
@@ -26,7 +26,7 @@ public static class CreateSettingsHandler
 			ShouldBackupToKnownDirectory = GetShouldBackupToKnownDirectory(),
 		};
 		
-		await mJsonSerializer.SerializeAsync(backupSerializedSettings, settingsFilePath, cancellationToken).ConfigureAwait(false);
+		await _jsonSerializer.SerializeAsync(backupSerializedSettings, settingsFilePath, cancellationToken).ConfigureAwait(false);
 
 		Console.WriteLine($"Created settings file can be found here: '{settingsFilePath}'. Copy it to the relevant device");
 	}

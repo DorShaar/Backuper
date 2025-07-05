@@ -12,6 +12,7 @@ public static class Program
 	private const string ShowLogsCommand2 = "log";
 	private const string OpenDataDirectory = "data";
 	private const string DatabaseMigration = "migration";
+	private const string GetFileSrtucture = "get-files-structure";
 	
 	private static readonly string[] mAllowedCommands =
 	{
@@ -25,7 +26,8 @@ public static class Program
 		ShowLogsCommand2,
 		OpenDataDirectory,
 		DatabaseMigration,
-	};
+        GetFileSrtucture,
+    };
 
 	public static async Task Main(string[] args)
 	{
@@ -74,8 +76,13 @@ public static class Program
 			case DatabaseMigration:
 				DatabaseMigrationHandler.Handle();
 				break;
-			
-			default:
+
+			case GetFileSrtucture:
+				await FileStuctureHandler.Handle(args[1..]);
+				break;
+
+
+            default:
 				Console.WriteLine($"Command '{command}' is not valid");
 				break;
 		}
