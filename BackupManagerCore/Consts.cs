@@ -1,10 +1,7 @@
 ﻿namespace BackupManagerCore;
 
 public static class Consts
-{
-    public const string ServiceName = "Dor Backuper Service";
-    public const string ServicePath = @"C:/Program Files/BackupService/bin/BackupManager.exe";
-    
+{   
     #region Application Configuration
     public const string DatabasesTypesSection = "DatabasesTypes";
 
@@ -33,10 +30,10 @@ public static class Consts
     private const string mSettingsExampleFilePath = "SettingsExample.json";
     private const string mKnownTokensFileName = "KnownTokens";
     
-    private static string mSettingsDirectoryPath => Path.Combine(BackupServiceDirectoryPath, mSettingsDirectoryName);
-    public static string SettingsFilePath => Path.Combine(mSettingsDirectoryPath, SettingsFileName);
-    public static string SettingsExampleFilePath => Path.Combine(mSettingsDirectoryPath, mSettingsExampleFilePath);
-    public static string KnownTokensFilePath => Path.Combine(mSettingsDirectoryPath, mKnownTokensFileName);
+    public static string SettingsDirectoryPath => Path.Combine(BackupServiceDirectoryPath, mSettingsDirectoryName);
+    public static string SettingsFilePath => Path.Combine(SettingsDirectoryPath, SettingsFileName);
+    public static string SettingsExampleFilePath => Path.Combine(SettingsDirectoryPath, mSettingsExampleFilePath);
+    public static string KnownTokensFilePath => Path.Combine(SettingsDirectoryPath, mKnownTokensFileName);
     #endregion Settings
 
     #region Logs
@@ -72,13 +69,17 @@ public static class Consts
     /// </summary>
     public static string BackupFilesForKnownDriveCollectionTemplate => "Data-{0}";
     #endregion Database
-    
-    #region CLI
-    public const string BackupServiceCliName = "backup.exe";
-    private const string CliDirectoryName = "CLI";
-    public static string CliDirectoryPath => Path.Combine(BackupServiceDirectoryPath, CliDirectoryName);
-    public static string CliFilePath => Path.Combine(CliDirectoryPath, BackupServiceCliName);
-    #endregion CLI
+
+    #region Service And CLI
+    public const string ServiceName = "Dor Backuper Service";
+    private const string ServiceDirectoryName = "bin";
+    private const string BackupServiceCliName = "backup.exe";
+    private const string ServiceFileName = "BackupManager.exe";
+
+    public static string ServiceDirectoryPath => Path.Combine(BackupServiceDirectoryPath, ServiceDirectoryName);
+    public static string CliFilePath => Path.Combine(ServiceDirectoryPath, BackupServiceCliName);
+    public static string ServicePath => Path.Combine(ServiceDirectoryPath, ServiceFileName);
+    #endregion Service
 
     #region Temp
 

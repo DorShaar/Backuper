@@ -21,7 +21,7 @@ public class BackupOptionsDetectorTests : TestsBase
             mJsonSerializer,
             NullLogger<BackupSettingsDetector>.Instance);
         
-        Assert.Null(await backupSettingsDetector.DetectBackupSettings(CancellationToken.None).ConfigureAwait(false));
+        Assert.Null(await backupSettingsDetector.DetectBackupSettings(CancellationToken.None));
     }
     
     [Fact(Skip = "Requires real device connected with BackupSettings.json without RootDirectory Section")]
@@ -32,7 +32,7 @@ public class BackupOptionsDetectorTests : TestsBase
             mJsonSerializer,
             NullLogger<BackupSettingsDetector>.Instance);
 
-        List<BackupSettings>? settingsList = await backupSettingsDetector.DetectBackupSettings(CancellationToken.None).ConfigureAwait(false);
+        List<BackupSettings>? settingsList = await backupSettingsDetector.DetectBackupSettings(CancellationToken.None);
         Assert.NotNull(settingsList);
         BackupSettings settings = settingsList[0];
         Assert.Equal("Internal shared storage", settings.RootDirectory); 

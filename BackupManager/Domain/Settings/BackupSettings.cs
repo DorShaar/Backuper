@@ -17,12 +17,12 @@ public class BackupSettings
         {
             if (string.IsNullOrWhiteSpace(directoriesMap.SourceRelativeDirectory))
             {
-                throw new ArgumentException($"{nameof(directoriesMap.SourceRelativeDirectory)} should not be empty while");
+                throw new ArgumentException($"{nameof(directoriesMap.SourceRelativeDirectory)} should not be empty");
             }
         }
         
         mBackupSerializedSettings = backupSerializedSettings;
-        RootDirectory = calculateRootDirectory(rootDirectory);
+        RootDirectory = CalculateRootDirectory(rootDirectory);
         SearchMethod = mBackupSerializedSettings.ShouldFastMapFiles ? SearchMethod.FilePath : SearchMethod.Hash;
     }
 
@@ -68,7 +68,7 @@ public class BackupSettings
 {nameof(AllowMultithreading)}: {AllowMultithreading}";
     }
     
-    private string calculateRootDirectory(string detectedRootDirectory)
+    private string CalculateRootDirectory(string detectedRootDirectory)
     {
         if (string.IsNullOrWhiteSpace(mBackupSerializedSettings.RootDirectory))
         {

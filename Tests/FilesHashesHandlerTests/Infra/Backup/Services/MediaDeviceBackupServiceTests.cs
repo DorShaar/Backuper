@@ -24,6 +24,7 @@ public class MediaDeviceBackupServiceTests : TestsBase
     {
         BackupSerializedSettings backupSerializedSettings = new()
         {
+            IsFromInstallation = true,
             DirectoriesSourcesToDirectoriesDestinationMap = new List<DirectoriesMap>
             {
                 new()
@@ -41,17 +42,17 @@ public class MediaDeviceBackupServiceTests : TestsBase
 
         MediaDeviceBackupService backupService = new("Redmi Note 8 Pro", filesHashesHandler, NullLoggerFactory.Instance);
 
-        await backupService.BackupFiles(backupSettings, CancellationToken.None).ConfigureAwait(false);
+        await backupService.BackupFiles(backupSettings, CancellationToken.None);
 
         Assert.True(File.Exists(Path.Combine(Consts.WaitingApprovalDirectoryPath, "Screenshots", "Screenshot_2020-03-12-20-42-59-175_com.facebook.katana.jpg")));
         Assert.True(File.Exists(Path.Combine(Consts.WaitingApprovalDirectoryPath, "Screenshots", "another dir", "Screenshot_same_copy.jpg")));
 
-        string lastBackupTimeStr = (await File.ReadAllLinesAsync(Consts.BackupTimeDiaryFilePath).ConfigureAwait(false))[^1];
+        string lastBackupTimeStr = (await File.ReadAllLinesAsync(Consts.BackupTimeDiaryFilePath))[^1];
         DateTime lastBackupTime = DateTime.Parse(lastBackupTimeStr);
         Assert.Equal(DateTime.Now.Date, lastBackupTime.Date);
 
         Dictionary<string, List<string>> hashesToFilePath =
-            await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(GetBackedUpFilesLocalFilePath(), CancellationToken.None).ConfigureAwait(false);
+            await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(GetBackedUpFilesLocalFilePath(), CancellationToken.None);
         Assert.Equal(Path.Combine("\\DCIM", "Screenshots_tests", "Screenshot_2020-03-12-20-42-59-175_com.facebook.katana.jpg"), hashesToFilePath["2C913FF054E9A626ED7D49A6B26CC9CE912AC39DA0E1EFD5A3077988955B97C6"][0]);
     }
     
@@ -61,6 +62,7 @@ public class MediaDeviceBackupServiceTests : TestsBase
     {
         BackupSerializedSettings backupSerializedSettings = new()
         {
+            IsFromInstallation = true,
             DirectoriesSourcesToDirectoriesDestinationMap = new List<DirectoriesMap>
             {
                 new()
@@ -78,17 +80,17 @@ public class MediaDeviceBackupServiceTests : TestsBase
 
         MediaDeviceBackupService backupService = new("Redmi Note 8 Pro", filesHashesHandler, NullLoggerFactory.Instance);
 
-        await backupService.BackupFiles(backupSettings, CancellationToken.None).ConfigureAwait(false);
+        await backupService.BackupFiles(backupSettings, CancellationToken.None);
 
         Assert.True(File.Exists(Path.Combine(Consts.WaitingApprovalDirectoryPath, "DCIM", "Screenshots_tests", "Screenshot_2020-03-12-20-42-59-175_com.facebook.katana.jpg")));
         Assert.True(File.Exists(Path.Combine(Consts.WaitingApprovalDirectoryPath, "DCIM", "Screenshots_tests", "another dir", "Screenshot_same_copy.jpg")));
 
-        string lastBackupTimeStr = (await File.ReadAllLinesAsync(Consts.BackupTimeDiaryFilePath).ConfigureAwait(false))[^1];
+        string lastBackupTimeStr = (await File.ReadAllLinesAsync(Consts.BackupTimeDiaryFilePath))[^1];
         DateTime lastBackupTime = DateTime.Parse(lastBackupTimeStr);
         Assert.Equal(DateTime.Now.Date, lastBackupTime.Date);
 
         Dictionary<string, List<string>> hashesToFilePath =
-            await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(GetBackedUpFilesLocalFilePath(), CancellationToken.None).ConfigureAwait(false);
+            await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(GetBackedUpFilesLocalFilePath(), CancellationToken.None);
         Assert.Equal(Path.Combine("\\DCIM","Screenshots_tests", "Screenshot_2020-03-12-20-42-59-175_com.facebook.katana.jpg"), hashesToFilePath["2C913FF054E9A626ED7D49A6B26CC9CE912AC39DA0E1EFD5A3077988955B97C6"][0]);
     }
     
@@ -98,6 +100,7 @@ public class MediaDeviceBackupServiceTests : TestsBase
     {
         BackupSerializedSettings backupSerializedSettings = new()
         {
+            IsFromInstallation = true,
             DirectoriesSourcesToDirectoriesDestinationMap = new List<DirectoriesMap>
             {
                 new()
@@ -115,16 +118,16 @@ public class MediaDeviceBackupServiceTests : TestsBase
 
         MediaDeviceBackupService backupService = new("Redmi Note 8 Pro", filesHashesHandler, NullLoggerFactory.Instance);
 
-        await backupService.BackupFiles(backupSettings, CancellationToken.None).ConfigureAwait(false);
+        await backupService.BackupFiles(backupSettings, CancellationToken.None);
 
         Assert.True(File.Exists(Path.Combine(Consts.WaitingApprovalDirectoryPath, "TestDir", "deviceId.txt")));
 
-        string lastBackupTimeStr = (await File.ReadAllLinesAsync(Consts.BackupTimeDiaryFilePath).ConfigureAwait(false))[^1];
+        string lastBackupTimeStr = (await File.ReadAllLinesAsync(Consts.BackupTimeDiaryFilePath))[^1];
         DateTime lastBackupTime = DateTime.Parse(lastBackupTimeStr);
         Assert.Equal(DateTime.Now.Date, lastBackupTime.Date);
 
         Dictionary<string, List<string>> hashesToFilePath =
-            await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(GetBackedUpFilesLocalFilePath(), CancellationToken.None).ConfigureAwait(false);
+            await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(GetBackedUpFilesLocalFilePath(), CancellationToken.None);
         Assert.Equal(Path.Combine("\\TestDir","deviceId.txt"), hashesToFilePath["726B219710AB5B7155C93F8E1854849BF48EAD801A97CB546B69E5BC2E7DC12F"][0]);
     }
 }

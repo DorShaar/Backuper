@@ -16,6 +16,7 @@ public class BackupSettingsTest : TestsBase
     {
         BackupSerializedSettings settings = new()
         {
+            IsFromInstallation = true,
             DirectoriesSourcesToDirectoriesDestinationMap = new List<DirectoriesMap>
             {
                 new()
@@ -34,9 +35,9 @@ public class BackupSettingsTest : TestsBase
 
         using TempFile settingsFile = new();
         
-        await mJsonSerializer.SerializeAsync(settings, settingsFile.Path, CancellationToken.None).ConfigureAwait(false);
+        await mJsonSerializer.SerializeAsync(settings, settingsFile.Path, CancellationToken.None);
         BackupSerializedSettings deserializedSettings =
-            await mJsonSerializer.DeserializeAsync<BackupSerializedSettings>(settingsFile.Path, CancellationToken.None).ConfigureAwait(false);
+            await mJsonSerializer.DeserializeAsync<BackupSerializedSettings>(settingsFile.Path, CancellationToken.None);
         
         Assert.Equal("Games", deserializedSettings.DirectoriesSourcesToDirectoriesDestinationMap[0].SourceRelativeDirectory);
         Assert.Equal("GamesBackup", deserializedSettings.DirectoriesSourcesToDirectoriesDestinationMap[0].DestRelativeDirectory);

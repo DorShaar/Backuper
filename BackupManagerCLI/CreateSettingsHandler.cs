@@ -17,6 +17,7 @@ public static class CreateSettingsHandler
 		
 		BackupSerializedSettings backupSerializedSettings = new()
 		{
+			IsFromInstallation = false,
 			DirectoriesSourcesToDirectoriesDestinationMap = GetDirectoriesMapFromUser(),
 			Description = GetDeviceDescription(),
 			AllowMultithreading = GetAllowMultithreading(),

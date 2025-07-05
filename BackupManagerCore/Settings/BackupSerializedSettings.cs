@@ -4,6 +4,8 @@ namespace BackupManagerCore.Settings;
 
 public class BackupSerializedSettings
 {
+	public required bool IsFromInstallation { get; init; }
+
 	public string? Description { get; init; }
         
 	public required List<DirectoriesMap> DirectoriesSourcesToDirectoriesDestinationMap { get; init; }

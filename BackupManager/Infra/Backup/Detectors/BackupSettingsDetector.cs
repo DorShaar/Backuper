@@ -302,6 +302,12 @@ public class BackupSettingsDetector : IBackupSettingsDetector
             BackupSerializedSettings backupSerializedSettings =
                 await mJsonSerializer.DeserializeAsync<BackupSerializedSettings>(backupSettingsFilePath, cancellationToken).ConfigureAwait(false);
             
+            if (backupSerializedSettings.IsFromInstallation)
+            {
+                mLogger.LogError("Seems like '{backupSettingsFilePath}' was created from installation and it should be configured. Use CLI's CreateSettingsHandler option",
+                                 backupSettingsFilePath);
+            }
+
             return new BackupSettings(backupSerializedSettings, rootDirectory)
             {
                 SourceType = sourceType
@@ -309,7 +315,9 @@ public class BackupSettingsDetector : IBackupSettingsDetector
         }
         catch (Exception ex)
         {
-            mLogger.LogError(ex, $"Failed to deserialize '{backupSettingsFilePath}'");
+            mLogger.LogError(ex,
+                "Failed to deserialize '{backupSettingsFilePath}'",
+                backupSettingsFilePath);
             return null;
         }
     }

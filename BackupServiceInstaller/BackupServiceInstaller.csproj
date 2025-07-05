@@ -20,6 +20,9 @@
       <Reference Include="IOWrapper">
         <HintPath>..\dlls\IOWrapper.dll</HintPath>
       </Reference>
+      <Reference Include="JsonSerialization">
+        <HintPath>..\dlls\JsonSerialization.dll</HintPath>
+      </Reference>
       <Reference Include="WindowsServiceHandle">
         <HintPath>..\dlls\WindowsServiceHandle.dll</HintPath>
       </Reference>
@@ -28,6 +31,7 @@
     <ItemGroup>
       <ProjectReference Include="..\BackupManagerCLI\BackupManagerCLI.csproj" />
       <ProjectReference Include="..\BackupManagerCore\BackupManagerCore.csproj" />
+      <ProjectReference Include="..\BackupManager\BackupManager.csproj" />
     </ItemGroup>
 
 </Project>

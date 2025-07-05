@@ -26,6 +26,7 @@ public class DriveBackupServiceTests : TestsBase
     {
         BackupSerializedSettings backupSerializedSettings = new()
         {
+            IsFromInstallation = false,
             ShouldBackupToKnownDirectory = true,
             DirectoriesSourcesToDirectoriesDestinationMap = new List<DirectoriesMap>
             {
@@ -51,14 +52,14 @@ public class DriveBackupServiceTests : TestsBase
         
         DriveBackupService backupService = new(filesHashesHandler, NullLoggerFactory.Instance);
 
-        await backupService.BackupFiles(backupSettings, CancellationToken.None).ConfigureAwait(false);
+        await backupService.BackupFiles(backupSettings, CancellationToken.None);
 
         Assert.Equal("just a file",
-            await File.ReadAllTextAsync(Path.Combine(Consts.WaitingApprovalDirectoryPath, "GamesBackup" ,"file in games directory.txt")).ConfigureAwait(false));
+            await File.ReadAllTextAsync(Path.Combine(Consts.WaitingApprovalDirectoryPath, "GamesBackup" ,"file in games directory.txt")));
         Assert.Equal("save the princess!",
-            await File.ReadAllTextAsync(Path.Combine(Consts.WaitingApprovalDirectoryPath, "GamesBackup", "prince of persia" ,"file in prince of persia directory.txt")).ConfigureAwait(false));
+            await File.ReadAllTextAsync(Path.Combine(Consts.WaitingApprovalDirectoryPath, "GamesBackup", "prince of persia" ,"file in prince of persia directory.txt")));
         
-        DateTime lastBackupTime = await ExtractLastBackupTime().ConfigureAwait(false);
+        DateTime lastBackupTime = await ExtractLastBackupTime();
         Assert.Equal(DateTime.Now.Date, lastBackupTime.Date);
 
         Dictionary<string, List<string>> hashesToFilePath =
@@ -77,6 +78,7 @@ public class DriveBackupServiceTests : TestsBase
     {
         BackupSerializedSettings backupSerializedSettings = new()
         {
+            IsFromInstallation = false,
             ShouldBackupToKnownDirectory = true,
             DirectoriesSourcesToDirectoriesDestinationMap = new List<DirectoriesMap>
             {
@@ -97,18 +99,18 @@ public class DriveBackupServiceTests : TestsBase
         
         DriveBackupService backupService = new(filesHashesHandler, NullLoggerFactory.Instance);
 
-        await backupService.BackupFiles(backupSettings, CancellationToken.None).ConfigureAwait(false);
+        await backupService.BackupFiles(backupSettings, CancellationToken.None);
 
         Assert.Equal("just a file",
-            await File.ReadAllTextAsync(Path.Combine(Consts.WaitingApprovalDirectoryPath, "Games" ,"file in games directory.txt")).ConfigureAwait(false));
+            await File.ReadAllTextAsync(Path.Combine(Consts.WaitingApprovalDirectoryPath, "Games" ,"file in games directory.txt")));
         Assert.Equal("save the princess!",
-            await File.ReadAllTextAsync(Path.Combine(Consts.WaitingApprovalDirectoryPath, "Games", "prince of persia" ,"file in prince of persia directory.txt")).ConfigureAwait(false));
+            await File.ReadAllTextAsync(Path.Combine(Consts.WaitingApprovalDirectoryPath, "Games", "prince of persia" ,"file in prince of persia directory.txt")));
 
-        DateTime lastBackupTime = await ExtractLastBackupTime().ConfigureAwait(false);
+        DateTime lastBackupTime = await ExtractLastBackupTime();
         Assert.Equal(DateTime.Now.Date, lastBackupTime.Date);
 
         Dictionary<string, List<string>> hashesToFilePath =
-            await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(GetBackedUpFilesLocalFilePath(), CancellationToken.None).ConfigureAwait(false);
+            await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(GetBackedUpFilesLocalFilePath(), CancellationToken.None);
         Assert.Equal(Path.Combine("/Games/file in games directory.txt"), hashesToFilePath["5B0CCEF73B8DCF768B3EBCFBB902269389C0224202F120C1AA25137AC2C27551"][0]);
         Assert.Equal(Path.Combine("/Games/prince of persia/file in prince of persia directory.txt"),
             hashesToFilePath["674833D4A3B3A2E67001316DE33E5024963B0C429AF2455FF55083BE16592D55"][0]);
@@ -123,6 +125,7 @@ public class DriveBackupServiceTests : TestsBase
     {
         BackupSerializedSettings backupSerializedSettings = new()
         {
+            IsFromInstallation = true,
             ShouldBackupToKnownDirectory = false,
             Token = "some-token",
             DirectoriesSourcesToDirectoriesDestinationMap = new List<DirectoriesMap>
@@ -143,7 +146,7 @@ public class DriveBackupServiceTests : TestsBase
         
         DriveBackupService backupService = new(filesHashesHandler, NullLoggerFactory.Instance);
 
-        await backupService.BackupFiles(backupSettings, CancellationToken.None).ConfigureAwait(false);
+        await backupService.BackupFiles(backupSettings, CancellationToken.None);
         
         A.CallTo(() => filesHashesHandler.Save(A<CancellationToken>.Ignored)).MustNotHaveHappened();
     }
@@ -153,6 +156,7 @@ public class DriveBackupServiceTests : TestsBase
     {
         BackupSerializedSettings backupSerializedSettings = new()
         {
+            IsFromInstallation = true,
             ShouldBackupToKnownDirectory = false,
             Token = "some_token",
             DirectoriesSourcesToDirectoriesDestinationMap = new List<DirectoriesMap>
@@ -176,14 +180,14 @@ public class DriveBackupServiceTests : TestsBase
         
         DriveBackupService backupService = new(filesHashesHandler, NullLoggerFactory.Instance);
     
-        await backupService.BackupFiles(backupSettings, CancellationToken.None).ConfigureAwait(false);
+        await backupService.BackupFiles(backupSettings, CancellationToken.None);
     
         Assert.Equal("just a file",
-            await File.ReadAllTextAsync(Path.Combine(tempBackupDirectory.Path, "GamesBackup" ,"file in games directory.txt")).ConfigureAwait(false));
+            await File.ReadAllTextAsync(Path.Combine(tempBackupDirectory.Path, "GamesBackup" ,"file in games directory.txt")));
         Assert.Equal("save the princess!",
-            await File.ReadAllTextAsync(Path.Combine(tempBackupDirectory.Path, "GamesBackup", "prince of persia" ,"file in prince of persia directory.txt")).ConfigureAwait(false));
+            await File.ReadAllTextAsync(Path.Combine(tempBackupDirectory.Path, "GamesBackup", "prince of persia" ,"file in prince of persia directory.txt")));
     
-        DateTime lastBackupTime = await ExtractLastBackupTime().ConfigureAwait(false);
+        DateTime lastBackupTime = await ExtractLastBackupTime();
         Assert.Equal(DateTime.Now.Date, lastBackupTime.Date);
 
         string databaseName = string.Format(Consts.BackupFilesForKnownDriveCollectionTemplate, backupSerializedSettings.Token); 
@@ -205,6 +209,7 @@ public class DriveBackupServiceTests : TestsBase
     {
         BackupSerializedSettings backupSerializedSettings = new()
         {
+            IsFromInstallation = true,
             ShouldBackupToKnownDirectory = false,
             Token = "some_token",
             DirectoriesSourcesToDirectoriesDestinationMap = new List<DirectoriesMap>
@@ -218,20 +223,20 @@ public class DriveBackupServiceTests : TestsBase
         
         LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
         FilesHashesHandler filesHashesHandler = new(new List<IBackedUpFilesDatabase> {localJsonDatabase});
-        await filesHashesHandler.LoadDatabase("Data-some_token", CancellationToken.None).ConfigureAwait(false);
+        await filesHashesHandler.LoadDatabase("Data-some_token", CancellationToken.None);
     
         DriveBackupService backupService = new(filesHashesHandler, NullLoggerFactory.Instance);
     
         using TempDirectory gamesTempDirectory = CreateFilesToBackup(Consts.ReadyToBackupDirectoryPath);
         string alreadyExistingFilePath = Path.Combine(tempBackupDirectory.Path, "Games", "file in games directory.txt");
         _ = Directory.CreateDirectory(Path.GetDirectoryName(alreadyExistingFilePath) ?? throw new NullReferenceException());
-        await File.WriteAllTextAsync(alreadyExistingFilePath, "just a file").ConfigureAwait(false);
+        await File.WriteAllTextAsync(alreadyExistingFilePath, "just a file");
         
-        Assert.False(await filesHashesHandler.IsHashExists("5B0CCEF73B8DCF768B3EBCFBB902269389C0224202F120C1AA25137AC2C27551", CancellationToken.None).ConfigureAwait(false));
+        Assert.False(await filesHashesHandler.IsHashExists("5B0CCEF73B8DCF768B3EBCFBB902269389C0224202F120C1AA25137AC2C27551", CancellationToken.None));
         
-        await backupService.BackupFiles(backupSettings, CancellationToken.None).ConfigureAwait(false);
+        await backupService.BackupFiles(backupSettings, CancellationToken.None);
         
-        Assert.True(await filesHashesHandler.IsHashExists("5B0CCEF73B8DCF768B3EBCFBB902269389C0224202F120C1AA25137AC2C27551", CancellationToken.None).ConfigureAwait(false));
+        Assert.True(await filesHashesHandler.IsHashExists("5B0CCEF73B8DCF768B3EBCFBB902269389C0224202F120C1AA25137AC2C27551", CancellationToken.None));
     }
 
     private static TempDirectory CreateFilesToBackup(string? directory = null)

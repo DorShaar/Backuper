@@ -42,8 +42,7 @@ public class WindowsBackgroundServiceTests : TestsBase
 
 		_ = Directory.CreateDirectory(Path.GetDirectoryName(Consts.SettingsFilePath) ?? throw new NullReferenceException());
 		
-		await Assert.ThrowsAsync<FileNotFoundException>(async () => await windowsBackgroundService.StartAsync(CancellationToken.None).ConfigureAwait(false))
-					.ConfigureAwait(false);
+		await Assert.ThrowsAsync<FileNotFoundException>(async () => await windowsBackgroundService.StartAsync(CancellationToken.None).ConfigureAwait(false));
 	}
 	
 	[Fact]
@@ -54,7 +53,8 @@ public class WindowsBackgroundServiceTests : TestsBase
 		IBackupSettingsDetector backupSettingsDetector = A.Fake<IBackupSettingsDetector>();
 		BackupSerializedSettings backupSerializedSettings = new()
 		{
-			DirectoriesSourcesToDirectoriesDestinationMap = new List<DirectoriesMap>(),
+            IsFromInstallation = true,
+            DirectoriesSourcesToDirectoriesDestinationMap = new List<DirectoriesMap>(),
 			ShouldBackupToKnownDirectory = false,
 			Token = Guid.NewGuid().ToString()
 		};
@@ -82,9 +82,9 @@ public class WindowsBackgroundServiceTests : TestsBase
 		_ = Directory.CreateDirectory(Path.GetDirectoryName(Consts.SettingsFilePath) ?? throw new NullReferenceException());
 
 		using TempFile settingsFilePath = new(Consts.SettingsFilePath);
-		await File.WriteAllTextAsync(settingsFilePath.Path, "a", CancellationToken.None).ConfigureAwait(false);
+		await File.WriteAllTextAsync(settingsFilePath.Path, "a", CancellationToken.None);
 		
-		await windowsBackgroundService.StartAsync(cancellationTokenSource.Token).ConfigureAwait(false);
+		await windowsBackgroundService.StartAsync(cancellationTokenSource.Token);
 		
 		A.CallTo(() => backupServiceFactory.Create(A<BackupSettings>.Ignored)).MustNotHaveHappened();
 	}
@@ -99,6 +99,7 @@ public class WindowsBackgroundServiceTests : TestsBase
 		IBackupSettingsDetector backupSettingsDetector = A.Fake<IBackupSettingsDetector>();
 		BackupSerializedSettings backupSerializedSettings = new()
 		{
+			IsFromInstallation = true,
 			DirectoriesSourcesToDirectoriesDestinationMap = new List<DirectoriesMap>(),
 			ShouldBackupToKnownDirectory = false,
 			Token = Guid.NewGuid().ToString()
@@ -115,7 +116,7 @@ public class WindowsBackgroundServiceTests : TestsBase
 		 .Invokes(() => cancellationTokenSource.Cancel());
 
 		_ = Directory.CreateDirectory(Path.GetDirectoryName(Consts.KnownTokensFilePath) ?? throw new NullReferenceException());
-		await File.WriteAllTextAsync(Consts.KnownTokensFilePath, backupSerializedSettings.Token, CancellationToken.None).ConfigureAwait(false);
+		await File.WriteAllTextAsync(Consts.KnownTokensFilePath, backupSerializedSettings.Token, CancellationToken.None);
 		
 		IDatabasesSynchronizer databasesSynchronizer = A.Dummy<IDatabasesSynchronizer>();
 		IOptionsMonitor<BackupServiceConfiguration> backupServiceOptions = A.Dummy<IOptionsMonitor<BackupServiceConfiguration>>();
@@ -130,12 +131,12 @@ public class WindowsBackgroundServiceTests : TestsBase
 		_ = Directory.CreateDirectory(Path.GetDirectoryName(Consts.SettingsFilePath) ?? throw new NullReferenceException());
 
 		using TempFile settingsFilePath = new(Consts.SettingsFilePath);
-		await File.WriteAllTextAsync(settingsFilePath.Path, "a", CancellationToken.None).ConfigureAwait(false);
+		await File.WriteAllTextAsync(settingsFilePath.Path, "a", CancellationToken.None);
 		
-		await windowsBackgroundService.StartAsync(cancellationTokenSource.Token).ConfigureAwait(false);
+		await windowsBackgroundService.StartAsync(cancellationTokenSource.Token);
 
 		// Must wait for few seconds to allow the ExecuteAsync begin.
-		await Task.Delay(3000, CancellationToken.None).ConfigureAwait(false);
+		await Task.Delay(3000, CancellationToken.None);
 
 		A.CallTo(() => backupService.BackupFiles(A<BackupSettings>.Ignored, A<CancellationToken>.Ignored))
 		 .MustHaveHappenedOnceExactly();
