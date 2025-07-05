@@ -3,9 +3,30 @@ using JsonSerialization;
 
 namespace BackupManagerCli;
 
-public static class DuplicateCheckerHandler
+public static class FileHashHandler
 {
     private static readonly IJsonSerializer _jsonSerializer = new JsonSerializer();
+
+    public static async Task MapFiles(string[] args)
+    {
+        if (args.Length < 2)
+        {
+            Console.WriteLine("Please provide directory to map file hashes result output path");
+            return;
+        }
+
+        string directoryPath = args[0];
+        if (!Directory.Exists(directoryPath))
+        {
+            Console.WriteLine($"Directory '{directoryPath}' does not exist");
+            return;
+        }
+
+        string resultOutputPath = args[1];
+
+        Dictionary<string, List<string>> hashToFilePaths = GetHashToFilePathMap(directoryPath);
+        await _jsonSerializer.SerializeAsync(hashToFilePaths, resultOutputPath, CancellationToken.None).ConfigureAwait(false);
+    }
 
     public static async Task FindAlreadyBackupedFiles(string[] args)
 	{
@@ -62,11 +83,11 @@ public static class DuplicateCheckerHandler
         await FindNonBackupedFilesInternal(directoryPath, databasePath, resultOutputPath).ConfigureAwait(false);
     }
 
-    private static async Task<List<string>> FindAlreadyBackupedFilesInternal(string rootDirectory, string databaseFilePath)
+    private static Dictionary<string, List<string>> GetHashToFilePathMap(string rootDirectory)
     {
         Dictionary<string, List<string>> hashToFilePaths = [];
 
-        Console.WriteLine($"Start iterative operation for finding duplicate files from {rootDirectory}");
+        Console.WriteLine($"Start iterative traversal from '{rootDirectory}'");
 
         Queue<string> directoriesToSearch = new();
         directoriesToSearch.Enqueue(rootDirectory);
@@ -89,7 +110,14 @@ public static class DuplicateCheckerHandler
             }
         }
 
-        Console.WriteLine($"Finished iterative operation for finding duplicate files from {rootDirectory}");
+        Console.WriteLine($"Finished iterative traversal from '{rootDirectory}'");
+
+        return hashToFilePaths;
+    }
+
+    private static async Task<List<string>> FindAlreadyBackupedFilesInternal(string rootDirectory, string databaseFilePath)
+    {
+        Dictionary<string, List<string>> hashToFilePaths = GetHashToFilePathMap(rootDirectory);
 
         await RemoveNonBackupedFilesFromMap(hashToFilePaths, databaseFilePath).ConfigureAwait(false);
 

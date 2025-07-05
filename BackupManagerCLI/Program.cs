@@ -6,6 +6,7 @@ public static class Program
 	private const string StopCommand = "stop";
 	private const string GetStatusCommand = "status";
 	private const string CreateSettingsCommand = "create-settings";
+	private const string MapFilesCommand = "map-files";
 	private const string FindAlreadyBackupedFilesCommand = "find-backuped";
 	private const string FindNonBackupedFilesCommand = "find-non-backuped"; 
 	private const string DeleteCommand = "delete";
@@ -22,7 +23,8 @@ public static class Program
 		StopCommand,
 		GetStatusCommand,
 		CreateSettingsCommand,
-		FindAlreadyBackupedFilesCommand,
+        MapFilesCommand,
+        FindAlreadyBackupedFilesCommand,
         FindNonBackupedFilesCommand,
 		DeleteCommand,
 		ShowLogsCommand,
@@ -55,17 +57,21 @@ public static class Program
 			case GetStatusCommand:
 				BackupServiceHandler.GetStatus();
 				break;
-			
-			case CreateSettingsCommand:
+
+            case CreateSettingsCommand:
 				await CreateSettingsHandler.Handle(CancellationToken.None).ConfigureAwait(false);
 				break;
-				
-			case FindAlreadyBackupedFilesCommand:
-				await DuplicateCheckerHandler.FindAlreadyBackupedFiles(args[1..]).ConfigureAwait(false);
+
+            case MapFilesCommand:
+				await FileHashHandler.MapFiles(args[1..]).ConfigureAwait(false);
+                break;
+
+            case FindAlreadyBackupedFilesCommand:
+				await FileHashHandler.FindAlreadyBackupedFiles(args[1..]).ConfigureAwait(false);
 				break;
 
             case FindNonBackupedFilesCommand:
-                await DuplicateCheckerHandler.FindNonBackupedFiles(args[1..]).ConfigureAwait(false);
+                await FileHashHandler.FindNonBackupedFiles(args[1..]).ConfigureAwait(false);
                 break;
 
             case DeleteCommand:
