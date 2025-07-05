@@ -35,12 +35,6 @@ public static class FileDeleteHandler
                 continue;
             }
 
-            if (new FileInfo(fixedFilePathToDelete).Length == 0)
-            {
-                File.Delete(fixedFilePathToDelete);
-                continue;
-            }
-
             File.Delete(fixedFilePathToDelete);
         }
     }

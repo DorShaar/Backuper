@@ -7,7 +7,7 @@ public static class DuplicateCheckerHandler
 {
     private static readonly IJsonSerializer _jsonSerializer = new JsonSerializer();
 
-    public static async Task FindDuplicatesInSingleDirectory(string[] args)
+    public static async Task FindAlreadyBackupedFiles(string[] args)
 	{
 		if (args.Length < 3)
 		{
@@ -31,8 +31,8 @@ public static class DuplicateCheckerHandler
 
         string resultOutputPath = args[2];
 
-		Dictionary<string, List<string>> duplicates = await FindDuplicateFiles(directoryPath, databasePath).ConfigureAwait(false);
-		WriteDuplicateFiles(duplicates, resultOutputPath);		
+		List<string> backupedFiles = await FindAlreadyBackupedFilesInternal(directoryPath, databasePath).ConfigureAwait(false);
+        await _jsonSerializer.SerializeAsync(backupedFiles, resultOutputPath, CancellationToken.None).ConfigureAwait(false);
 	}
 
     public static async Task FindNonBackupedFiles(string[] args)
@@ -62,32 +62,7 @@ public static class DuplicateCheckerHandler
         await FindNonBackupedFilesInternal(directoryPath, databasePath, resultOutputPath).ConfigureAwait(false);
     }
 
-    private static void WriteDuplicateFiles(Dictionary<string, List<string>> duplicatedFiles, string outputPath)
-    {
-        using StreamWriter writer = File.CreateText(outputPath);
-        foreach ((string fileHash, List<string> filePaths) in duplicatedFiles)
-        {
-            if (filePaths.Count > 1)
-            {
-                writer.WriteLine($"Duplicate hash {fileHash}");
-                filePaths.ForEach(file => writer.WriteLine(file));
-                writer.WriteLine(string.Empty);
-            }
-        }
-    }
-
-    private static async Task<Dictionary<string, List<string>>> FindDuplicateFiles(string rootDirectory, string databaseFilePath)
-    {
-        if (!Directory.Exists(rootDirectory))
-        {
-            Console.WriteLine($"{rootDirectory} does not exists");
-            return new Dictionary<string, List<string>>();
-        }
-
-        return await FindDuplicateFilesIterative(rootDirectory, databaseFilePath).ConfigureAwait(false);
-    }
-
-    private static async Task<Dictionary<string, List<string>>> FindDuplicateFilesIterative(string rootDirectory, string databaseFilePath)
+    private static async Task<List<string>> FindAlreadyBackupedFilesInternal(string rootDirectory, string databaseFilePath)
     {
         Dictionary<string, List<string>> hashToFilePaths = [];
 
@@ -116,12 +91,9 @@ public static class DuplicateCheckerHandler
 
         Console.WriteLine($"Finished iterative operation for finding duplicate files from {rootDirectory}");
 
-        await CheckWithDatabase(hashToFilePaths, databaseFilePath).ConfigureAwait(false);
+        await RemoveNonBackupedFilesFromMap(hashToFilePaths, databaseFilePath).ConfigureAwait(false);
 
-        Dictionary<string, List<string>> duplicates = hashToFilePaths.Where(keyValue => keyValue.Value.Count > 1)
-                                                                     .ToDictionary(pair => pair.Key, pair => pair.Value);
-
-        return duplicates;
+        return hashToFilePaths.Values.SelectMany(list => list).ToList();
     }
 
     private static async Task CheckWithDatabase(Dictionary<string, List<string>> hashToFilePathMap, string databaseFilePath)
@@ -187,6 +159,23 @@ public static class DuplicateCheckerHandler
 
         await _jsonSerializer.SerializeAsync(hashToFilePaths, resultOutputPath, CancellationToken.None)
             .ConfigureAwait(false);
+    }
+
+    private static async Task RemoveNonBackupedFilesFromMap(Dictionary<string, List<string>> hashToFilePaths, string databaseFilePath)
+    {
+        Dictionary<string, List<string>> alreadyBackedUp =
+            await _jsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(databaseFilePath, CancellationToken.None)
+            .ConfigureAwait(false);
+
+        foreach (string hash in alreadyBackedUp.Keys)
+        {
+            if (hashToFilePaths.ContainsKey(hash))
+            {
+                continue;
+            }
+
+            hashToFilePaths.Remove(hash);
+        }
     }
 
     private static async Task RemoveAlreadyBackupedFilesFromMap(Dictionary<string, List<string>> hashToFilePaths, string databaseFilePath)
