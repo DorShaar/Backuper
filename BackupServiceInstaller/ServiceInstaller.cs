@@ -18,18 +18,18 @@ public class ServiceInstaller(WindowsServiceManager windowsServiceManager,
 
     public async Task Install(CancellationToken cancellationToken)
 	{
-		_logger.LogInformation($"Checking if service {Consts.ServiceName} exists");
-		(bool isServiceExists, WindowsServiceHandle.WindowsServiceHandle? serviceHandler) = _windowsServiceManager.IsServiceExists(Consts.ServiceName); 
+		_logger.LogInformation($"Checking if service {Consts.ServiceAndCLI.ServiceName} exists");
+		(bool isServiceExists, WindowsServiceHandle.WindowsServiceHandle? serviceHandler) = _windowsServiceManager.IsServiceExists(Consts.ServiceAndCLI.ServiceName); 
 		if (isServiceExists && serviceHandler is not null)
 		{
-			_logger.LogInformation($"Starting service {Consts.ServiceName}");
-			_windowsServiceManager.StartService(serviceHandler, Consts.ServiceName);
+			_logger.LogInformation($"Starting service {Consts.ServiceAndCLI.ServiceName}");
+			_windowsServiceManager.StartService(serviceHandler, Consts.ServiceAndCLI.ServiceName);
 			serviceHandler.Dispose();
 			return;
 		}
 
-		_logger.LogInformation($"Creating service {Consts.ServiceName}");
-		using WindowsServiceHandle.WindowsServiceHandle? serviceHandle = _windowsServiceManager.TryCreateService(Consts.ServiceName, Consts.ServicePath);
+		_logger.LogInformation($"Creating service {Consts.ServiceAndCLI.ServiceName}");
+		using WindowsServiceHandle.WindowsServiceHandle? serviceHandle = _windowsServiceManager.TryCreateService(Consts.ServiceAndCLI.ServiceName, Consts.ServiceAndCLI.ServicePath);
 		if (serviceHandle is null)
 		{
 			return;
@@ -45,13 +45,13 @@ public class ServiceInstaller(WindowsServiceManager windowsServiceManager,
 
 		await CreateNonInitializedBackupSettings(cancellationToken).ConfigureAwait(false);
 
-        _logger.LogInformation($"Starting service {Consts.ServiceName}");
-        _windowsServiceManager.StartService(serviceHandle, Consts.ServiceName);
+        _logger.LogInformation($"Starting service {Consts.ServiceAndCLI.ServiceName}");
+        _windowsServiceManager.StartService(serviceHandle, Consts.ServiceAndCLI.ServiceName);
     }
 
 	private bool CopyServiceAndCLIToKnownLocation(CancellationToken cancellationToken)
 	{
-		_logger.LogInformation($"Copying Service and CLI to {Consts.ServiceDirectoryPath}");
+		_logger.LogInformation($"Copying Service and CLI to {Consts.ServiceAndCLI.ServiceDirectoryPath}");
 		string runningExeFilePath = Process.GetCurrentProcess().MainModule?.FileName!;
 		string? cliSourceDirectory = Path.GetDirectoryName(runningExeFilePath);
 
@@ -70,16 +70,16 @@ public class ServiceInstaller(WindowsServiceManager windowsServiceManager,
 
 		try
 		{
-			_ = Directory.CreateDirectory(Consts.ServiceDirectoryPath);
+			_ = Directory.CreateDirectory(Consts.ServiceAndCLI.ServiceDirectoryPath);
 			IOWrapper.DirectoryOperations.CopyDirectory(cliSourceDirectory,
-														Consts.ServiceDirectoryPath,
+														Consts.ServiceAndCLI.ServiceDirectoryPath,
 														"*",
 														shouldOverwriteExist: true,
 														SearchOption.AllDirectories,
 														cancellationToken);
 		
-			string cliDestinationFilePath = Path.Combine(Consts.ServiceDirectoryPath, $"{nameof(BackupManagerCli)}.exe");
-			File.Move(cliDestinationFilePath, Consts.CliFilePath, overwrite: true);
+			string cliDestinationFilePath = Path.Combine(Consts.ServiceAndCLI.ServiceDirectoryPath, $"{nameof(BackupManagerCli)}.exe");
+			File.Move(cliDestinationFilePath, Consts.ServiceAndCLI.CliFilePath, overwrite: true);
 			return true;
 		}
 		catch (Exception ex)
@@ -99,22 +99,22 @@ public class ServiceInstaller(WindowsServiceManager windowsServiceManager,
 
 		if (string.IsNullOrEmpty(oldPathsEnvironmentVariableValue))
 		{
-			Environment.SetEnvironmentVariable(pathVariableName, Consts.ServiceDirectoryPath, environmentVariableTarget);
+			Environment.SetEnvironmentVariable(pathVariableName, Consts.ServiceAndCLI.ServiceDirectoryPath, environmentVariableTarget);
 			return;
 		}
 
 		HashSet<string> environmentVariablePaths = oldPathsEnvironmentVariableValue.Split(';').ToHashSet();
 
-		if (environmentVariablePaths.Contains(Consts.ServiceDirectoryPath))
+		if (environmentVariablePaths.Contains(Consts.ServiceAndCLI.ServiceDirectoryPath))
 		{
 			_logger.LogInformation("Backup service CLI already added as environment variable");
 			return;
 		}
 
-		string newPathEnvironmentVariableValue = oldPathsEnvironmentVariableValue + $";{Consts.ServiceDirectoryPath}";
+		string newPathEnvironmentVariableValue = oldPathsEnvironmentVariableValue + $";{Consts.ServiceAndCLI.ServiceDirectoryPath}";
 		Environment.SetEnvironmentVariable(pathVariableName, newPathEnvironmentVariableValue, environmentVariableTarget);
 		
-		_logger.LogInformation($"Now you can make backup service commands with {Consts.ServiceDirectoryPath}");
+		_logger.LogInformation($"Now you can make backup service commands with {Consts.ServiceAndCLI.ServiceDirectoryPath}");
 	}
 
 	private async Task CreateNonInitializedBackupSettings(CancellationToken cancellationToken)

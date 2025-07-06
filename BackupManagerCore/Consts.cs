@@ -44,42 +44,45 @@ public static class Consts
     public static string LogsFilePathWithoutExtension => Path.Combine(LogsDirectoryPath, mLogsFilesNameWithoutExtension);
     #endregion Logs
     
-    #region Data
-    private const string mDataDirectoryName = "Data";
-    private const string mBackupsDirectoryName = "Backups";
-    private const string mWaitingApprovalDirectoryName = "WaitingApproval";
-    private const string mReadyToBackupDirectoryName = "ReadyToBackup";
-    private const string mBackedUpDirectoryName = "BackedUp";
-    private const string mBackupTimeDiaryFileName = "BackupTimeDiary";
-    public const string LocalDatabaseExtension = "json";
+    public struct Data
+    {
+        private const string mDataDirectoryName = "Data";
+        private const string mBackupsDirectoryName = "Backups";
+        private const string mWaitingApprovalDirectoryName = "WaitingApproval";
+        private const string mReadyToBackupDirectoryName = "ReadyToBackup";
+        private const string mBackedUpDirectoryName = "BackedUp";
+        private const string mBackupTimeDiaryFileName = "BackupTimeDiary";
+        public const string LocalDatabaseExtension = "json";
 
-    public static string DataDirectoryPath => Path.Combine(BackupServiceDirectoryPath, mDataDirectoryName);
-    public static string BackupTimeDiaryFilePath => Path.Combine(DataDirectoryPath, mBackupTimeDiaryFileName);
-    public static string BackupsDirectoryPath => Path.Combine(DataDirectoryPath, mBackupsDirectoryName);
-    public static string WaitingApprovalDirectoryPath => Path.Combine(BackupsDirectoryPath, mWaitingApprovalDirectoryName);
-    public static string ReadyToBackupDirectoryPath => Path.Combine(BackupsDirectoryPath, mReadyToBackupDirectoryName);
-    public static string BackedUpDirectoryPath => Path.Combine(BackupsDirectoryPath, mBackedUpDirectoryName);
-    #endregion Data
+        public static string DataDirectoryPath => Path.Combine(BackupServiceDirectoryPath, mDataDirectoryName);
+        public static string BackupTimeDiaryFilePath => Path.Combine(DataDirectoryPath, mBackupTimeDiaryFileName);
+        public static string BackupsDirectoryPath => Path.Combine(DataDirectoryPath, mBackupsDirectoryName);
+        public static string WaitingApprovalDirectoryPath => Path.Combine(BackupsDirectoryPath, mWaitingApprovalDirectoryName);
+        public static string ReadyToBackupDirectoryPath => Path.Combine(BackupsDirectoryPath, mReadyToBackupDirectoryName);
+        public static string BackedUpDirectoryPath => Path.Combine(BackupsDirectoryPath, mBackedUpDirectoryName);
+    }
     
-    #region Database
-    public const string BackupFilesCollectionName = "FilesBackup";
+    public struct Database
+    {
+        public const string BackupFilesCollectionName = "FilesBackup";
     
-    /// <summary>
-    /// {0} - known-id.
-    /// </summary>
-    public static string BackupFilesForKnownDriveCollectionTemplate => "Data-{0}";
-    #endregion Database
+        /// <summary>
+        /// {0} - known-id.
+        /// </summary>
+        public static string BackupFilesForKnownDriveCollectionTemplate => "Data-{0}";
+    }
 
-    #region Service And CLI
-    public const string ServiceName = "Dor Backuper Service";
-    private const string ServiceDirectoryName = "bin";
-    private const string BackupServiceCliName = "backup.exe";
-    private const string ServiceFileName = "BackupManager.exe";
+    public struct ServiceAndCLI
+    {
+        public const string ServiceName = "Dor Backuper Service";
+        private const string ServiceDirectoryName = "bin";
+        private const string BackupServiceCliName = "backup.exe";
+        private const string ServiceFileName = "BackupManager.exe";
 
-    public static string ServiceDirectoryPath => Path.Combine(BackupServiceDirectoryPath, ServiceDirectoryName);
-    public static string CliFilePath => Path.Combine(ServiceDirectoryPath, BackupServiceCliName);
-    public static string ServicePath => Path.Combine(ServiceDirectoryPath, ServiceFileName);
-    #endregion Service
+        public static string ServiceDirectoryPath => Path.Combine(BackupServiceDirectoryPath, ServiceDirectoryName);
+        public static string CliFilePath => Path.Combine(ServiceDirectoryPath, BackupServiceCliName);
+        public static string ServicePath => Path.Combine(ServiceDirectoryPath, ServiceFileName);
+    }
 
     #region Temp
 

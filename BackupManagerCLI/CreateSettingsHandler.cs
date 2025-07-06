@@ -1,5 +1,4 @@
-﻿using System.Globalization;
-using BackupManagerCore;
+﻿using BackupManagerCore;
 using BackupManagerCore.Mapping;
 using BackupManagerCore.Settings;
 using JsonSerialization;
@@ -11,9 +10,11 @@ public static class CreateSettingsHandler
 	private const string StopCommand = "done";
 	private static readonly IJsonSerializer _jsonSerializer = new JsonSerializer();
 	
-	public static async Task Handle(CancellationToken cancellationToken)
+	public static async Task Create(string[] args)
 	{
-		string settingsFilePath = Path.Combine(Consts.TempDirectoryPath, DateTime.Now.ToString("dd-MM-yy h:mm:ss", CultureInfo.InvariantCulture), Consts.SettingsFileName);
+		string destinationFileDir = args[0];
+
+		string settingsFilePath = Path.Combine(destinationFileDir, Consts.SettingsFileName);
 		
 		BackupSerializedSettings backupSerializedSettings = new()
 		{
@@ -25,7 +26,8 @@ public static class CreateSettingsHandler
 			ShouldBackupToKnownDirectory = GetShouldBackupToKnownDirectory(),
 		};
 		
-		await _jsonSerializer.SerializeAsync(backupSerializedSettings, settingsFilePath, cancellationToken).ConfigureAwait(false);
+		await _jsonSerializer.SerializeAsync(backupSerializedSettings, settingsFilePath, CancellationToken.None)
+			.ConfigureAwait(false);
 
 		Console.WriteLine($"Created settings file can be found here: '{settingsFilePath}'. Copy it to the relevant device");
 	}

@@ -189,15 +189,16 @@ public static class FileHashHandler
             .ConfigureAwait(false);
     }
 
-    private static async Task RemoveNonBackupedFilesFromMap(Dictionary<string, List<string>> hashToFilePaths, string databaseFilePath)
+    private static async Task RemoveNonBackupedFilesFromMap(Dictionary<string, List<string>> hashToFilePaths,
+                                                            string databaseFilePath)
     {
         Dictionary<string, List<string>> alreadyBackedUp =
             await _jsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(databaseFilePath, CancellationToken.None)
             .ConfigureAwait(false);
 
-        foreach (string hash in alreadyBackedUp.Keys)
+        foreach (string hash in hashToFilePaths.Keys.ToList())
         {
-            if (hashToFilePaths.ContainsKey(hash))
+            if (alreadyBackedUp.ContainsKey(hash))
             {
                 continue;
             }

@@ -28,7 +28,7 @@ public class MediaDeviceBackupService : BackupServiceBase
 
     public override void Dispose()
     {
-        mLogger.LogInformation($"Closing media device {mMediaDevice.Description}");
+        _logger.LogInformation($"Closing media device {mMediaDevice.Description}");
         GC.SuppressFinalize(this);
         mMediaDevice.Dispose();
     }
@@ -54,7 +54,7 @@ public class MediaDeviceBackupService : BackupServiceBase
         
         if (searchMethod == SearchMethod.FilePath)
         {
-            isAlreadyBackedUp = await mFilesHashesHandler.IsFilePathExist(relativeFilePath, cancellationToken).ConfigureAwait(false);
+            isAlreadyBackedUp = await _filesHashesHandler.IsFilePathExist(relativeFilePath, cancellationToken).ConfigureAwait(false);
 
             if (isAlreadyBackedUp)
             {
@@ -68,12 +68,12 @@ public class MediaDeviceBackupService : BackupServiceBase
         string tempFilePath = Path.Combine(Consts.TempDirectoryPath, Path.GetRandomFileName());
         using TempFile tempFile = new(tempFilePath);
         CopyFile(filePath, tempFile.Path);
-        string fileHash = mFilesHashesHandler.CalculateHash(tempFile.Path);
+        string fileHash = _filesHashesHandler.CalculateHash(tempFile.Path);
 
         isAlreadyBackedUp = false;
         if (searchMethod == SearchMethod.Hash)
         {
-            isAlreadyBackedUp = await mFilesHashesHandler.IsHashExists(fileHash, cancellationToken).ConfigureAwait(false);
+            isAlreadyBackedUp = await _filesHashesHandler.IsHashExists(fileHash, cancellationToken).ConfigureAwait(false);
         }
         
         return (fileHash, isAlreadyBackedUp);
@@ -94,7 +94,7 @@ public class MediaDeviceBackupService : BackupServiceBase
         }
         catch (Exception ex)
         {
-            mLogger.LogError(ex, $"Could not get directory info for {directory}");
+            _logger.LogError(ex, $"Could not get directory info for {directory}");
             return false;
         }
     }

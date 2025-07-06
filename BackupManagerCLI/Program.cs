@@ -6,7 +6,8 @@ public static class Program
 	private const string StopCommand = "stop";
 	private const string GetStatusCommand = "status";
 	private const string CreateSettingsCommand = "create-settings";
-	private const string MapFilesCommand = "map-files";
+	private const string UpdateSettingsCommand = "update-settings";
+    private const string MapFilesCommand = "map-files";
 	private const string FindAlreadyBackupedFilesCommand = "find-backuped";
 	private const string FindNonBackupedFilesCommand = "find-non-backuped"; 
 	private const string DeleteCommand = "delete";
@@ -16,6 +17,7 @@ public static class Program
 	private const string DatabaseMigrationCommand = "migration";
 	private const string GetFilesTreeCommand = "get-files-tree";
 	private const string CompareFilesTreeCommand = "compare-files-tree";
+	private const string AlignToRelativeFilePathCommand = "align-to-relative";
 	
 	private static readonly string[] mAllowedCommands =
 	{
@@ -23,6 +25,7 @@ public static class Program
 		StopCommand,
 		GetStatusCommand,
 		CreateSettingsCommand,
+        UpdateSettingsCommand,
         MapFilesCommand,
         FindAlreadyBackupedFilesCommand,
         FindNonBackupedFilesCommand,
@@ -33,6 +36,7 @@ public static class Program
 		DatabaseMigrationCommand,
         GetFilesTreeCommand,
         CompareFilesTreeCommand,
+        AlignToRelativeFilePathCommand,
     };
 
 	public static async Task Main(string[] args)
@@ -59,7 +63,11 @@ public static class Program
 				break;
 
             case CreateSettingsCommand:
-				await CreateSettingsHandler.Handle(CancellationToken.None).ConfigureAwait(false);
+				await CreateSettingsHandler.Create(args[1..]).ConfigureAwait(false);
+				break;
+
+			case UpdateSettingsCommand:
+				await UpdateSettingsHandler.Update(args[1..]).ConfigureAwait(false);
 				break;
 
             case MapFilesCommand:
@@ -98,6 +106,10 @@ public static class Program
 			case CompareFilesTreeCommand:
                 await FilesTreeStuctureHandler.Compare(args[1..]);
                 break;
+
+			case AlignToRelativeFilePathCommand:
+				await RelativeFilePathAligner.Align(args[1..]);
+				break;
 
             default:
 				Console.WriteLine($"Command '{command}' is not valid");

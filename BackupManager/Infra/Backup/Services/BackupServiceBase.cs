@@ -16,10 +16,9 @@ namespace BackupManager.Infra.Backup.Services;
 
 public abstract class BackupServiceBase : IBackupService
 {
-    protected readonly IFilesHashesHandler mFilesHashesHandler;
-    protected readonly ILogger<BackupServiceBase> mLogger;
-    private readonly ILoggerFactory mLoggerFactory;
-    private readonly TimeSpan mIntervalForCheckingAvailableSlot = TimeSpan.FromMilliseconds(500);
+    protected readonly IFilesHashesHandler _filesHashesHandler;
+    protected readonly ILogger<BackupServiceBase> _logger;
+    private readonly ILoggerFactory _loggerFactory;
 
     public virtual void Dispose()
     {
@@ -28,9 +27,9 @@ public abstract class BackupServiceBase : IBackupService
 
     protected BackupServiceBase(IFilesHashesHandler filesHashesHandler, ILoggerFactory loggerFactory)
     {
-        mFilesHashesHandler = filesHashesHandler ?? throw new ArgumentNullException(nameof(filesHashesHandler));
-        mLoggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
-        mLogger = loggerFactory.CreateLogger<BackupServiceBase>();
+        _filesHashesHandler = filesHashesHandler ?? throw new ArgumentNullException(nameof(filesHashesHandler));
+        _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+        _logger = loggerFactory.CreateLogger<BackupServiceBase>();
     }
     
     protected abstract void AddSubDirectoriesToSearchQueue(Queue<string> directoriesToSearch, string currentSearchDirectory);
@@ -45,7 +44,7 @@ public abstract class BackupServiceBase : IBackupService
     
     public async Task BackupFiles(BackupSettings backupSettings, CancellationToken cancellationToken)
     {
-        mLogger.LogInformation($"Start backup '{backupSettings.Description ?? backupSettings.ToString()}'");
+        _logger.LogInformation($"Start backup '{backupSettings.Description ?? backupSettings.ToString()}'");
 
         await LoadDatabase(backupSettings, cancellationToken).ConfigureAwait(false);
 
@@ -59,25 +58,27 @@ public abstract class BackupServiceBase : IBackupService
             await BackupInternal(directoriesMap, backupSettings, cancellationToken).ConfigureAwait(false);
         }
 
-        UpdateLastBackupTime(backupSettings.Description);
+        await UpdateLastBackupTime(backupSettings.Description).ConfigureAwait(false);
         
-        mLogger.LogInformation($"Finished backup '{backupSettings.Description ?? backupSettings.ToString()}'");
+        _logger.LogInformation($"Finished backup '{backupSettings.Description ?? backupSettings.ToString()}'");
+
+        WarnForNonBackupFiles(); 
     }
 
     private async Task LoadDatabase(BackupSettings backupSettings, CancellationToken cancellationToken)
     {
-        string databaseName = Consts.BackupFilesCollectionName;
+        string databaseName = Consts.Database.BackupFilesCollectionName;
         if (!backupSettings.ShouldBackupToKnownDirectory)
         {
-            databaseName = string.Format(Consts.BackupFilesForKnownDriveCollectionTemplate, backupSettings.Token);
+            databaseName = string.Format(Consts.Database.BackupFilesForKnownDriveCollectionTemplate, backupSettings.Token);
         }
         
-        await mFilesHashesHandler.LoadDatabase(databaseName, cancellationToken).ConfigureAwait(false);
+        await _filesHashesHandler.LoadDatabase(databaseName, cancellationToken).ConfigureAwait(false);
     }
     
     private async Task MapAllFilesWithHash(BackupSettings backupSettings, CancellationToken cancellationToken)
     {
-        mLogger.LogInformation($"Before backup we should verify all files in {backupSettings.RootDirectory} are mapped");
+        _logger.LogInformation($"Before backup we should verify all files in {backupSettings.RootDirectory} are mapped");
 
         ushort iteration = 0;
         bool isGetAllFilesCompleted = false;
@@ -86,12 +87,12 @@ public abstract class BackupServiceBase : IBackupService
         {
             if (cancellationToken.IsCancellationRequested)
             {
-                mLogger.LogInformation("Cancel requested");
+                _logger.LogInformation("Cancel requested");
                 break;
             }
 
             iteration++;
-            mLogger.LogInformation($"Mapping all files with hash from directory '{backupSettings.RootDirectory}'. Iteration number: {iteration}");
+            _logger.LogInformation($"Mapping all files with hash from directory '{backupSettings.RootDirectory}'. Iteration number: {iteration}");
 
             FilesBackupData filesBackupData = await GetFilesBackupData(backupSettings.RootDirectory,
                                                                        sourceRelativeDirectory: backupSettings.RootDirectory,
@@ -103,17 +104,17 @@ public abstract class BackupServiceBase : IBackupService
             
             if (filesBackupData.NotBackedUpFilePathToFileHashMap is null || filesBackupData.NotBackedUpFilePathToFileHashMap.Count == 0)
             {
-                mLogger.LogDebug("No new files to map found");
+                _logger.LogDebug("No new files to map found");
                 continue;
             }
 
             foreach ((FileSystemPath fileSystemPath, string fileHash) in filesBackupData.NotBackedUpFilePathToFileHashMap)
             {
                 FileSystemPath relativeDestinationPath = fileSystemPath.GetRelativePath(backupSettings.RootDirectory);
-                await mFilesHashesHandler.AddFileHash(fileHash, relativeDestinationPath.PathString, cancellationToken).ConfigureAwait(false);
+                await _filesHashesHandler.AddFileHash(fileHash, relativeDestinationPath.PathString, cancellationToken).ConfigureAwait(false);
             }
 
-            await mFilesHashesHandler.Save(cancellationToken).ConfigureAwait(false);
+            await _filesHashesHandler.Save(cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -127,15 +128,15 @@ public abstract class BackupServiceBase : IBackupService
         {
             if (cancellationToken.IsCancellationRequested)
             {
-                mLogger.LogInformation("Cancel requested");
+                _logger.LogInformation("Cancel requested");
                 break;
             }
 
             iteration++;
-            mLogger.LogInformation($"Handling backup from '{directoriesMap.SourceRelativeDirectory}' to '{directoriesMap.DestRelativeDirectory}'. Iteration number: {iteration}");
+            _logger.LogInformation($"Handling backup from '{directoriesMap.SourceRelativeDirectory}' to '{directoriesMap.DestRelativeDirectory}'. Iteration number: {iteration}");
 
             string sourceDirectoryToBackup = BuildSourceDirectoryToBackup(backupSettings, directoriesMap.SourceRelativeDirectory);
-            string sourceRelativeDirectory = backupSettings.ShouldBackupToKnownDirectory ? backupSettings.RootDirectory : Consts.ReadyToBackupDirectoryPath;
+            string sourceRelativeDirectory = backupSettings.ShouldBackupToKnownDirectory ? backupSettings.RootDirectory : Consts.Data.ReadyToBackupDirectoryPath;
             FilesBackupData filesBackupData = await GetFilesBackupData(sourceDirectoryToBackup,
                                                                        sourceRelativeDirectory,
                                                                        backupSettings,
@@ -163,7 +164,7 @@ public abstract class BackupServiceBase : IBackupService
     {
         return backupSettings.ShouldBackupToKnownDirectory 
                    ? Path.Combine(backupSettings.RootDirectory, sourceRelativeDirectory)
-                   : Path.Combine(Consts.ReadyToBackupDirectoryPath, sourceRelativeDirectory);
+                   : Path.Combine(Consts.Data.ReadyToBackupDirectoryPath, sourceRelativeDirectory);
     }
 
     private async Task<FilesBackupData> GetFilesBackupData(string directoryToBackup,
@@ -177,7 +178,7 @@ public abstract class BackupServiceBase : IBackupService
         
         if (!IsDirectoryExists(directoryToBackup))
         {
-            mLogger.LogInformation($"'{directoryToBackup}' does not exists");
+            _logger.LogInformation($"'{directoryToBackup}' does not exists");
             return new FilesBackupData
             {
                 IsGetAllFilesCompleted = true,
@@ -186,7 +187,7 @@ public abstract class BackupServiceBase : IBackupService
             };
         }
 
-        mLogger.LogInformation(iteration > 1 
+        _logger.LogInformation(iteration > 1 
                                    ? $"Continue getting files to backup from '{directoryToBackup}'. Iteration Number {iteration}"
                                    : $"Starting iterative search to find files to backup from '{directoryToBackup}'");
 
@@ -199,7 +200,7 @@ public abstract class BackupServiceBase : IBackupService
         {
             if (cancellationToken.IsCancellationRequested)
             {
-                mLogger.LogInformation($"Cancel requested");
+                _logger.LogInformation($"Cancel requested");
                 break;
             }
 
@@ -211,7 +212,7 @@ public abstract class BackupServiceBase : IBackupService
                 continue;
             }
             
-            mLogger.LogDebug($"Collecting files from directory '{currentSearchDirectory}'");
+            _logger.LogDebug($"Collecting files from directory '{currentSearchDirectory}'");
             isGetAllFilesCompleted = await AddFilesToBackupOnlyIfFileNotBackedUpAlready(notBackedUpFilePathToFileHashMap,
                                                                                         alreadyBackedUpFilePathToFileHashMap,
                                                                                         currentSearchDirectory,
@@ -226,7 +227,7 @@ public abstract class BackupServiceBase : IBackupService
             alreadyCompletedDirectories.Add(currentSearchDirectory);
         }
 
-        mLogger.LogInformation(isGetAllFilesCompleted 
+        _logger.LogInformation(isGetAllFilesCompleted 
                                    ? $"Finished iterative search for finding files from '{directoryToBackup}'" 
                                    : $"Paused iterative search in '{directoryToBackup}'");
         return new FilesBackupData
@@ -237,9 +238,20 @@ public abstract class BackupServiceBase : IBackupService
         };
     }
 
-    private static void UpdateLastBackupTime(string? backupDescription)
+    private static async Task UpdateLastBackupTime(string? backupDescription)
     {
-        File.AppendAllText(Consts.BackupTimeDiaryFilePath, $"{DateTime.Now} --- {backupDescription}" + Environment.NewLine);
+        await File.AppendAllTextAsync(Consts.Data.BackupTimeDiaryFilePath, $"{DateTime.Now} --- {backupDescription}" + Environment.NewLine);
+    }
+
+    private void WarnForNonBackupFiles()
+    {
+        foreach(string directory in Directory.EnumerateDirectories(Consts.Data.ReadyToBackupDirectoryPath))
+        {
+            if (Directory.GetFiles(directory, "*", SearchOption.AllDirectories).Length > 0)
+            {
+                _logger.LogWarning("Not all files were backuped!!! Found non mapped directory '{directory}'. Consider use CLI command 'UpdateSettingsHandler'", directory);
+            }
+        }
     }
 
     private async Task<bool> AddFilesToBackupOnlyIfFileNotBackedUpAlready(IDictionary<FileSystemPath, string> notBackedUpFilePathToFileHashMap,
@@ -257,7 +269,7 @@ public abstract class BackupServiceBase : IBackupService
             
             if (cancellationToken.IsCancellationRequested)
             {
-                mLogger.LogInformation("Cancel requested");
+                _logger.LogInformation("Cancel requested");
                 break;
             }
             
@@ -265,7 +277,7 @@ public abstract class BackupServiceBase : IBackupService
             
             if (isAlreadyBackedUp)
             {
-                mLogger.LogTrace($"File '{fileSystemPath}' already backed up");
+                _logger.LogTrace($"File '{fileSystemPath}' already backed up");
 
                 if (!string.IsNullOrWhiteSpace(fileHash))
                 {
@@ -277,21 +289,21 @@ public abstract class BackupServiceBase : IBackupService
             
             if (string.IsNullOrWhiteSpace(fileHash))
             {
-                mLogger.LogError($"Hash for '{filePath}' was not calculated");
+                _logger.LogError($"Hash for '{filePath}' was not calculated");
                 continue;
             }
 
             notBackedUpFilePathToFileHashMap.Add(fileSystemPath, fileHash);
-            mLogger.LogInformation($"Found file '{fileSystemPath}' to backup");
+            _logger.LogInformation($"Found file '{fileSystemPath}' to backup");
             
             if (notBackedUpFilePathToFileHashMap.Count >= backupSettings.SaveInterval)
             {
-                mLogger.LogInformation($"Collected {notBackedUpFilePathToFileHashMap.Count} files, pausing file fetch");
+                _logger.LogInformation($"Collected {notBackedUpFilePathToFileHashMap.Count} files, pausing file fetch");
                 return isGetAllFilesCompleted;
             }
         }
 
-        mLogger.LogInformation($"Collected {notBackedUpFilePathToFileHashMap.Count} files");
+        _logger.LogInformation($"Collected {notBackedUpFilePathToFileHashMap.Count} files");
         isGetAllFilesCompleted = true;
         return isGetAllFilesCompleted;
     }
@@ -301,7 +313,7 @@ public abstract class BackupServiceBase : IBackupService
                                            DirectoriesMap directoriesMap,
                                            CancellationToken cancellationToken)
     {
-        mLogger.LogInformation(
+        _logger.LogInformation(
             $"Copying {filePathToBackupToFileHashMap.Count} files from '{directoriesMap.SourceRelativeDirectory}' to '{directoriesMap.DestRelativeDirectory}'");
 
         FileSystemPath destinationDirectoryPath = BuildDestinationDirectoryPath(backupSettings);
@@ -311,7 +323,7 @@ public abstract class BackupServiceBase : IBackupService
         {
             if (cancellationToken.IsCancellationRequested)
             {
-                mLogger.LogInformation($"Cancel requested");
+                _logger.LogInformation($"Cancel requested");
                 break;
             }
 
@@ -325,15 +337,15 @@ public abstract class BackupServiceBase : IBackupService
             try
             {
                 CopyFile(fileToBackup.PathString, destinationFilePath.PathString);
-                mLogger.LogInformation($"Copied '{fileToBackup}' to '{destinationFilePath}'");
+                _logger.LogInformation("Copied '{fileToBackup}' to '{destinationFilePath}'", fileToBackup, destinationFilePath);
                 
-                await mFilesHashesHandler.AddFileHash(fileHash, relativeFilePathToBackup.PathString, cancellationToken).ConfigureAwait(false);
+                await _filesHashesHandler.AddFileHash(fileHash, relativeFilePathToBackup.PathString, cancellationToken).ConfigureAwait(false);
 
                 backupFilesIntervalCount++;
                 if (backupFilesIntervalCount % backupSettings.SaveInterval == 0)
                 {
-                    mLogger.LogDebug($"Reached save interval {backupFilesIntervalCount}");
-                    await mFilesHashesHandler.Save(cancellationToken).ConfigureAwait(false);
+                    _logger.LogDebug($"Reached save interval {backupFilesIntervalCount}");
+                    await _filesHashesHandler.Save(cancellationToken).ConfigureAwait(false);
                     backupFilesIntervalCount = 0;
                 }
 
@@ -344,12 +356,12 @@ public abstract class BackupServiceBase : IBackupService
             }
             catch (IOException ex)
             {
-                mLogger.LogError(ex, $"Failed to copy '{fileToBackup}' to '{destinationFilePath}'");
+                _logger.LogError(ex, $"Failed to copy '{fileToBackup}' to '{destinationFilePath}'");
             }
         }
         
-        mLogger.LogInformation($"Done copy {filePathToBackupToFileHashMap.Count} files from '{directoriesMap.SourceRelativeDirectory}' to '{directoriesMap.DestRelativeDirectory}'");
-        await mFilesHashesHandler.Save(cancellationToken).ConfigureAwait(false);
+        _logger.LogInformation($"Done copy {filePathToBackupToFileHashMap.Count} files from '{directoriesMap.SourceRelativeDirectory}' to '{directoriesMap.DestRelativeDirectory}'");
+        await _filesHashesHandler.Save(cancellationToken).ConfigureAwait(false);
     }
 
     private void MoveFilesToBackedUpDirectoryIfRequired(BackupSettings backupSettings,
@@ -370,7 +382,7 @@ public abstract class BackupServiceBase : IBackupService
     {
         if (backupSettings.ShouldBackupToKnownDirectory)
         {
-            return new FileSystemPath(Consts.WaitingApprovalDirectoryPath);
+            return new FileSystemPath(Consts.Data.WaitingApprovalDirectoryPath);
         }
 
         if (string.IsNullOrWhiteSpace(backupSettings.RootDirectory))
@@ -421,26 +433,26 @@ public abstract class BackupServiceBase : IBackupService
                 : sourceFilePath.GetRelativePath(backupSettings.RootDirectory);
         }
         
-        return sourceFilePath.GetRelativePath(Consts.ReadyToBackupDirectoryPath);
+        return sourceFilePath.GetRelativePath(Consts.Data.ReadyToBackupDirectoryPath);
     }
 
     private bool tryMoveFileFromReadyToBackupDirectoryToBackedUpDirectory(FileSystemPath readyToBackupFilePath)
     {
         try
         {
-            FileSystemPath backedUpFilePath = readyToBackupFilePath.Replace(Consts.ReadyToBackupDirectoryPath,
-                                                                            Consts.BackedUpDirectoryPath);
+            FileSystemPath backedUpFilePath = readyToBackupFilePath.Replace(Consts.Data.ReadyToBackupDirectoryPath,
+                                                                            Consts.Data.BackedUpDirectoryPath);
 
             string parentDirectory = Path.GetDirectoryName(backedUpFilePath.PathString)
                 ?? throw new NullReferenceException($"Directory of '{backedUpFilePath.PathString}' is empty");
             _ = Directory.CreateDirectory(parentDirectory);
-            mLogger.LogTrace($"Moving {readyToBackupFilePath.PathString} to {Consts.BackedUpDirectoryPath}");
+            _logger.LogTrace($"Moving {readyToBackupFilePath.PathString} to {Consts.Data.BackedUpDirectoryPath}");
             File.Move(readyToBackupFilePath.PathString, backedUpFilePath.PathString);
             return true;
         }
         catch (Exception ex)
         {
-           mLogger.LogError(ex, $"Failed to move {readyToBackupFilePath.PathString} to {Consts.BackedUpDirectoryPath}");
+           _logger.LogError(ex, $"Failed to move {readyToBackupFilePath.PathString} to {Consts.Data.BackedUpDirectoryPath}");
            return false;
         }
     }

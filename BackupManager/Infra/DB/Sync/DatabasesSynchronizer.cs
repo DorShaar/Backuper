@@ -43,13 +43,13 @@ public class DatabasesSynchronizer : IDatabasesSynchronizer
 	
 	public async Task SyncDatabases(IEnumerable<string> knownTokens, CancellationToken cancellationToken)
 	{
-		string[] collections = knownTokens.Select(token => string.Format(Consts.BackupFilesForKnownDriveCollectionTemplate, token))
-										   .Append(Consts.BackupFilesCollectionName)
+		string[] collections = knownTokens.Select(token => string.Format(Consts.Database.BackupFilesForKnownDriveCollectionTemplate, token))
+										   .Append(Consts.Database.BackupFilesCollectionName)
 										   .ToArray();
 
 		if (mLocalJsonDatabase is null || mMongoBackupServiceDatabase is null)
 		{
-			mLogger.LogError("Only one database is registered, synchronization is not required");
+			mLogger.LogInformation("Only one database is registered, synchronization is not required");
 			return;
 		}
 		

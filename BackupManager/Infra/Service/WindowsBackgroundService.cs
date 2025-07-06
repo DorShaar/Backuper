@@ -77,7 +77,7 @@ public sealed class WindowsBackgroundService : BackgroundService
     {
         try
         {
-            _ = Directory.CreateDirectory(Consts.ReadyToBackupDirectoryPath);
+            _ = Directory.CreateDirectory(Consts.Data.ReadyToBackupDirectoryPath);
             HashSet<string> knownTokens = await GetKnownTokens(cancellationToken).ConfigureAwait(false);
             
             await mDatabasesSynchronizer.SyncDatabases(knownTokens, cancellationToken).ConfigureAwait(false);

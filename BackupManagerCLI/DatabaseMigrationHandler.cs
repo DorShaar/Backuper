@@ -8,7 +8,7 @@ public static class DatabaseMigrationHandler
 {
 	public static void Handle()
 	{
-		string fileBackupDataFilePath = Path.Combine(Consts.DataDirectoryPath, $"{Consts.BackupFilesCollectionName}.{Consts.LocalDatabaseExtension}");
+		string fileBackupDataFilePath = Path.Combine(Consts.Data.DataDirectoryPath, $"{Consts.Database.BackupFilesCollectionName}.{Consts.Data.LocalDatabaseExtension}");
 		string filesBackupRawData = File.ReadAllText(fileBackupDataFilePath);
 		Dictionary<string, List<string>> hashToFilesPathsMap = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(filesBackupRawData)
 			?? throw new NullReferenceException($"Could not cast '{fileBackupDataFilePath}' into {nameof(Dictionary<string, List<string>>)}");

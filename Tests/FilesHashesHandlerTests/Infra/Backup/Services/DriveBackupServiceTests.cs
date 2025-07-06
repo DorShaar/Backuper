@@ -55,9 +55,9 @@ public class DriveBackupServiceTests : TestsBase
         await backupService.BackupFiles(backupSettings, CancellationToken.None);
 
         Assert.Equal("just a file",
-            await File.ReadAllTextAsync(Path.Combine(Consts.WaitingApprovalDirectoryPath, "GamesBackup" ,"file in games directory.txt")));
+            await File.ReadAllTextAsync(Path.Combine(Consts.Data.WaitingApprovalDirectoryPath, "GamesBackup" ,"file in games directory.txt")));
         Assert.Equal("save the princess!",
-            await File.ReadAllTextAsync(Path.Combine(Consts.WaitingApprovalDirectoryPath, "GamesBackup", "prince of persia" ,"file in prince of persia directory.txt")));
+            await File.ReadAllTextAsync(Path.Combine(Consts.Data.WaitingApprovalDirectoryPath, "GamesBackup", "prince of persia" ,"file in prince of persia directory.txt")));
         
         DateTime lastBackupTime = await ExtractLastBackupTime();
         Assert.Equal(DateTime.Now.Date, lastBackupTime.Date);
@@ -102,9 +102,9 @@ public class DriveBackupServiceTests : TestsBase
         await backupService.BackupFiles(backupSettings, CancellationToken.None);
 
         Assert.Equal("just a file",
-            await File.ReadAllTextAsync(Path.Combine(Consts.WaitingApprovalDirectoryPath, "Games" ,"file in games directory.txt")));
+            await File.ReadAllTextAsync(Path.Combine(Consts.Data.WaitingApprovalDirectoryPath, "Games" ,"file in games directory.txt")));
         Assert.Equal("save the princess!",
-            await File.ReadAllTextAsync(Path.Combine(Consts.WaitingApprovalDirectoryPath, "Games", "prince of persia" ,"file in prince of persia directory.txt")));
+            await File.ReadAllTextAsync(Path.Combine(Consts.Data.WaitingApprovalDirectoryPath, "Games", "prince of persia" ,"file in prince of persia directory.txt")));
 
         DateTime lastBackupTime = await ExtractLastBackupTime();
         Assert.Equal(DateTime.Now.Date, lastBackupTime.Date);
@@ -142,7 +142,7 @@ public class DriveBackupServiceTests : TestsBase
 
         IFilesHashesHandler filesHashesHandler = A.Fake<IFilesHashesHandler>();
         
-        using TempDirectory gamesTempDirectory = CreateFilesToBackup(Consts.ReadyToBackupDirectoryPath);
+        using TempDirectory gamesTempDirectory = CreateFilesToBackup(Consts.Data.ReadyToBackupDirectoryPath);
         
         DriveBackupService backupService = new(filesHashesHandler, NullLoggerFactory.Instance);
 
@@ -176,7 +176,7 @@ public class DriveBackupServiceTests : TestsBase
         LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
         FilesHashesHandler filesHashesHandler = new(new List<IBackedUpFilesDatabase> {localJsonDatabase});
     
-        using TempDirectory gamesTempDirectory = CreateFilesToBackup(Consts.ReadyToBackupDirectoryPath);
+        using TempDirectory gamesTempDirectory = CreateFilesToBackup(Consts.Data.ReadyToBackupDirectoryPath);
         
         DriveBackupService backupService = new(filesHashesHandler, NullLoggerFactory.Instance);
     
@@ -190,7 +190,7 @@ public class DriveBackupServiceTests : TestsBase
         DateTime lastBackupTime = await ExtractLastBackupTime();
         Assert.Equal(DateTime.Now.Date, lastBackupTime.Date);
 
-        string databaseName = string.Format(Consts.BackupFilesForKnownDriveCollectionTemplate, backupSerializedSettings.Token); 
+        string databaseName = string.Format(Consts.Database.BackupFilesForKnownDriveCollectionTemplate, backupSerializedSettings.Token); 
         Dictionary<string, List<string>> hashesToFilePath =
             await mJsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(GetBackedUpFilesLocalFilePath(databaseName), CancellationToken.None);
         Assert.Equal(Path.Combine("/Games/file in games directory.txt"), hashesToFilePath["5B0CCEF73B8DCF768B3EBCFBB902269389C0224202F120C1AA25137AC2C27551"][0]);
@@ -199,9 +199,9 @@ public class DriveBackupServiceTests : TestsBase
         
         // Makes sure files in ReadyToBackup directory were moved to Backedup directory.
         Assert.False(File.Exists(Path.Combine(gamesTempDirectory.Path, "file in games directory.txt")));
-        Assert.True(File.Exists(Path.Combine(Consts.BackedUpDirectoryPath, "Games", "file in games directory.txt")));
+        Assert.True(File.Exists(Path.Combine(Consts.Data.BackedUpDirectoryPath, "Games", "file in games directory.txt")));
         Assert.False(File.Exists(Path.Combine(gamesTempDirectory.Path, "prince of persia", "file in prince of persia directory.txt")));
-        Assert.True(File.Exists(Path.Combine(Consts.BackedUpDirectoryPath, "Games", "prince of persia", "file in prince of persia directory.txt")));
+        Assert.True(File.Exists(Path.Combine(Consts.Data.BackedUpDirectoryPath, "Games", "prince of persia", "file in prince of persia directory.txt")));
     }
 
     [Fact]
@@ -227,7 +227,7 @@ public class DriveBackupServiceTests : TestsBase
     
         DriveBackupService backupService = new(filesHashesHandler, NullLoggerFactory.Instance);
     
-        using TempDirectory gamesTempDirectory = CreateFilesToBackup(Consts.ReadyToBackupDirectoryPath);
+        using TempDirectory gamesTempDirectory = CreateFilesToBackup(Consts.Data.ReadyToBackupDirectoryPath);
         string alreadyExistingFilePath = Path.Combine(tempBackupDirectory.Path, "Games", "file in games directory.txt");
         _ = Directory.CreateDirectory(Path.GetDirectoryName(alreadyExistingFilePath) ?? throw new NullReferenceException());
         await File.WriteAllTextAsync(alreadyExistingFilePath, "just a file");
@@ -253,7 +253,7 @@ public class DriveBackupServiceTests : TestsBase
 
     private static async Task<DateTime> ExtractLastBackupTime()
     {
-        string lastBackupLog = (await File.ReadAllLinesAsync(Consts.BackupTimeDiaryFilePath).ConfigureAwait(false))[^1];
+        string lastBackupLog = (await File.ReadAllLinesAsync(Consts.Data.BackupTimeDiaryFilePath).ConfigureAwait(false))[^1];
         int lastIndexOfTime = lastBackupLog.IndexOf("---", StringComparison.Ordinal);
         string lastBackupTimeText = lastBackupLog[..lastIndexOfTime];
         return DateTime.Parse(lastBackupTimeText);

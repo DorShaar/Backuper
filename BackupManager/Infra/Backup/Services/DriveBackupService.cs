@@ -11,7 +11,8 @@ namespace BackupManager.Infra.Backup.Services;
 
 public class DriveBackupService : BackupServiceBase
 {
-    public DriveBackupService(IFilesHashesHandler filesHashesHandler, ILoggerFactory loggerFactory) : base(filesHashesHandler, loggerFactory)
+    public DriveBackupService(IFilesHashesHandler filesHashesHandler, ILoggerFactory loggerFactory)
+        : base(filesHashesHandler, loggerFactory)
     {
     }
 
@@ -30,18 +31,43 @@ public class DriveBackupService : BackupServiceBase
 
     protected override async Task<(string?, bool)> GetFileHashData(string filePath, string relativeFilePath, SearchMethod searchMethod, CancellationToken cancellationToken)
     {
-        string fileHash = mFilesHashesHandler.CalculateHash(filePath);
+        string fileHash = _filesHashesHandler.CalculateHash(filePath);
         return searchMethod switch
         {
-            SearchMethod.Hash     => (fileHash, await mFilesHashesHandler.IsHashExists(fileHash, cancellationToken).ConfigureAwait(false)),
-            SearchMethod.FilePath => (fileHash, await mFilesHashesHandler.IsFilePathExist(relativeFilePath, cancellationToken).ConfigureAwait(false)),
+            SearchMethod.Hash     => (fileHash, await _filesHashesHandler.IsHashExists(fileHash, cancellationToken).ConfigureAwait(false)),
+            SearchMethod.FilePath => (fileHash, await _filesHashesHandler.IsFilePathExist(relativeFilePath, cancellationToken).ConfigureAwait(false)),
             _                     => throw new NotSupportedException($"Search method {searchMethod} not supported at the moment")
         };
     }
 
     protected override void CopyFile(string fileToBackup, string destinationFilePath)
     {
-        File.Copy(fileToBackup, destinationFilePath, overwrite: true);
+        if (!File.Exists(destinationFilePath))
+        {
+            File.Copy(fileToBackup, destinationFilePath);
+            return;
+        }
+
+        CopyFileWithAutoRename(fileToBackup, destinationFilePath);
+    }
+
+    private static void CopyFileWithAutoRename(string fileToBackup, string destinationFilePath)
+    {
+        string directory = Path.GetDirectoryName(destinationFilePath) ?? throw new ArgumentNullException(nameof(destinationFilePath));
+        string filename = Path.GetFileNameWithoutExtension(destinationFilePath);
+        string extension = Path.GetExtension(destinationFilePath);
+
+        string finalPath = destinationFilePath;
+        int i = 1;
+
+        // Try suffixes until we find a free filename
+        while (File.Exists(finalPath))
+        {
+            finalPath = Path.Combine(directory, $"{filename}_{i}{extension}");
+            i++;
+        }
+
+        File.Copy(fileToBackup, finalPath);
     }
 
     protected override bool IsDirectoryExists(string directory)

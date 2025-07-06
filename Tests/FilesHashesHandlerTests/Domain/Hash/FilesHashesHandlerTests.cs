@@ -18,7 +18,7 @@ namespace BackupManagerTests.Domain.Hash
         public async Task AddFileHash_FileHashNotExists_FileHashAdded()
         {
             LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
-            await localJsonDatabase.Load(Consts.BackupFilesCollectionName, CancellationToken.None);
+            await localJsonDatabase.Load(Consts.Database.BackupFilesCollectionName, CancellationToken.None);
             FilesHashesHandler filesHashesHandler = new(new List<IBackedUpFilesDatabase> {localJsonDatabase});
 
             await filesHashesHandler.AddFileHash("ABC123", "FileName.ext", CancellationToken.None);
@@ -33,7 +33,7 @@ namespace BackupManagerTests.Domain.Hash
         public async Task AddFileHash_FileHashAlreadyExists_PathIsAddedToTheSameHash()
         {
             LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
-            await localJsonDatabase.Load(Consts.BackupFilesCollectionName, CancellationToken.None);
+            await localJsonDatabase.Load(Consts.Database.BackupFilesCollectionName, CancellationToken.None);
             FilesHashesHandler filesHashesHandler = new(new List<IBackedUpFilesDatabase> {localJsonDatabase});
             
             const string firstFileName = "FileName.ext";
@@ -51,7 +51,7 @@ namespace BackupManagerTests.Domain.Hash
         public async Task AddFileHash_FileHashAlreadyExists_PathIsNotAddedToTheSameHashIfAlreadyExistsInList()
         {
             LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
-            await localJsonDatabase.Load(Consts.BackupFilesCollectionName, CancellationToken.None);
+            await localJsonDatabase.Load(Consts.Database.BackupFilesCollectionName, CancellationToken.None);
             FilesHashesHandler filesHashesHandler = new(new List<IBackedUpFilesDatabase> {localJsonDatabase});
             
             const string firstFileName = "FileName.ext";
@@ -76,7 +76,7 @@ namespace BackupManagerTests.Domain.Hash
         public async Task IsHashExists_HashAlreadyExists_True()
         {
             LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
-            await localJsonDatabase.Load(Consts.BackupFilesCollectionName, CancellationToken.None);
+            await localJsonDatabase.Load(Consts.Database.BackupFilesCollectionName, CancellationToken.None);
             FilesHashesHandler filesHashesHandler = new(new List<IBackedUpFilesDatabase> {localJsonDatabase});
 
             const string hash = "ABC123";
@@ -89,7 +89,7 @@ namespace BackupManagerTests.Domain.Hash
         public async Task IsHashExists_HashNotExists_False()
         {
             LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
-            await localJsonDatabase.Load(Consts.BackupFilesCollectionName, CancellationToken.None);
+            await localJsonDatabase.Load(Consts.Database.BackupFilesCollectionName, CancellationToken.None);
             FilesHashesHandler filesHashesHandler = new(new List<IBackedUpFilesDatabase> {localJsonDatabase});
 
             await filesHashesHandler.AddFileHash("ABC123", "fileName", CancellationToken.None);
@@ -101,7 +101,7 @@ namespace BackupManagerTests.Domain.Hash
         public async Task Save_ToFilesWithSameHash_DataFileCreatedAsExpected()
         {
             LocalJsonDatabase localJsonDatabase = new(mJsonSerializer, NullLogger<LocalJsonDatabase>.Instance);
-            await localJsonDatabase.Load(Consts.BackupFilesCollectionName, CancellationToken.None);
+            await localJsonDatabase.Load(Consts.Database.BackupFilesCollectionName, CancellationToken.None);
             FilesHashesHandler filesHashesHandler = new(new List<IBackedUpFilesDatabase> {localJsonDatabase});
             await filesHashesHandler.AddFileHash("expectedHash", "expectedFilePath1", CancellationToken.None);
             await filesHashesHandler.AddFileHash("expectedHash", "expectedFilePath2", CancellationToken.None);

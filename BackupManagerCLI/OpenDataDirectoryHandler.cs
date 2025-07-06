@@ -9,7 +9,7 @@ public static class OpenDataDirectoryHandler
 	{
 		ProcessStartInfo processStartInfo = new()
 		{
-			FileName = $"\"{Consts.BackupsDirectoryPath}\"",
+			FileName = $"\"{Consts.Data.BackupsDirectoryPath}\"",
 			UseShellExecute = true
 		};
 		

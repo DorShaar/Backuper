@@ -44,10 +44,10 @@ public class MediaDeviceBackupServiceTests : TestsBase
 
         await backupService.BackupFiles(backupSettings, CancellationToken.None);
 
-        Assert.True(File.Exists(Path.Combine(Consts.WaitingApprovalDirectoryPath, "Screenshots", "Screenshot_2020-03-12-20-42-59-175_com.facebook.katana.jpg")));
-        Assert.True(File.Exists(Path.Combine(Consts.WaitingApprovalDirectoryPath, "Screenshots", "another dir", "Screenshot_same_copy.jpg")));
+        Assert.True(File.Exists(Path.Combine(Consts.Data.WaitingApprovalDirectoryPath, "Screenshots", "Screenshot_2020-03-12-20-42-59-175_com.facebook.katana.jpg")));
+        Assert.True(File.Exists(Path.Combine(Consts.Data.WaitingApprovalDirectoryPath, "Screenshots", "another dir", "Screenshot_same_copy.jpg")));
 
-        string lastBackupTimeStr = (await File.ReadAllLinesAsync(Consts.BackupTimeDiaryFilePath))[^1];
+        string lastBackupTimeStr = (await File.ReadAllLinesAsync(Consts.Data.BackupTimeDiaryFilePath))[^1];
         DateTime lastBackupTime = DateTime.Parse(lastBackupTimeStr);
         Assert.Equal(DateTime.Now.Date, lastBackupTime.Date);
 
@@ -82,10 +82,10 @@ public class MediaDeviceBackupServiceTests : TestsBase
 
         await backupService.BackupFiles(backupSettings, CancellationToken.None);
 
-        Assert.True(File.Exists(Path.Combine(Consts.WaitingApprovalDirectoryPath, "DCIM", "Screenshots_tests", "Screenshot_2020-03-12-20-42-59-175_com.facebook.katana.jpg")));
-        Assert.True(File.Exists(Path.Combine(Consts.WaitingApprovalDirectoryPath, "DCIM", "Screenshots_tests", "another dir", "Screenshot_same_copy.jpg")));
+        Assert.True(File.Exists(Path.Combine(Consts.Data.WaitingApprovalDirectoryPath, "DCIM", "Screenshots_tests", "Screenshot_2020-03-12-20-42-59-175_com.facebook.katana.jpg")));
+        Assert.True(File.Exists(Path.Combine(Consts.Data.WaitingApprovalDirectoryPath, "DCIM", "Screenshots_tests", "another dir", "Screenshot_same_copy.jpg")));
 
-        string lastBackupTimeStr = (await File.ReadAllLinesAsync(Consts.BackupTimeDiaryFilePath))[^1];
+        string lastBackupTimeStr = (await File.ReadAllLinesAsync(Consts.Data.BackupTimeDiaryFilePath))[^1];
         DateTime lastBackupTime = DateTime.Parse(lastBackupTimeStr);
         Assert.Equal(DateTime.Now.Date, lastBackupTime.Date);
 
@@ -120,9 +120,9 @@ public class MediaDeviceBackupServiceTests : TestsBase
 
         await backupService.BackupFiles(backupSettings, CancellationToken.None);
 
-        Assert.True(File.Exists(Path.Combine(Consts.WaitingApprovalDirectoryPath, "TestDir", "deviceId.txt")));
+        Assert.True(File.Exists(Path.Combine(Consts.Data.WaitingApprovalDirectoryPath, "TestDir", "deviceId.txt")));
 
-        string lastBackupTimeStr = (await File.ReadAllLinesAsync(Consts.BackupTimeDiaryFilePath))[^1];
+        string lastBackupTimeStr = (await File.ReadAllLinesAsync(Consts.Data.BackupTimeDiaryFilePath))[^1];
         DateTime lastBackupTime = DateTime.Parse(lastBackupTimeStr);
         Assert.Equal(DateTime.Now.Date, lastBackupTime.Date);
 

@@ -18,25 +18,25 @@ public class TestsBase : IDisposable
             Assert.Fail("Must run tests with admin privileges");
         }
         
-        if (Path.GetFileName(Path.GetDirectoryName(Consts.DataDirectoryPath)) == Consts.BackupServiceDirectoryName)
+        if (Path.GetFileName(Path.GetDirectoryName(Consts.Data.DataDirectoryPath)) == Consts.BackupServiceDirectoryName)
         {
             Assert.Fail("Cannot run tests on real directory. Please Change it before running tests.");
         }
 
-        _ = Directory.CreateDirectory(Consts.DataDirectoryPath);
+        _ = Directory.CreateDirectory(Consts.Data.DataDirectoryPath);
     }
 
     public void Dispose()
     {
-        string backupServiceDirectoryPath = Path.GetDirectoryName(Consts.DataDirectoryPath)!;
+        string backupServiceDirectoryPath = Path.GetDirectoryName(Consts.Data.DataDirectoryPath)!;
         if (Directory.Exists(backupServiceDirectoryPath))
         {
             Directory.Delete(backupServiceDirectoryPath, recursive: true);
         }
     }
 
-    protected string GetBackedUpFilesLocalFilePath(string databaseName = Consts.BackupFilesCollectionName)
+    protected string GetBackedUpFilesLocalFilePath(string databaseName = Consts.Database.BackupFilesCollectionName)
     {
-        return Path.Combine(Consts.DataDirectoryPath, $"{databaseName}.{Consts.LocalDatabaseExtension}");
+        return Path.Combine(Consts.Data.DataDirectoryPath, $"{databaseName}.{Consts.Data.LocalDatabaseExtension}");
     }
 }

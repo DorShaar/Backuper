@@ -36,7 +36,7 @@ public class LocalJsonDatabase : IBackedUpFilesDatabase
 			await Save(cancellationToken).ConfigureAwait(false);
 		}
 		
-		mDatabaseFilePath = new FileSystemPath(Path.Combine(Consts.DataDirectoryPath, $"{databaseName}.{Consts.LocalDatabaseExtension}"));
+		mDatabaseFilePath = new FileSystemPath(Path.Combine(Consts.Data.DataDirectoryPath, $"{databaseName}.{Consts.Data.LocalDatabaseExtension}"));
 		mHashToFilePathsMap = TryReadHashToFilePathsMap(mDatabaseFilePath.PathString);
 		mFilePathToFileHashMap = DeduceFilePathToFileHashMap(mHashToFilePathsMap);
 	}
