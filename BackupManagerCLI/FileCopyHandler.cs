@@ -25,6 +25,8 @@ namespace BackupManagerCli
             await CopyFiles(new FileSystemPath(sourceDirectory),
                 new FileSystemPath(destinationDirectory),
                 relativePathsFile).ConfigureAwait(false);
+
+            Console.WriteLine("Done !");
         }
 
         private static async Task CopyFiles(FileSystemPath sourceDirectory,
@@ -40,7 +42,7 @@ namespace BackupManagerCli
 
                 if (File.Exists(destinationFilePath.PathString))
                 {
-                    Console.WriteLine($"File {destinationDirectory.PathString} already exist");
+                    Console.WriteLine($"File {destinationFilePath.PathString} already exist");
                     continue;
                 }
 
