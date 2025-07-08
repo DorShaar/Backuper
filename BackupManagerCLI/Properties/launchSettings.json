@@ -2,7 +2,7 @@
   "profiles": {
     "BackupManagerCLI": {
       "commandName": "Project",
-      "commandLineArgs": "find-backuped \"C:\\Users\\Dor Shaar\\Desktop\\to_backup\" \"C:\\Program Files\\BackupService\\Data\\Data-7a160d7a-ceae-4df1-a0db-3a97cd2f1aec.json\" \"C:\\Users\\Dor Shaar\\Desktop\\to_backup\\dup_backuped_files.json\""
+      "commandLineArgs": "copy-files \"D:\\Dor's backups\" \"E:\\Dor's backups\" \"C:\\Users\\Dor Shaar\\Desktop\\to_backup\\compare.txt\""
     }
   }
 }

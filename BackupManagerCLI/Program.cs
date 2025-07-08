@@ -18,6 +18,7 @@ public static class Program
 	private const string GetFilesTreeCommand = "get-files-tree";
 	private const string CompareFilesTreeCommand = "compare-files-tree";
 	private const string AlignToRelativeFilePathCommand = "align-to-relative";
+	private const string CopyFilesFromRelativeCommand = "copy-files";
 	
 	private static readonly string[] mAllowedCommands =
 	{
@@ -37,6 +38,7 @@ public static class Program
         GetFilesTreeCommand,
         CompareFilesTreeCommand,
         AlignToRelativeFilePathCommand,
+        CopyFilesFromRelativeCommand,
     };
 
 	public static async Task Main(string[] args)
@@ -109,6 +111,10 @@ public static class Program
 
 			case AlignToRelativeFilePathCommand:
 				await RelativeFilePathAligner.Align(args[1..]);
+				break;
+
+			case CopyFilesFromRelativeCommand:
+				await FileCopyHandler.Handle(args[1..]);
 				break;
 
             default:
